@@ -1,0 +1,58 @@
+name: one-time next-match savebar fix
+
+on:
+  push:
+    paths:
+      - '.github/patch_next_match_savebar.py'
+      - '.github/workflows/next-match-savebar.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: RED — contract must fail before implementation
+        shell: bash
+        run: |
+          set +e
+          python .github/patch_next_match_savebar.py check
+          status=$?
+          set -e
+          if [ "$status" -eq 0 ]; then
+            echo "Expected RED failure, but contract already passes"
+            exit 1
+          fi
+          echo "RED confirmed"
+      - name: Apply bounded frontend patch
+        run: python .github/patch_next_match_savebar.py apply
+      - name: GREEN — contract must pass
+        run: python .github/patch_next_match_savebar.py check
+      - name: Check inline JavaScript syntax
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re, subprocess, tempfile
+          s=Path('index.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)</script>',s,flags=re.I)
+          if not scripts: raise SystemExit('no inline scripts found')
+          for i,js in enumerate(scripts):
+              p=Path(tempfile.gettempdir())/f'ciao-inline-{i}.js'
+              p.write_text(js,encoding='utf-8')
+              subprocess.run(['node','--check',str(p)],check=True)
+          print(f'JS syntax PASS: {len(scripts)} inline scripts')
+          PY
+      - name: Commit production patch and remove one-time tooling
+        shell: bash
+        run: |
+          git config user.name 'godievda-pixel'
+          git config user.email 'godievda@gmail.com'
+          rm -f .github/patch_next_match_savebar.py .github/workflows/next-match-savebar.yml
+          git add -A
+          git commit -m 'fix: correct favorite next match and prediction savebar'
+          git push origin main
