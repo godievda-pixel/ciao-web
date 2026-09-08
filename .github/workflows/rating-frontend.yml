@@ -1,5 +1,5 @@
 name: one-time premium rating frontend
-# retry after newline encoding fix
+# retry after newline encoding and picker invariant fixes
 on:
   workflow_dispatch:
   push:
@@ -44,8 +44,9 @@ jobs:
       - name: Verify Predictions picker source untouched
         run: |
           grep -q 'ciao-v29-native-score-picker-20260908' index.html
-          grep -q 'id="cw29-score-picker"' index.html
-          ! grep -q 'id="cw28-score-picker"' index.html
+          grep -q "el.id='cw29-score-picker'" index.html
+          grep -q 'cw29-picker-grid' index.html
+          ! grep -q 'cw28-score-picker' index.html
           echo 'cw29 picker invariant PASS'
       - name: Commit Rating patch and remove one-time frontend tooling
         run: |
