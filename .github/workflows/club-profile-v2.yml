@@ -1,0 +1,85 @@
+name: one-time club profile v2
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/club-profile-v2.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: RED source contract
+        shell: bash
+        run: |
+          set +e
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text(encoding='utf-8')
+          assert 'data-club-scope' in s
+          assert "['transfers','Трансферы']" not in s
+          assert 'cwpred-hub cwmt-hub-parity' in s
+          PY
+          rc=$?
+          set -e
+          if [ "$rc" -eq 0 ]; then
+            echo "Expected RED but source is already green"
+            exit 1
+          fi
+          echo "RED confirmed"
+
+      - name: Apply source patch
+        shell: bash
+        run: |
+          base64 -d .github/club_profile_patch.b64 | gunzip > /tmp/club_patch.py
+          python /tmp/club_patch.py
+
+      - name: GREEN source contract
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text(encoding='utf-8')
+          assert "const __cw16ClubTabs=[['overview','Обзор'],['matches','Матчи'],['squad','Состав'],['stats','Статистика']];" in s
+          assert "scope:String(scope||'overall')" in s
+          assert 'data-club-scope' in s
+          assert 'cw23-club-shell' in s
+          assert '__cw23ClubSecondaries' in s
+          assert 'cwpred-hub cwmt-hub-parity' in s
+          assert '<h3>Матчи</h3><span>5 турниров</span>' in s
+          assert "['transfers','Трансферы']" not in s
+          print('GREEN source contract passed')
+          PY
+
+      - name: Check inline JavaScript
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re, subprocess
+          html=Path('index.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script\b[^>]*>([\s\S]*?)</script>',html,re.I)
+          assert scripts, 'no inline scripts found'
+          for i,code in enumerate(scripts):
+              f=Path(f'/tmp/inline-{i}.js')
+              f.write_text(code,encoding='utf-8')
+              subprocess.run(['node','--check',str(f)],check=True)
+          print('inline scripts:',len(scripts))
+          PY
+
+      - name: Commit production source
+        shell: bash
+        run: |
+          rm -f .github/club_profile_patch.b64 .github/workflows/club-profile-v2.yml
+          rmdir .github/workflows 2>/dev/null || true
+          rmdir .github 2>/dev/null || true
+          git config user.name "Ciao Web Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -m "feat: rebuild club profiles across competitions"
+          git push
