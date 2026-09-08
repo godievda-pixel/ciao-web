@@ -192,6 +192,8 @@ Common fields:
 - `away`
 - `prediction`
 
+For external matches, `is_finished` is derived from `cp_external_matches.status === 'finished'`; it is not a separate database column.
+
 Normalized team fields:
 
 - `id` when a stable local ID exists, otherwise `null`
@@ -285,6 +287,8 @@ Columns mirror the useful fields of the existing cache:
 - `status text nullable`
 - `payload jsonb not null default '{}'::jsonb`
 - `fetched_at timestamptz not null default now()`
+
+Enable Row Level Security on this table immediately. No anon/authenticated client policy is required for this feature; Match Center Edge Functions access it with the server-role client.
 
 The same cache-refresh strategy and section-level payload metadata are used.
 
