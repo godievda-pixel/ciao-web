@@ -2241,7 +2241,7 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
     if(!matchViewId||matchLoading||document.hidden||String(matchData?.status??'').toLowerCase()==='finished')return;
     try{
       const fresh=await __cw9SummaryApi(matchViewId);matchData=__cw9MergeMatch(matchData,fresh);patchMatchCenter(matchData);
-      if(String(matchData?.status||'').toLowerCase()==='live'&&matchCenterTab!=='overview'&&Date.now()-__cw9LastSectionRefresh>30000){
+      if(String(matchData?.status||'').toLowerCase()==='live'&&matchCenterTab!=='overview'&&Date.now()-__cw9LastSectionRefresh>10000){
         const sec=await __cw9FastMatchApi(matchViewId,__cw9SectionsForTab(matchCenterTab));matchData=__cw9MergeMatch(matchData,sec);__cw9LastSectionRefresh=Date.now();
         const current=main.querySelector('[data-mc-tab-content]');if(current){current.innerHTML=matchTabContent(matchData,matchCenterTab)}
       }
@@ -2269,7 +2269,7 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
   /* ===== /Ciao, Web! v10 upgrade layer ===== */
 
   /* ===== Ciao, Web! v10 scaling layer ===== */
-  const __CW10_LIVE_POLL_MS=30000,__CW10_IDLE_POLL_MS=180000;
+  const __CW10_LIVE_POLL_MS=5000,__CW10_IDLE_POLL_MS=180000;
   let __cw10PollTimer=null;
   function __cw10Jitter(base){const spread=base<=__CW10_LIVE_POLL_MS?3000:20000;return Math.max(5000,base+Math.round((Math.random()*2-1)*spread))}
   function __cw10BaseDelay(){if(!S&&!matchViewId)return 5000;if(matchViewId)return String(matchData?.status??'').toLowerCase()==='live'?__CW10_LIVE_POLL_MS:__CW10_IDLE_POLL_MS;return (S?.round?.matches||[]).some(isLive)?__CW10_LIVE_POLL_MS:__CW10_IDLE_POLL_MS}
@@ -2286,7 +2286,7 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
   __cw10ScheduleNext(3000+Math.floor(Math.random()*2500));
   /* ===== /Ciao, Web! v10 scaling layer ===== */
   /* ===== Ciao, Web! v11 refinement layer ===== */
-  const __CW11_SERIE_A_LIVE_MS=30000,__CW11_SERIE_A_IDLE_MS=600000;
+  const __CW11_SERIE_A_LIVE_MS=5000,__CW11_SERIE_A_IDLE_MS=600000;
   let __cw11SerieATimer=null,__cw11SerieALastCheck=0,__cw11SerieARefreshing=false;
 
   function __cw11Plural(n,one,few,many){
@@ -2870,7 +2870,7 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
   /* ===== Ciao, Web! v20 consolidated layer ===== */
   /* ===== Ciao, Web! v20.14 live phase + deterministic scheduler ===== */
   const __CW2014_LIVE_API='https://dkefzepiiudehhzbbrjn.supabase.co/functions/v1/ciao-live-snapshot-v1';
-  const __CW2014_LIVE_MS=10000,__CW2014_IDLE_MS=60000;
+  const __CW2014_LIVE_MS=5000,__CW2014_IDLE_MS=60000;
   const __CW2014_BREAK_PHASES=new Set(['halftime','half_time','ht','break','extra_time_halftime']);
   let __cw2014Timer=null,__cw2014LastRows=new Map();
   function __cw2014IsBreak(m){return __CW2014_BREAK_PHASES.has(String(m?.live_phase??'').toLowerCase())}
@@ -3042,7 +3042,7 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
     try{
       const fresh=await __cw9SummaryApi(matchViewId);matchData=__cw9MergeMatch(matchData,fresh);patchMatchCenter(matchData);matchCenterTab=activeTab;
       if(activeTab==='overview')__cw20PatchOverviewPredictions(matchData);
-      if(String(matchData?.status||'').toLowerCase()==='live'&&['stats','events'].includes(activeTab)&&Date.now()-__cw9LastSectionRefresh>30000){
+      if(String(matchData?.status||'').toLowerCase()==='live'&&['stats','events'].includes(activeTab)&&Date.now()-__cw9LastSectionRefresh>10000){
         const sec=await __cw9FastMatchApi(matchViewId,__cw9SectionsForTab(activeTab));matchData=__cw9MergeMatch(matchData,sec);__cw9LastSectionRefresh=Date.now();__cw20PatchActiveTab(matchData,activeTab);
       }
     }catch(_e){}finally{matchCenterTab=activeTab;if(main)main.scrollTop=y;requestAnimationFrame(()=>{if(main)main.scrollTop=y})}
@@ -3205,6 +3205,7 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
   function __cw2014Wake(){if(document.hidden)return;if(__cw2014Timer)clearTimeout(__cw2014Timer);__cw2014Timer=null;Promise.resolve(refreshLive()).finally(()=>__cw2014Schedule(S?.has_live?__CW2014_LIVE_MS:__CW2014_IDLE_MS))}
   if(typeof window!=='undefined'){document.addEventListener?.('visibilitychange',()=>{if(!document.hidden)__cw2014Wake()});window.addEventListener?.('focus',()=>__cw2014Wake());setTimeout(()=>__cw2014Tick(),1200)}
   /* ===== /Ciao, Web! v20.14 deterministic live scheduler ===== */
+  /* ciao-v32-live-poll-5s-20260908 */
   /* ===== Ciao, Web! v20.15 stable match center live patch ===== */
   function __cw2015GoalScorers(d,side){
     const raw=Array.isArray(d?.incidents?.incidents)?d.incidents.incidents:[],home=side==='home',groups=new Map();
@@ -3799,7 +3800,7 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
   function __cwMtPatchVisibleMatches(payload){if(!main)return false;const rows=Array.isArray(payload?.matches)?payload.matches:[],hosts=[...(main.querySelectorAll?.('[data-cwmt-match]')||[])];for(const match of rows){const wanted=String(match?.matchId||''),host=hosts.find(el=>String(el.getAttribute?.('data-cwmt-match')||'')===wanted);if(!host)continue;const center=host.querySelector?.('.cwmt-match-center');if(center)center.innerHTML=__cwMtCenterHtml(match)}return true}
   async function __cwMtLoadCompetition(key,{quiet=false}={}){if(!__cwMtMeta(key)||key==='serie_a')return false;const version=++__cwMtRequestVersion;const selectedAtStart=__cwMtCompetition;if(!quiet){__cwMtLoading=true;__cwMtError='';render()}try{const response=await fetch(__CWPRED_EXTERNAL_API,{method:'POST',headers:{accept:'application/json','content-type':'application/json','x-telegram-init-data':String(initData||'')},body:JSON.stringify({action:'state',competition:key}),cache:'no-store'});const body=await response.json().catch(()=>({}));if(!response?.ok||body?.ok===false)throw new Error(String(body?.error||('HTTP '+Number(response?.status||0))));const payload=body?.data;if(version!==__cwMtRequestVersion||selectedAtStart!==__cwMtCompetition||key!==__cwMtCompetition)return false;return __cwMtApplyPayload(version,payload,{quiet})}catch(error){if(version!==__cwMtRequestVersion||selectedAtStart!==__cwMtCompetition||key!==__cwMtCompetition)return false;__cwMtLoading=false;if(quiet&&__cwMtPayload){__cwMtRefreshError=String(error?.message||'refresh_failed');return false}__cwMtError=String(error?.message||'load_failed');render();return false}}
   function __cwMtStopRefresh(){if(__cwMtRefreshTimer){clearInterval(__cwMtRefreshTimer);__cwMtRefreshTimer=0}}
-  function __cwMtStartRefresh(){__cwMtStopRefresh();if(!(tab==='calendar'&&__cwMtCompetition&&__cwMtCompetition!=='serie_a'))return;__cwMtRefreshTimer=setInterval(()=>{if(tab==='calendar'&&__cwMtCompetition&&__cwMtCompetition!=='serie_a'&&!document.hidden)__cwMtLoadCompetition(__cwMtCompetition,{quiet:true})},30000)}
+  function __cwMtStartRefresh(){__cwMtStopRefresh();if(!(tab==='calendar'&&__cwMtCompetition&&__cwMtCompetition!=='serie_a'))return;__cwMtRefreshTimer=setInterval(()=>{if(tab==='calendar'&&__cwMtCompetition&&__cwMtCompetition!=='serie_a'&&!document.hidden)__cwMtLoadCompetition(__cwMtCompetition,{quiet:true})},5000)}
 
   function __cwMtExternalCompetitionHtml(){const meta=__cwMtMeta(__cwMtCompetition);if(!meta)return __cwMtHubHtml();const cover=__cwMtCoverHtml(__cwMtCompetition);if(__cwMtLoading&&!__cwMtPayload)return cover+'<div class="cwmt-state">Загружаем матчи…</div>';if(__cwMtError&&!__cwMtPayload)return cover+'<div class="cwmt-state"><b>Не удалось загрузить матчи</b><button type="button" data-cwmt-action="retry">Повторить</button></div>';const group=__cwMtSelectedGroup();if(!group)return cover+'<div class="cwmt-state">Матчей пока нет</div>';return cover+__cwMtStageBarHtml()+'<div class="section-title cwmt-stage-title"><h3>'+__cwMtEsc(group.label)+'</h3></div><div class="scoreboards cwmt-scoreboards">'+group.matches.map(__cwMtMatchCardHtml).join('')+'</div>'}
 
