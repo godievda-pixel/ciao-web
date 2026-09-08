@@ -2,62 +2,54 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add the existing full BSD-powered Match Center to UCL, UEL, UECL and Coppa Italia, with tournament-specific visual themes, while preserving Serie A Match Center and prediction editing behavior.
+**Goal:** Add the existing full BSD-powered Match Center to UCL, UEL, UECL and Coppa Italia, with tournament-specific themes, while preserving Serie A Match Center and prediction editing.
 
-**Architecture:** Keep one Match Center UI and one backend family, but make identity/source explicit with `source: 'serie_a' | 'external'`. Normalize `cp_matches` and `cp_external_matches` into one response shape, use a physically separate cache table for external matches, and propagate `matchViewSource` through frontend navigation, polling, lazy sections and session restore.
+**Architecture:** Keep one Match Center UI and one backend family, but make identity explicit with `source: 'serie_a' | 'external'`. Normalize `cp_matches` and `cp_external_matches` into one response shape, use a separate external cache table, and propagate `matchViewSource` through navigation, polling, lazy sections and session restore.
 
-**Tech Stack:** Supabase Postgres, Supabase Edge Functions (Deno + `@supabase/supabase-js`), BSD Sports API, single-file GitHub Pages frontend (`index.html`), vanilla JavaScript/CSS, GitHub Actions for temporary source-contract checks.
+**Tech Stack:** Supabase Postgres, Supabase Edge Functions (Deno + `@supabase/supabase-js`), BSD Sports API, single-file GitHub Pages frontend (`index.html`), vanilla JavaScript/CSS, temporary GitHub Actions/source-contract checks.
 
 **Spec:** `docs/superpowers/specs/2026-09-08-external-match-center-design.md`
 
 ## Global Constraints
 
-- Production repository is `godievda-pixel/ciao-web`, branch `main`.
-- Do not touch archive/fallback repository `godievda-pixel/ciao-pronostici`.
-- Final accepted production tree must return to root `index.html` only; spec/plan/workflow/test artifacts are temporary.
-- Existing Serie A Match Center remains functionally unchanged except for explicit source plumbing.
-- Existing `cw29` score picker and prediction autosave must remain unchanged.
-- Club profile navigation remains disabled inside Predictions.
-- External Match Center must never render “Контекст Серии А”.
-- External identities are always `(source, match_id)`, never numeric `match_id` alone.
-- Optional BSD sections must fail locally without replacing the whole Match Center.
-- The unrelated Rating rank inconsistency is out of scope for this feature.
+- Production repository: `godievda-pixel/ciao-web`, branch `main`.
+- Never touch `godievda-pixel/ciao-pronostici`.
+- After user acceptance, production tree returns to root `index.html` only; spec/plan/test/workflow artifacts are temporary.
+- Serie A Match Center remains functionally unchanged except for explicit source plumbing.
+- `cw29` picker and prediction autosave remain unchanged.
+- Club-profile navigation remains disabled inside Predictions.
+- External Match Center never renders “Контекст Серии А”.
+- External identity is always `(source, match_id)`, never numeric `match_id` alone.
+- Optional BSD sections fail locally without replacing the whole Match Center.
+- Rating work is out of scope for this feature.
 
 ---
 
 ## File / Service Map
 
-- **Database:** create `public.cp_external_match_center_cache` only.
-- **Edge Function:** modify deployed function `ciao-match-summary-fast-v2` to normalize internal/external match summaries and prediction split.
-- **Edge Function:** modify deployed function `ciao-match-center-fast-v3` to normalize internal/external full/lazy data and use source-specific cache storage.
-- **Frontend:** modify `index.html` only for source-aware Match Center state/API/navigation, external card entry points, external crest rendering and tournament theme CSS.
-- **Temporary tests/tooling:** one-time workflow/scripts may be added under `.github/workflows/` or `scripts/`, but must self-delete or be removed after visual acceptance.
+- Database: create `public.cp_external_match_center_cache`.
+- Edge Function: modify `ciao-match-summary-fast-v2`.
+- Edge Function: modify `ciao-match-center-fast-v3`.
+- Frontend: modify `index.html` only.
+- Temporary test/workflow files may exist during implementation and must be removed after acceptance.
 
 ---
 
-### Task 1: External Match Center Cache Table
+### Task 1: External Cache Table
 
-**Files / Services:**
-- Modify: Supabase schema for project `dkefzepiiudehhzbbrjn`
-- Create: `public.cp_external_match_center_cache`
+**Files / Services:** Supabase schema, project `dkefzepiiudehhzbbrjn`.
 
-**Interfaces:**
-- Consumes: `public.cp_external_matches(id, provider_event_id)`
-- Produces: external cache rows keyed by `external_match_id`
+**Interfaces:** consumes `cp_external_matches(id, provider_event_id)`; produces source-isolated cache keyed by `external_match_id`.
 
-- [ ] **Step 1: Run the failing schema contract**
-
-Run:
+- [ ] **Step 1: RED schema contract**
 
 ```sql
 select to_regclass('public.cp_external_match_center_cache') as cache_table;
 ```
 
-Expected before migration: `cache_table = null`.
+Expected before migration: `null`.
 
-- [ ] **Step 2: Apply the migration**
-
-Run as a named migration:
+- [ ] **Step 2: Apply migration**
 
 ```sql
 create table public.cp_external_match_center_cache (
@@ -72,50 +64,40 @@ create table public.cp_external_match_center_cache (
 alter table public.cp_external_match_center_cache enable row level security;
 ```
 
-Do not add anon/authenticated policies; Edge Functions use the service role and are the only intended writers/readers.
+No anon/authenticated policies: Edge Functions use service role.
 
-- [ ] **Step 3: Run the GREEN schema contract**
-
-Run:
+- [ ] **Step 3: GREEN schema contract**
 
 ```sql
-select
-  to_regclass('public.cp_external_match_center_cache') as cache_table,
-  c.relrowsecurity as rls_enabled
+select to_regclass('public.cp_external_match_center_cache') as cache_table,
+       c.relrowsecurity as rls_enabled
 from pg_class c
-where c.oid = 'public.cp_external_match_center_cache'::regclass;
+where c.oid='public.cp_external_match_center_cache'::regclass;
 ```
 
-Expected: table exists and `rls_enabled = true`.
+Expected: table exists, `rls_enabled=true`.
 
 - [ ] **Step 4: Verify FK isolation**
 
-Run:
-
 ```sql
-select
-  conname,
-  pg_get_constraintdef(oid) as definition
+select conname, pg_get_constraintdef(oid) as definition
 from pg_constraint
-where conrelid = 'public.cp_external_match_center_cache'::regclass;
+where conrelid='public.cp_external_match_center_cache'::regclass;
 ```
 
-Expected: FK references `cp_external_matches(id)`, not `cp_matches(id)`.
+Expected FK references `cp_external_matches(id)`, not `cp_matches(id)`.
 
 ---
 
 ### Task 2: Source-Aware Summary API
 
-**Files / Services:**
-- Modify deployed Edge Function: `ciao-match-summary-fast-v2/index.ts`
+**Files / Services:** deployed `ciao-match-summary-fast-v2/index.ts`.
 
-**Interfaces:**
-- Consumes request: `{ source?: 'serie_a'|'external', match_id: number }`
-- Produces normalized response: `{ ok, source, match, competition, stage, prediction_split, status, summary_only, recommended_poll_ms }`
+**Interfaces:** request `{ source?: 'serie_a'|'external', match_id:number }`; response `{ ok, source, match, competition, stage, prediction_split, status, summary_only, recommended_poll_ms }`.
 
-- [ ] **Step 1: RED — prove current summary endpoint is internal-only**
+- [ ] **Step 1: RED source contract**
 
-Inspect current source and assert all three are true:
+Inspect current source and prove:
 
 ```text
 getMatch() reads only cp_matches
@@ -123,18 +105,16 @@ getSplit() reads only cp_predictions
 request body has no source branch
 ```
 
-Also select one real external ID for later smoke:
+Capture a real external match:
 
 ```sql
-select id, competition, provider_event_id
+select id,competition,provider_event_id
 from cp_external_matches
 order by id
 limit 1;
 ```
 
-- [ ] **Step 2: Add canonical source parser**
-
-Add:
+- [ ] **Step 2: Add source parser**
 
 ```ts
 function sourceOf(body:any){
@@ -142,90 +122,77 @@ function sourceOf(body:any){
 }
 ```
 
-- [ ] **Step 3: Add normalized internal/external loaders**
+- [ ] **Step 3: Normalize internal and external matches**
 
-Implement two source branches that both return a normalized match object.
-
-Internal shape must include:
+Internal normalized fields:
 
 ```ts
 {
   id, source:'serie_a', competition:'serie_a',
-  provider_event_id: bsd_event_id,
-  bsd_event_id,
-  kickoff_at, home_score, away_score,
-  is_finished, live_status, live_elapsed,
-  round,
+  provider_event_id:bsd_event_id, bsd_event_id,
+  kickoff_at, home_score, away_score, is_finished,
+  live_status, live_elapsed, round,
   home:{id,bsd_team_id,name,short_name,custom_emoji_id,crest_url:null,country_code:null},
-  away:{...},
+  away:{id,bsd_team_id,name,short_name,custom_emoji_id,crest_url:null,country_code:null},
   prediction
 }
 ```
 
-External shape must include:
+External normalized fields:
 
 ```ts
 {
   id, source:'external', competition,
-  provider_event_id,
-  bsd_event_id: provider_event_id,
+  provider_event_id, bsd_event_id:provider_event_id,
   stage_key, stage_label, stage_order, round_number,
   kickoff_at, home_score, away_score,
-  is_finished: status==='finished',
-  live_status: status,
-  live_elapsed: minute,
+  is_finished:status==='finished', live_status:status, live_elapsed:minute,
   home:{id:null,bsd_team_id:home_bsd_team_id,name:home_name,short_name:null,custom_emoji_id:null,crest_url:home_crest_url,country_code:home_country_code},
-  away:{...},
+  away:{id:null,bsd_team_id:away_bsd_team_id,name:away_name,short_name:null,custom_emoji_id:null,crest_url:away_crest_url,country_code:away_country_code},
   prediction
 }
 ```
 
-External current-user prediction query:
+External user prediction query:
 
 ```ts
 db.from('cp_external_predictions')
   .select('home_score,away_score,points,updated_at')
-  .eq('user_id', userId)
-  .eq('external_match_id', matchId)
+  .eq('user_id',userId)
+  .eq('external_match_id',matchId)
   .maybeSingle()
 ```
 
 - [ ] **Step 4: Make prediction split source-aware**
 
-For `serie_a`, retain `cp_predictions.match_id`.
-
-For `external`, query:
+For external:
 
 ```ts
 db.from('cp_external_predictions')
   .select('home_score,away_score')
-  .eq('external_match_id', matchId)
+  .eq('external_match_id',matchId)
 ```
 
-Cache key must include source:
+Use source-qualified cache key:
 
 ```ts
-const splitKey = `${source}:${matchId}`;
+const splitKey=`${source}:${matchId}`;
 ```
 
-- [ ] **Step 5: Normalize statuses**
-
-Use explicit external mapping:
+- [ ] **Step 5: Normalize external status**
 
 ```ts
 function externalStatus(s:string){
   const x=String(s||'').toLowerCase();
-  if(['live','halftime','extra_time','penalties'].includes(x)) return 'live';
-  if(x==='finished') return 'finished';
+  if(['live','halftime','extra_time','penalties'].includes(x))return 'live';
+  if(x==='finished')return 'finished';
   return 'upcoming';
 }
 ```
 
-Keep original DB status available on `match.live_status` for presentation of postponed/cancelled when needed.
+Keep original DB status in `match.live_status` for postponed/cancelled presentation.
 
-- [ ] **Step 6: Return explicit source/competition/stage**
-
-Response must include:
+- [ ] **Step 6: Return explicit metadata**
 
 ```ts
 {
@@ -233,12 +200,12 @@ Response must include:
   source,
   match,
   competition:match.competition,
-  stage: source==='external' ? {
+  stage:source==='external'?{
     key:match.stage_key,
     label:match.stage_label,
     order:match.stage_order,
     round_number:match.round_number
-  } : null,
+  }:null,
   prediction_split,
   status,
   summary_only:true,
@@ -246,142 +213,86 @@ Response must include:
 }
 ```
 
-- [ ] **Step 7: GREEN source contract**
+- [ ] **Step 7: GREEN source contract and deploy**
 
-Re-read deployed source and assert:
-
-```text
-cp_external_matches is referenced
-cp_external_predictions is referenced twice (user prediction + split)
-request source defaults to serie_a
-cache keys include source
-external response exposes competition/stage
-```
-
-- [ ] **Step 8: Deploy and record the new active function version**
-
-Deploy same slug `ciao-match-summary-fast-v2`, preserving `verify_jwt=false` because custom Telegram validation remains in function body.
+Verify source contains `cp_external_matches`, separate external prediction queries, source-qualified split key, and explicit competition/stage response. Deploy same slug with `verify_jwt=false` because custom Telegram auth remains in the function.
 
 ---
 
-### Task 3: Source-Aware Full/Lazy Match Center API
+### Task 3: Source-Aware Full/Lazy API
 
-**Files / Services:**
-- Modify deployed Edge Function: `ciao-match-center-fast-v3/index.ts`
+**Files / Services:** deployed `ciao-match-center-fast-v3/index.ts`.
 
-**Interfaces:**
-- Consumes request: `{ source?: 'serie_a'|'external', match_id: number, sections?: string[], include_split?: boolean }`
-- Produces same normalized `match`/metadata as Task 2 plus lazy BSD sections.
+**Interfaces:** request `{ source?:'serie_a'|'external', match_id:number, sections?:string[], include_split?:boolean }`; response shares Task 2 normalized match metadata plus BSD lazy sections.
 
-- [ ] **Step 1: RED — prove current full endpoint is internal-only**
+- [ ] **Step 1: RED source contract**
 
-Inspect current source and assert:
+Prove current implementation is internal-only:
 
 ```text
-loadMatch() reads only cp_matches
-predictionSplit() reads only cp_predictions
-all cache helpers are hardcoded to cp_match_center_cache + match_id
+loadMatch() only cp_matches
+predictionSplit() only cp_predictions
+cache helpers hardcoded to cp_match_center_cache + match_id
 fetchOverviewMeta() assumes match.bsd_event_id
 ```
 
-- [ ] **Step 2: Add source-aware normalized loader**
+- [ ] **Step 2: Reuse Task 2 normalized match shape**
 
-Reuse the exact normalized match shape from Task 2. Do not invent a second frontend shape.
+Do not create a second external frontend shape.
 
 - [ ] **Step 3: Add cache descriptor**
-
-Add:
 
 ```ts
 function cacheSpec(source:string){
   return source==='external'
-    ? {table:'cp_external_match_center_cache', key:'external_match_id', event:'provider_event_id'}
-    : {table:'cp_match_center_cache', key:'match_id', event:'bsd_event_id'};
+    ? {table:'cp_external_match_center_cache',key:'external_match_id',event:'provider_event_id'}
+    : {table:'cp_match_center_cache',key:'match_id',event:'bsd_event_id'};
 }
 ```
 
-Update `ensureCacheRow`, `readCache`, `claimRefresh`, `waitForRefresh` and final `upsert` to receive `(source, matchId)` and use the descriptor.
+Update `ensureCacheRow`, `readCache`, `claimRefresh`, `waitForRefresh` and final `upsert` to receive source.
 
-- [ ] **Step 4: Make refresh-flight key collision-safe**
-
-Replace keys like:
-
-```ts
-`${match.id}:${sections}`
-```
-
-with:
+- [ ] **Step 4: Make all in-memory keys collision-safe**
 
 ```ts
 `${match.source}:${match.id}:${[...sections].sort().join(',')}`
 ```
 
+Prediction split cache keys also include source.
+
 - [ ] **Step 5: Make BSD event access source-neutral**
 
-All BSD routes must use:
-
 ```ts
-const eventId = Number(match.provider_event_id ?? match.bsd_event_id);
+const eventId=Number(match.provider_event_id??match.bsd_event_id);
 ```
 
-`fetchOverviewMeta()` must use normalized `match.home.bsd_team_id` and `match.away.bsd_team_id`, not `cp_teams` assumptions.
+`fetchOverviewMeta()` uses normalized `match.home.bsd_team_id` and `match.away.bsd_team_id`.
 
-- [ ] **Step 6: Make prediction split source-aware**
+- [ ] **Step 6: Preserve lazy sections and graceful errors**
 
-Use the same source split logic as Task 2 and a source-qualified cache key.
-
-- [ ] **Step 7: Preserve graceful section degradation**
-
-Keep the existing independent section refresh model for:
+Reuse existing section set:
 
 ```text
 detail, stats, incidents, lineups, player_stats, overview_meta
 ```
 
-A failed BSD section updates only `payload.errors[key]`; cached successful sections remain in response.
+A failed BSD section updates only its error entry and keeps cached successful sections.
 
-- [ ] **Step 8: Return normalized source metadata**
+- [ ] **Step 7: Return source/competition/stage**
 
-Full response includes:
+Full response includes `source`, `competition`, `stage` plus existing coverage/data/error fields.
 
-```ts
-source,
-competition:match.competition,
-stage: match.source==='external' ? {...} : null
-```
+- [ ] **Step 8: GREEN contract and deploy**
 
-alongside existing coverage/detail/stats/incidents/lineups/player_stats/overview_meta/errors fields.
-
-- [ ] **Step 9: GREEN source contract**
-
-Re-read source and verify:
-
-```text
-both cp_matches and cp_external_matches loaders exist
-external cache table is used only for source external
-source participates in flight/split/cache identity
-all BSD routes use normalized provider event ID
-no fallback from missing external match to cp_matches exists
-```
-
-- [ ] **Step 10: Deploy and record the new active function version**
-
-Deploy same slug `ciao-match-center-fast-v3`, preserving current custom Telegram auth and `verify_jwt=false`.
+Verify both source loaders exist; external cache is used only for external source; source participates in flight/split/cache identity; BSD routes use normalized provider ID; no external-to-Serie-A fallback exists. Deploy same slug, keeping custom Telegram auth.
 
 ---
 
-### Task 4: Backend Data/Collision Smoke Contracts
+### Task 4: Backend Data and Collision Smoke
 
-**Files / Services:**
-- Read-only SQL against Supabase production data
-- Read deployed Task 2/3 sources
+**Files / Services:** read-only SQL + deployed function source.
 
-**Interfaces:**
-- Proves backend has valid provider linkage for all supported competitions.
-
-- [ ] **Step 1: Verify provider coverage remains complete**
-
-Run:
+- [ ] **Step 1: Provider coverage**
 
 ```sql
 select competition,
@@ -394,7 +305,7 @@ group by competition
 order by competition;
 ```
 
-Expected current counts:
+Expected current coverage:
 
 ```text
 coppa_italia 12/12/12/12
@@ -403,79 +314,67 @@ uecl          8/8/8/8
 uel          16/16/16/16
 ```
 
-- [ ] **Step 2: Find a numeric ID collision candidate**
-
-Run:
+- [ ] **Step 2: Find an overlapping numeric ID**
 
 ```sql
-select e.id,
-       e.competition,
-       e.home_name as external_home,
-       e.away_name as external_away,
-       m.id as serie_a_id
+select e.id,e.competition,e.home_name as external_home,e.away_name as external_away,m.id as serie_a_id
 from cp_external_matches e
 join cp_matches m on m.id=e.id
 order by e.id
 limit 1;
 ```
 
-Expected: at least one overlapping numeric ID is acceptable and must resolve differently by source.
+This ID must resolve differently for `source='external'` vs `source='serie_a'`.
 
-- [ ] **Step 3: Verify prediction table isolation**
-
-For one external match with predictions, compare counts:
+- [ ] **Step 3: Verify prediction-table isolation with an executable CTE**
 
 ```sql
-select
-  (select count(*) from cp_external_predictions where external_match_id = :external_id) as external_predictions,
-  (select count(*) from cp_predictions where match_id = :external_id) as serie_a_predictions_same_numeric_id;
+with chosen as (
+  select external_match_id
+  from cp_external_predictions
+  group by external_match_id
+  order by count(*) desc, external_match_id
+  limit 1
+)
+select chosen.external_match_id,
+       (select count(*) from cp_external_predictions ep where ep.external_match_id=chosen.external_match_id) as external_predictions,
+       (select count(*) from cp_predictions p where p.match_id=chosen.external_match_id) as serie_a_predictions_same_numeric_id
+from chosen;
 ```
 
-The two values are independent; backend source determines which one is used.
+The counts are independent; source decides which table is used.
 
-- [ ] **Step 4: Verify no external cache row can satisfy an internal lookup**
+- [ ] **Step 4: Verify physical cache isolation**
 
-Check both cache tables independently for the collision ID. Physical table separation is the contract.
+For the collision ID, query `cp_match_center_cache` and `cp_external_match_center_cache` separately. No code path may substitute one table for the other.
 
 ---
 
-### Task 5: Frontend Match Center Source Plumbing
+### Task 5: Frontend Source Plumbing
 
-**Files:**
-- Modify: `index.html`
-- Temporary test: `.github/workflows/external-match-center-frontend-tdd.yml` or equivalent one-time contract runner
+**Files:** modify `index.html`; temporary one-time source-contract workflow/script.
 
-**Interfaces:**
-- Produces frontend state variable `matchViewSource` and source-aware API helpers.
-- Legacy callers remain valid because default source is `serie_a`.
+**Interfaces:** produces `matchViewSource` and source-aware summary/full API helpers; legacy callers default to Serie A.
 
 - [ ] **Step 1: RED frontend contract**
 
-Create/run a one-time source test that fails unless all are present:
+Fail unless active source contains:
 
 ```text
-let matchViewSource
-openMatchCenter(id, source='serie_a') or equivalent defaulting behavior
-summary request includes source
-lazy section request includes source
-session persistence includes matchViewSource
+matchViewSource
+source-aware openMatchCenter
+summary request source
+lazy request source
+session snapshot source
 ```
 
-Expected before patch: FAIL.
-
-- [ ] **Step 2: Add source state**
-
-Near existing Match Center state, add:
+- [ ] **Step 2: Add state**
 
 ```js
 let matchViewSource='serie_a';
 ```
 
-Keep `matchViewId` numeric.
-
-- [ ] **Step 3: Make summary/full helpers source-aware**
-
-Change conceptual helpers to:
+- [ ] **Step 3: Make API helpers source-aware**
 
 ```js
 const __cw9FastMatchApi=(id,sections=[],source=matchViewSource)=>
@@ -485,139 +384,107 @@ const __cw9SummaryApi=(id,source=matchViewSource)=>
   __cw9Post(__CW9_SUMMARY_API,{source,match_id:Number(id)},'Не удалось загрузить матч');
 ```
 
-Every refresh/lazy call must either rely on `matchViewSource` or pass it explicitly.
+All refresh/lazy calls use the current source.
 
-- [ ] **Step 4: Update open/close contract**
-
-Canonical open signature:
+- [ ] **Step 4: Update open/close**
 
 ```js
 openMatchCenter=async function(id,source='serie_a'){
   matchViewSource=source==='external'?'external':'serie_a';
   matchViewId=Number(id);
-  ...
+  // existing loading/render flow
 }
 ```
 
-On close, reset only after return state is captured:
-
-```js
-matchViewSource='serie_a';
-```
+Reset source only after return state has been captured.
 
 - [ ] **Step 5: Persist/restore source**
 
-Add `matchViewSource` to the session snapshot and restore it before calling `openMatchCenter`.
+Add `matchViewSource` to session snapshots and to any match↔club return snapshots that already carry `matchViewId` and `matchCenterTab`.
 
-- [ ] **Step 6: Preserve source through club-profile round trips**
+- [ ] **Step 6: GREEN and syntax check**
 
-Any snapshot that currently stores `matchViewId`/`matchCenterTab` must also store `matchViewSource` so a Serie A match remains Serie A and a future external-club route cannot collide.
-
-- [ ] **Step 7: GREEN + syntax check**
-
-Extract all inline `<script>` bodies from `index.html` into a temporary JS file and run:
+Extract inline scripts and run:
 
 ```bash
 node --check /tmp/ciao-inline.js
 ```
 
-Also assert source plumbing markers exist exactly once in the active layer.
+Expected exit 0; source-plumbing markers must exist in the active layer.
 
 ---
 
-### Task 6: External Entry Points From Matches and Predictions
+### Task 6: Entry Points From Matches and Predictions
 
-**Files:**
-- Modify: `index.html`
+**Files:** modify `index.html`.
 
-**Interfaces:**
-- External cards call `openMatchCenter(externalId,'external')`.
-- Prediction editing controls never trigger Match Center.
+**Interfaces:** external cards call `openMatchCenter(externalId,'external')`; prediction controls never trigger Match Center.
 
-- [ ] **Step 1: RED — external cards have no Match Center locator**
+- [ ] **Step 1: RED card contract**
 
-Source contract must fail unless external cards expose a stable external match ID and source.
+Fail until external cards expose a stable external ID/source and have no Match Center binding.
 
-- [ ] **Step 2: Add source/id data attributes to external cards**
+- [ ] **Step 2: Add external locator attributes**
 
-Both external edit and mine cards include data equivalent to:
+External cards use data equivalent to:
 
 ```html
-data-cwpred-match="42" data-match-source="external"
+data-external-match-id="42" data-match-source="external"
 ```
-
-Matches-tab external cards use equivalent attributes.
 
 - [ ] **Step 3: Bind Matches cards**
 
-On free card tap:
+Free-card tap calls:
 
 ```js
 openMatchCenter(Number(card.dataset.externalMatchId),'external')
 ```
 
-Do not intercept tournament/stage controls.
+Tournament/stage controls are excluded.
 
-- [ ] **Step 4: Bind Predictions cards with hard interaction guard**
+- [ ] **Step 4: Bind Predictions cards with hard guard**
 
-Guard must ignore clicks originating from:
+Ignore events originating from:
 
 ```js
 '.cw29-score-pick, #cw29-score-picker, button, [data-cwpred-action], [data-cwpred-pick]'
 ```
 
-Then call external Match Center only for free card space.
+Only free card space opens external Match Center.
 
-- [ ] **Step 5: Verify `cw29` picker regression contract**
+- [ ] **Step 5: `cw29` regression contract**
 
-Static/source checks must confirm:
+Verify one canonical `cw29` picker remains, no `cw28` classes return, picker selection still schedules existing autosave, and external-card guard contains `.cw29-score-pick`.
 
-```text
-one canonical cw29 picker implementation remains
-no cw28 picker classes are reintroduced
-score digit handler still schedules existing autosave
-external card click guard contains cw29-score-pick
-```
+- [ ] **Step 6: Syntax check**
 
-- [ ] **Step 6: Run inline JS syntax check again**
-
-Expected: `node --check` exits 0.
+Run inline `node --check`, expected exit 0.
 
 ---
 
-### Task 7: External Match Center Presentation and Tournament Themes
+### Task 7: External Presentation and Tournament Themes
 
-**Files:**
-- Modify: `index.html`
+**Files:** modify `index.html`.
 
-**Interfaces:**
-- Uses normalized `match.source`, `competition`, `stage_label`, `crest_url` from Tasks 2/3.
+**Interfaces:** consumes normalized `source`, `competition`, `stage`, `crest_url`.
 
-- [ ] **Step 1: RED — external presentation contract**
+- [ ] **Step 1: RED presentation contract**
 
-Fail unless source contains competition theme mapping for all four keys:
+Fail until active source has theme mapping for `ucl`, `uel`, `uecl`, `coppa_italia` and a source guard around Serie A context.
 
-```text
-ucl, uel, uecl, coppa_italia
-```
+- [ ] **Step 2: Make logo renderer source-neutral**
 
-and a source guard around Serie A context.
-
-- [ ] **Step 2: Make team logo renderer source-neutral**
-
-Use priority:
+Priority:
 
 ```js
-if(t?.crest_url) return `<img ... src="${esc(t.crest_url)}">`;
-if(t?.custom_emoji_id) return existing Telegram emoji renderer;
+if(t?.crest_url) return external crest image;
+if(t?.custom_emoji_id) return existing Telegram emoji image;
 return football fallback;
 ```
 
-External crest CSS must fix width/height and use `object-fit:contain`.
+External crests use fixed dimensions and `object-fit:contain`.
 
-- [ ] **Step 3: Add competition metadata helpers**
-
-Mapping:
+- [ ] **Step 3: Add tournament labels and stage hero**
 
 ```js
 const labels={
@@ -628,145 +495,102 @@ const labels={
 };
 ```
 
-External hero subtitle:
+External subtitle:
 
 ```js
 `${labels[d.competition]||'Матч'}${d.stage?.label?' · '+d.stage.label:''}`
 ```
 
-Serie A keeps round/date copy.
+Serie A keeps existing round/date presentation.
 
 - [ ] **Step 4: Hard-disable Serie A context for external source**
 
-At the start of `__cw18MatchContext` or its active successor:
+At the start of the active context renderer:
 
 ```js
-if(String(d?.source||d?.match?.source||'serie_a')!=='serie_a') return '';
+if(String(d?.source||d?.match?.source||'serie_a')!=='serie_a')return '';
 ```
 
-Do not hide the context with CSS; do not run Serie A table/club lookups for external render.
+No CSS-only hiding and no Serie A context lookups for external render.
 
 - [ ] **Step 5: Add theme classes**
 
-Match Center shell gets one class based on competition, e.g.:
-
 ```text
-mc-theme-ucl
-mc-theme-uel
-mc-theme-uecl
-mc-theme-coppa
+mc-theme-ucl   → midnight/navy + violet/electric-blue
+mc-theme-uel   → graphite + orange
+mc-theme-uecl  → graphite + saturated green
+mc-theme-coppa → deep navy + restrained green/red
 ```
 
-Theme token intent:
+Only hero, badges, active tabs, borders and subtle glow vary; layout/tabs remain shared.
 
-```text
-UCL: midnight/navy + violet/electric-blue glow
-UEL: graphite + orange
-UECL: graphite + saturated green
-Coppa: deep navy + restrained green/red accents
-```
+- [ ] **Step 6: Keep shared tabs**
 
-Only hero decoration, badges, active tabs, borders and subtle glow change; layout stays shared.
+Reuse existing Overview, Stats, Events, Lineups and Players renderers against normalized payloads.
 
-- [ ] **Step 6: Keep all existing tabs/data components**
+- [ ] **Step 7: GREEN + syntax**
 
-No separate external implementations of Overview/Stats/Events/Lineups/Players. Reuse existing renderers against normalized BSD payloads.
-
-- [ ] **Step 7: GREEN + syntax contract**
-
-Verify:
-
-```text
-all four theme classes exist
-external hero uses tournament + stage
-Serie A context has a source guard
-crest_url precedes custom_emoji_id in logo selection
-node --check exits 0
-```
+Verify all theme classes, external stage hero, source guard, crest priority and `node --check` success.
 
 ---
 
 ### Task 8: Production Verification and Rollout
 
-**Files / Services:**
-- `index.html`
-- deployed summary/full Match Center functions
-- GitHub Pages deployment
+**Files / Services:** `index.html`, both deployed Match Center functions, GitHub Pages.
 
-**Interfaces:**
-- Produces production-ready feature for Telegram Mini App validation.
+- [ ] **Step 1: Preserve a stable pre-frontend backup point**
 
-- [ ] **Step 1: Verify current `main` backup point exists**
+Create a backup branch from the exact `main` commit immediately before the production frontend patch.
 
-Create or update a stable backup branch from the pre-frontend-change commit before committing the final frontend patch.
-
-- [ ] **Step 2: Run full static frontend contract**
+- [ ] **Step 2: Run full static contract**
 
 Required assertions:
 
 ```text
 matchViewSource exists
-legacy Serie A callers default to serie_a
-all external card entry points call source external
-cw29 picker implementation unchanged
-no cw28 picker layer
+legacy callers default to serie_a
+external cards open source external
+cw29 picker unchanged
+no cw28 layer
 external context guard present
 all four theme mappings present
 ```
 
-- [ ] **Step 3: Run inline JavaScript syntax verification**
+- [ ] **Step 3: Run inline JS syntax verification**
 
-Run `node --check` against concatenated inline scripts. Expected exit 0.
+`node --check` must exit 0.
 
-- [ ] **Step 4: Re-read deployed Edge Function versions**
+- [ ] **Step 4: Re-read active Edge Function versions**
 
-Confirm active sources contain:
+Confirm external loaders, external prediction tables, external cache table and source-qualified keys are present.
 
-```text
-source-aware external loaders
-external prediction tables
-external cache table
-source-qualified cache/flight keys
-```
+- [ ] **Step 5: Re-check database cache/RLS/FK**
 
-- [ ] **Step 5: Verify database cache/RLS state**
+Confirm external cache exists, RLS enabled, FK points to `cp_external_matches`.
 
-Confirm `cp_external_match_center_cache` exists, RLS enabled, FK points to `cp_external_matches`.
-
-- [ ] **Step 6: Commit the frontend patch**
-
-Commit message:
+- [ ] **Step 6: Commit frontend**
 
 ```text
 feat: add external tournament match centers
 ```
 
-- [ ] **Step 7: Verify GitHub Pages deployment**
+- [ ] **Step 7: Verify GitHub Pages deploy on that SHA**
 
-Wait for Pages build/deploy success on the exact frontend commit SHA.
+Build and deploy jobs must both succeed.
 
 - [ ] **Step 8: Telegram Mini App visual smoke**
 
-User validates at least:
+Validate UCL plus at least one of UEL/UECL/Coppa; confirm no Serie A context externally; confirm Serie A Match Center still works; confirm score picker/autosave; confirm Back restores tournament/stage/scroll.
 
-```text
-one UCL Match Center
-one UEL/UECL or Coppa Match Center
-external Match Center has no “Контекст Серии А”
-Serie A Match Center still works
-score picker still opens and autosaves
-back returns to the same tournament/stage/scroll
-```
+- [ ] **Step 9: Cleanup after user acceptance**
 
-- [ ] **Step 9: Cleanup only after user acceptance**
-
-Delete temporary workflows/tests/spec/plan artifacts and verify the final production repository tree again contains only root `index.html`.
+Delete temporary workflows/tests/spec/plan artifacts and verify final production tree again contains only root `index.html`.
 
 ---
 
 ## Self-Review Checklist
 
-- Spec coverage: backend source identity, separate cache, normalized data, external prediction split, entry points, picker guard, themes, context removal, navigation restore, lazy/live refresh, graceful degradation and cleanup are each assigned to a task.
-- Placeholder scan: no implementation steps rely on TBD/TODO language.
-- Type consistency: every layer uses `source: 'serie_a'|'external'`; frontend state is `matchViewSource`; external primary key remains numeric `matchViewId`; normalized provider event is `provider_event_id` with `bsd_event_id` compatibility alias.
-- Regression boundary: Rating, prediction scoring, Home favorite club and external ingestion are explicitly untouched.
+- Spec coverage: source identity, separate cache, normalized match data, external predictions/split, entry points, picker guard, themes, context removal, navigation restore, lazy/live refresh, graceful degradation and cleanup each map to a task.
+- No execution step depends on an unresolved placeholder value; SQL smoke queries select their own real IDs.
+- Type consistency: every layer uses `source:'serie_a'|'external'`; frontend state is `matchViewSource`; external primary key remains numeric `matchViewId`; normalized provider event is `provider_event_id` with `bsd_event_id` compatibility alias.
+- Regression boundary: Rating, scoring, Home favorite club and external ingestion are untouched.
