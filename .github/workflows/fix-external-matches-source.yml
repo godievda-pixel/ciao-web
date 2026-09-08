@@ -78,7 +78,7 @@ jobs:
           out = Path('/tmp/ciao-inline-js')
           shutil.rmtree(out, ignore_errors=True)
           out.mkdir()
-          scripts = re.findall(r'<script(?![^>]*\\bsrc=)[^>]*>([\\s\\S]*?)</script>', s, flags=re.I)
+          scripts = re.findall(r'<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)</script>', s, flags=re.I)
           assert scripts
           for i, body in enumerate(scripts):
               (out / f'{i}.js').write_text(body, encoding='utf-8')
