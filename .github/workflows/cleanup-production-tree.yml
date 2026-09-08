@@ -1,0 +1,24 @@
+name: Enforce production tree invariant
+
+on:
+  push:
+    paths:
+      - '.github/workflows/cleanup-production-tree.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Keep only production index
+        shell: bash
+        run: |
+          test -f index.html
+          git rm -r .github docs tools
+          git config user.name 'Ciao Web Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git commit -m 'chore: keep production tree index-only'
+          git push
