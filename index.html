@@ -3884,7 +3884,7 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
 
   /* ciao-prod-multitournament-predictions-20260907 */
   const __CWPRED_COMPETITIONS={"serie_a":{"key":"serie_a","title":"Серия А","theme":"serie-a","wide":true},"coppa_italia":{"key":"coppa_italia","title":"Кубок Италии","theme":"coppa","wide":false},"ucl":{"key":"ucl","title":"Лига Чемпионов","theme":"champions","wide":false},"uel":{"key":"uel","title":"Лига Европы","theme":"europa","wide":false},"uecl":{"key":"uecl","title":"Лига Конференций","theme":"conference","wide":false}};
-  const __CWPRED_EXTERNAL_API='https://dkefzepiiudehhzbbrjn.supabase.co/functions/v1/ciao-external-predictions';
+  const __CWPRED_EXTERNAL_API='https://dkefzepiiudehhzbbrjn.supabase.co/functions/v1/ciao-external-predictions-live-v1';
   const __cwPredLegacyPredict=predict;
   const __cwPredLegacyMine=mine;
   const __cwPredLegacyBind=bind;
@@ -4433,7 +4433,7 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
   predict=function(){if(__cwHomeExternalCenter)return __cwHomeExternalCenterHtml();__cwHomeEnsureExternal();return __cw23RenderHomeHtml(__cw23HomeRenderBase())};
 
   function __cwHomeBindPolish(){
-    root.querySelectorAll?.('[data-cw-home-match][data-cw-home-competition]').forEach(el=>{if(String(el.getAttribute('data-cw-home-competition')||'')==='serie_a')return;if(el.dataset.cwHomeBound==='1')return;el.dataset.cwHomeBound='1';const open=ev=>{ev?.preventDefault?.();ev?.stopPropagation?.();__cwHomeOpenExternalCenter(el.getAttribute('data-cw-home-match'),el.getAttribute('data-cw-home-competition'))};el.addEventListener('click',open);if(el.getAttribute('role')==='button')el.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();open(ev)}})});
+    root.querySelectorAll?.('[data-cw-home-match][data-cw-home-competition]').forEach(el=>{if(String(el.getAttribute('data-cw-home-competition')||'')==='serie_a')return;if(el.dataset.cwHomeBound==='1')return;el.dataset.cwHomeBound='1';const open=ev=>{ev?.preventDefault?.();ev?.stopPropagation?.();(()=>{const key=String(el.getAttribute('data-cw-home-match')||''),competition=String(el.getAttribute('data-cw-home-competition')||''),match=__cwHomeExternalRows().find(row=>String(row?.matchId||'')===key&&String(row?.competition||'')===competition),id=Number(match?.externalMatchId);if(id>0)openMatchCenter(id,'external')})()};el.addEventListener('click',open);if(el.getAttribute('role')==='button')el.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();open(ev)}})});
     root.querySelector?.('[data-cw-home-back]')?.addEventListener('click',()=>{__cwHomeExternalCenter=null;__cwHomeExternalCenterOverview=null;__cwHomeExternalCenterLoading=false;render()});
   }
 
@@ -4621,15 +4621,16 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
     root.querySelectorAll('.cwmt-match-card[data-cwmt-match]').forEach(card=>{
       card.onclick=null;
       if(card.dataset.cw32MatchCenterBound==='1')return;card.dataset.cw32MatchCenterBound='1';
-      card.addEventListener('click',e=>{if(e.target.closest?.('button,[data-cwmt-local-club],[data-cwmt-stage],[data-cwmt-action]'))return;const id=Number(card.getAttribute('data-cwmt-match'));if(id>0)openMatchCenter(id,'external')});
+      card.addEventListener('click',e=>{if(e.target.closest?.('button,[data-cwmt-local-club],[data-cwmt-stage],[data-cwmt-action]'))return;const key=String(card.getAttribute('data-cwmt-match')||'');const match=(__cwMtPayload?.matches||[]).find(row=>String(row?.matchId||'')===key);const id=Number(match?.externalMatchId);if(id>0)openMatchCenter(id,'external')});
     });
     root.querySelectorAll('.cwpred-external-card[data-cwpred-match]').forEach(card=>{
       if(card.dataset.cw32MatchCenterBound==='1')return;card.dataset.cw32MatchCenterBound='1';
-      card.addEventListener('click',e=>{if(e.target.closest?.('.cw29-score-pick,#cw29-score-picker,button,[data-cwpred-action],[data-cwpred-pick]'))return;const id=Number(card.getAttribute('data-cwpred-match'));if(id>0)openMatchCenter(id,'external')});
+      card.addEventListener('click',e=>{if(e.target.closest?.('.cw29-score-pick,#cw29-score-picker,button,[data-cwpred-action],[data-cwpred-pick]'))return;const key=String(card.getAttribute('data-cwpred-match')||'');const match=(__cwPredSelectedGroup()?.matches||[]).find(row=>String(row?.matchId||'')===key);const id=Number(match?.externalMatchId);if(id>0)openMatchCenter(id,'external')});
     });
     return result
   };
   /* /ciao-v32-external-match-center-20260908 */
+  /* ciao-v33-external-live-navigation-fix-20260908 */
 
 
 /* ===== /Ciao, Web! v22.5 product polish layer ===== */
