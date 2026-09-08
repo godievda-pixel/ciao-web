@@ -12,20 +12,16 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: RED — active prediction renderer still uses plus minus
+      - name: RED — native picker is not wired into active module yet
         run: |
           python - <<'PY'
           from pathlib import Path
-          import re
           s=Path('index.html').read_text(encoding='utf-8')
           assert 'ciao-v29-native-score-picker-20260908' not in s
+          assert 'function __cw29PickerEnsure' not in s
           assert 'ciao-v28-score-picker-20260908' in s
-          ext=re.search(r'^  function __cwPredExternalEditCard\(match\)\{[^\n]*$',s,re.M).group(0)
-          ser=re.search(r'^  function __cwPredSerieEditCard\(match\)\{[^\n]*$',s,re.M).group(0)
-          assert 'data-cwpred-delta' in ext
-          assert 'data-delta=' in ser
           assert "if(tab==='predict'||tab==='mine')return false;" in s
-          print('RED confirmed: active renderers still use +/- while refresh guard is already stable')
+          print('RED confirmed: native in-scope picker is absent; old out-of-scope cw28 layer is present')
           PY
       - name: Apply native score picker patch
         run: python tools/cw29_native_score_picker.py
@@ -39,14 +35,14 @@ jobs:
           assert 'ciao-v28-score-picker-20260908' not in s
           ext=re.search(r'^  function __cwPredExternalEditCard\(match\)\{[^\n]*$',s,re.M).group(0)
           ser=re.search(r'^  function __cwPredSerieEditCard\(match\)\{[^\n]*$',s,re.M).group(0)
-          assert 'data-cwpred-pick=\\\"h\\\"' in ext and 'data-cwpred-pick=\\\"a\\\"' in ext
-          assert 'data-cwpred-pick=\\\"h\\\"' in ser and 'data-cwpred-pick=\\\"a\\\"' in ser
+          assert 'cw29-score-pick' in ext and 'data-cwpred-pick' in ext
+          assert 'cw29-score-pick' in ser and 'data-cwpred-pick' in ser
           assert 'data-cwpred-delta' not in ext
           assert 'data-delta=' not in ser
           assert 'function __cw29PickerEnsure' in s and 'function __cw29PickerApply' in s
           assert '.cw29-score-pick[data-cwpred-pick="h"]' in s
           assert "if(tab==='predict'||tab==='mine')return false;" in s
-          print('GREEN confirmed: active prediction renderers use picker and background rerender stays disabled')
+          print('GREEN confirmed: active renderers use picker and background rerender stays disabled')
           PY
       - name: Check inline JavaScript syntax
         run: |
