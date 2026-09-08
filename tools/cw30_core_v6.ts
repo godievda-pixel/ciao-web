@@ -8,6 +8,7 @@ const RATING_SEASON='2026/27';
 const RATING_SEASON_START='2026-07-01T00:00:00Z';
 const RATING_SEASON_END='2027-07-01T00:00:00Z';
 const RATING_COMPETITIONS=new Set(['all','serie_a','ucl','uel','uecl','coppa_italia']);
+const RATING_LABELS={all:'Все',serie_a:'Серия А',ucl:'ЛЧ',uel:'ЛЕ',uecl:'ЛК',coppa_italia:'Кубок Италии'};
 const RATING_CACHE_TTL=30000;
 
 function serviceKey(){const s=Deno.env.get("SUPABASE_SECRET_KEYS");if(s){try{const j=JSON.parse(s);if(typeof j?.default==="string")return j.default;const x=Object.values(j??{}).find(v=>typeof v==="string");if(x)return String(x)}catch{}}return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")??""}
@@ -33,11 +34,11 @@ async function loadRatingBase(){
   const [uq,tq,pq,mq,rq,epq,emq,sq]=await Promise.all([
     db.from('cp_users').select('id,display_name,favorite_team_id').eq('is_active',true),
     db.from('cp_teams').select('id,name,short_name,custom_emoji_id'),
-    db.from('cp_predictions').select('id,user_id,match_id,points,base_points').not('points','is',null),
-    db.from('cp_matches').select('id,round_id,kickoff_at,home_score,away_score,is_finished'),
+    db.from('cp_predictions').select('id,user_id,match_id,home_score,away_score,points,base_points').not('points','is',null),
+    db.from('cp_matches').select('id,round_id,kickoff_at,home_team_id,away_team_id,home_score,away_score,is_finished'),
     db.from('cp_rounds').select('id,number,nominal_date'),
-    db.from('cp_external_predictions').select('id,user_id,external_match_id,points,base_points').not('points','is',null),
-    db.from('cp_external_matches').select('id,competition,stage_key,stage_order,round_number,kickoff_at,status,home_score,away_score,finalized_at'),
+    db.from('cp_external_predictions').select('id,user_id,external_match_id,home_score,away_score,points,base_points').not('points','is',null),
+    db.from('cp_external_matches').select('id,competition,stage_key,stage_order,round_number,kickoff_at,status,home_name,away_name,home_score,away_score,finalized_at'),
     db.from('cp_scoring_rules').select('exact_score').eq('id',1).maybeSingle()
   ]);
   for(const q of [uq,tq,pq,mq,rq,epq,emq,sq])if(q.error)throw q.error;
@@ -45,8 +46,8 @@ async function loadRatingBase(){
   const rounds=new Map((rq.data??[]).map(r=>[Number(r.id),r])),matches=new Map((mq.data??[]).map(m=>[Number(m.id),m]));
   const externalMatches=new Map((emq.data??[]).map(m=>[Number(m.id),m]));
   const results=[];
-  for(const p of pq.data??[]){const m=matches.get(Number(p.match_id)),r=m?rounds.get(Number(m.round_id)):null,date=serieDate(m,r);if(!m||!date||!inRatingSeason(date))continue;results.push({source:'serie_a',competition:'serie_a',user_id:Number(p.user_id),source_id:Number(p.id),match_id:Number(p.match_id),settled_at:date,block_key:`serie_a:round:${Number(r?.number)||0}`,points:Number(p.points??0),base_points:Number(p.base_points??0)})}
-  for(const p of epq.data??[]){const m=externalMatches.get(Number(p.external_match_id)),competition=String(m?.competition||'');if(!m||!RATING_COMPETITIONS.has(competition)||competition==='all'||competition==='serie_a'||!inRatingSeason(m.kickoff_at))continue;const block=String(m.stage_key||m.stage_order||m.round_number||'unknown');results.push({source:'external',competition,user_id:Number(p.user_id),source_id:Number(p.id),match_id:Number(p.external_match_id),settled_at:String(m.finalized_at||m.kickoff_at),block_key:`${competition}:stage:${block}`,points:Number(p.points??0),base_points:Number(p.base_points??0)})}
+  for(const p of pq.data??[]){const m=matches.get(Number(p.match_id)),r=m?rounds.get(Number(m.round_id)):null,date=serieDate(m,r);if(!m||!date||!inRatingSeason(date))continue;const home=teams.get(Number(m.home_team_id)),away=teams.get(Number(m.away_team_id)),isSettled=!!m.is_finished&&m.home_score!=null&&m.away_score!=null;results.push({source:'serie_a',competition:'serie_a',user_id:Number(p.user_id),source_id:Number(p.id),match_id:Number(p.match_id),settled_at:date,block_key:`serie_a:round:${Number(r?.number)||0}`,points:Number(p.points??0),base_points:Number(p.base_points??0),prediction_home:Number(p.home_score??0),prediction_away:Number(p.away_score??0),final_home:m.home_score==null?null:Number(m.home_score),final_away:m.away_score==null?null:Number(m.away_score),home_name:String(home?.name||'—'),away_name:String(away?.name||'—'),is_settled:isSettled})}
+  for(const p of epq.data??[]){const m=externalMatches.get(Number(p.external_match_id)),competition=String(m?.competition||'');if(!m||!RATING_COMPETITIONS.has(competition)||competition==='all'||competition==='serie_a'||!inRatingSeason(m.kickoff_at))continue;const block=String(m.stage_key||m.stage_order||m.round_number||'unknown'),status=String(m.status||''),isSettled=(status==='finished'||!!m.finalized_at)&&m.home_score!=null&&m.away_score!=null;results.push({source:'external',competition,user_id:Number(p.user_id),source_id:Number(p.id),match_id:Number(p.external_match_id),settled_at:String(m.finalized_at||m.kickoff_at),block_key:`${competition}:stage:${block}`,points:Number(p.points??0),base_points:Number(p.base_points??0),prediction_home:Number(p.home_score??0),prediction_away:Number(p.away_score??0),final_home:m.home_score==null?null:Number(m.home_score),final_away:m.away_score==null?null:Number(m.away_score),home_name:String(m.home_name||'—'),away_name:String(m.away_name||'—'),is_settled:isSettled})}
   return{users,teams,results,exactScore:Number(sq.data?.exact_score??5)};
 }
 
@@ -57,23 +58,47 @@ function buildRatingRows(users,teams,results,exactScore){
   rows.forEach((r,i)=>r.rank=i+1);return rows;
 }
 
+function ratingStandingsFromBase(base,competition='all'){
+  competition=RATING_COMPETITIONS.has(String(competition))?String(competition):'all';
+  const selected=base.results.filter(r=>competition==='all'||r.competition===competition),rows=buildRatingRows(base.users,base.teams,selected,base.exactScore);
+  if(selected.length){const blockTimes=new Map();for(const r of selected){const t=Date.parse(String(r.settled_at||''));if(!Number.isFinite(t))continue;blockTimes.set(r.block_key,Math.max(blockTimes.get(r.block_key)||0,t))}const latest=[...blockTimes.entries()].sort((a,b)=>b[1]-a[1])[0]?.[0];if(latest){const previousResults=selected.filter(r=>r.block_key!==latest);if(previousResults.length){const previous=buildRatingRows(base.users,base.teams,previousResults,base.exactScore),pm=new Map(previous.map(r=>[r.id,r.rank]));for(const r of rows)r.trend=Number(pm.get(r.id)??r.rank)-r.rank}}}
+  return{competition,rows,updated_at:new Date().toISOString(),season:RATING_SEASON};
+}
+
 async function ratingStandings(competition='all'){
   competition=RATING_COMPETITIONS.has(String(competition))?String(competition):'all';
   const ck=`${RATING_SEASON}:${competition}`,cached=ratingCache.get(ck);if(cached&&cached.expires>Date.now())return cached.value;
-  const base=await loadRatingBase(),selected=base.results.filter(r=>competition==='all'||r.competition===competition),rows=buildRatingRows(base.users,base.teams,selected,base.exactScore);
-  if(selected.length){const blockTimes=new Map();for(const r of selected){const t=Date.parse(String(r.settled_at||''));if(!Number.isFinite(t))continue;blockTimes.set(r.block_key,Math.max(blockTimes.get(r.block_key)||0,t))}const latest=[...blockTimes.entries()].sort((a,b)=>b[1]-a[1])[0]?.[0];if(latest){const previousResults=selected.filter(r=>r.block_key!==latest);if(previousResults.length){const previous=buildRatingRows(base.users,base.teams,previousResults,base.exactScore),pm=new Map(previous.map(r=>[r.id,r.rank]));for(const r of rows)r.trend=Number(pm.get(r.id)??r.rank)-r.rank}}}
-  const value={competition,rows,updated_at:new Date().toISOString(),season:RATING_SEASON};ratingCache.set(ck,{value,expires:Date.now()+RATING_CACHE_TTL});return value;
+  const value=ratingStandingsFromBase(await loadRatingBase(),competition);ratingCache.set(ck,{value,expires:Date.now()+RATING_CACHE_TTL});return value;
 }
+
+function clampHistoryLimit(v){return Math.max(1,Math.min(50,Number.isFinite(Number(v))?Math.floor(Number(v)):20))}
+function historyKey(r){return `${r.source}:${r.source_id}`}
+function encodeHistoryCursor(r){return btoa(`${r.settled_at}|${historyKey(r)}`)}
+function decodeHistoryCursor(value){if(!value)return null;try{const raw=atob(String(value)),i=raw.indexOf('|');if(i<1)return null;return{settled_at:raw.slice(0,i),key:raw.slice(i+1)}}catch{return null}}
+function publicHistory(base,userId,competition){return base.results.filter(r=>Number(r.user_id)===Number(userId)&&(competition==='all'||r.competition===competition)&&r.is_settled===true&&r.final_home!=null&&r.final_away!=null).slice().sort(cmpResultTime)}
+function historyRow(base,r){const quality=Number(r.base_points)===Number(base.exactScore)?'exact':Number(r.points)>0?'success':'miss';return{key:historyKey(r),competition:r.competition,competition_label:RATING_LABELS[r.competition]||r.competition,settled_at:r.settled_at,home_name:r.home_name,away_name:r.away_name,final_home:r.final_home,final_away:r.final_away,prediction_home:r.prediction_home,prediction_away:r.prediction_away,points:Number(r.points||0),base_points:Number(r.base_points||0),quality}}
+function historyPage(base,allRows,limit,cursorValue){const cursor=decodeHistoryCursor(cursorValue);let start=0;if(cursor){const idx=allRows.findIndex(r=>String(r.settled_at)===String(cursor.settled_at)&&historyKey(r)===cursor.key);if(idx>=0)start=idx+1}const slice=allRows.slice(start,start+limit+1),hasMore=slice.length>limit,emit=slice.slice(0,limit);return{rows:emit.map(r=>historyRow(base,r)),page:{next_cursor:hasMore&&emit.length?encodeHistoryCursor(emit[emit.length-1]):null,has_more:hasMore}}}
 
 async function standingsAction(req,b){const a=await authState(req);if(!a.ok)return a.response;const competition=RATING_COMPETITIONS.has(String(b.competition))?String(b.competition):'all',x=await ratingStandings(competition);return out(req,{ok:true,competition:x.competition,standings:x.rows,standings_meta:{competition:x.competition,season:RATING_SEASON,updated_at:x.updated_at}})}
 
+async function predictorAction(req,b){
+  const a=await authState(req);if(!a.ok)return a.response;
+  const userId=Number(b.user_id);if(!Number.isInteger(userId)||userId<=0)return out(req,{ok:false,error:'Некорректный пользователь'},400);
+  const competition=RATING_COMPETITIONS.has(String(b.competition))?String(b.competition):'all',history_limit=clampHistoryLimit(b.history_limit),history_cursor=b.history_cursor??null;
+  const base=await loadRatingBase(),user=base.users.find(u=>Number(u.id)===userId);if(!user)return out(req,{ok:false,error:'Пользователь не найден'},404);
+  const standings=ratingStandingsFromBase(base,competition),stats=standings.rows.find(r=>Number(r.id)===userId),history=publicHistory(base,userId,competition),page=historyPage(base,history,history_limit,history_cursor),recent=history.slice(0,10);
+  const recent_summary={sample_size:recent.length,exact:recent.filter(r=>Number(r.base_points)===Number(base.exactScore)).length,successful:recent.filter(r=>Number(r.points)>0).length,points:recent.reduce((s,r)=>s+Number(r.points||0),0)};
+  return out(req,{ok:true,predictor:{id:userId,display_name:String(user.display_name??''),favorite_team:stats?.favorite_team??null,competition,stats:stats??{rank:null,points:0,exact:0,successful:0,calculated:0,success_rate:0,streak:0,trend:0},recent_summary,history:page.rows,history_page:page.page,season:RATING_SEASON}})
+}
+
 Deno.serve(async req=>{try{
   if(req.method==="OPTIONS")return new Response("ok",{headers:cors(req)});
-  if(req.method==="GET")return out(req,{ok:true,service:"Ciao Core API Fast v6",version:6,eager_favorite:true,nominal_date_fallback:true,round_bonus:false,rating_competitions:[...RATING_COMPETITIONS],rating_season:RATING_SEASON,cors_origins:[...ALLOWED_ORIGINS]});
+  if(req.method==="GET")return out(req,{ok:true,service:"Ciao Core API Fast v6",version:6,eager_favorite:true,nominal_date_fallback:true,round_bonus:false,rating_competitions:[...RATING_COMPETITIONS],rating_season:RATING_SEASON,predictor_history:true,cors_origins:[...ALLOWED_ORIGINS]});
   if(req.method!=="POST")return new Response("Method Not Allowed",{status:405,headers:cors(req)});
   const b=await req.json().catch(()=>({})),action=String(b.action??"state");
   if(action==="set_round_bonus")return out(req,{ok:false,error:"Бонус x2 удалён из правил",code:"bonus_removed"},410);
   if(action==="standings_scope")return await standingsAction(req,b);
+  if(action==="public_predictor")return await predictorAction(req,b);
   if(action!=="state"){const x=await proxy(req,b);if(action==="prediction_rules"&&x.j?.rules)x.j.rules={...x.j.rules,bonus_multiplier:1,bonus_per_round:0,bonus_enabled:false};return out(req,x.j,x.r.status)}
   const baseP=proxy(req,b),favP=eagerFavorite(req).catch(()=>null),[base,favorite]=await Promise.all([baseP,favP]);if(!base.r.ok||!base.j?.ok)return out(req,base.j,base.r.status);withoutRoundBonus(base.j);if(favorite)base.j.favorite_club_profile=favorite;return out(req,base.j,base.r.status)
 }catch(e){console.error("core_v6_error",e);return out(req,{ok:false,error:e instanceof Error?e.message:String(e)},500)}});
