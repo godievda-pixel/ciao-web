@@ -47,6 +47,14 @@ def once(src: str, old: str, new: str, label: str) -> str:
     return src.replace(old, new, 1)
 
 
+def last_once(src: str, old: str, new: str, label: str) -> str:
+    count = src.count(old)
+    if count < 1:
+        raise RuntimeError(f'{label}: expected at least 1 occurrence, got 0')
+    head, tail = src.rsplit(old, 1)
+    return head + new + tail
+
+
 def apply(src: str) -> str:
     if MARKER in src:
         return src
@@ -58,7 +66,7 @@ def apply(src: str) -> str:
         'scope squad reset',
     )
 
-    src = once(
+    src = last_once(
         src,
         "${__cw16ClubTabs.map(([k,l])=>`<button type=\"button\" class=\"cw16-club-tab ${clubViewTab===k?'active':''}\" data-club-tab=\"${k}\" role=\"tab\" aria-selected=\"${clubViewTab===k?'true':'false'}\">${l}</button>`).join('')}",
         "${(scope==='overall'?__cw16ClubTabs:__cw16ClubTabs.filter(([k])=>k!=='squad')).map(([k,l])=>`<button type=\"button\" class=\"cw16-club-tab ${clubViewTab===k?'active':''}\" data-club-tab=\"${k}\" role=\"tab\" aria-selected=\"${clubViewTab===k?'true':'false'}\">${l}</button>`).join('')}",
