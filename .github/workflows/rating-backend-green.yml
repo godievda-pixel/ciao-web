@@ -1,0 +1,15 @@
+name: rating backend GREEN
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/cw30_core_v6.ts'
+      - 'tools/cw30_rating_backend_contract.py'
+      - '.github/workflows/rating-backend-green.yml'
+jobs:
+  green:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: GREEN — competition-aware standings contract
+        run: python tools/cw30_rating_backend_contract.py tools/cw30_core_v6.ts
