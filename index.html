@@ -1015,9 +1015,15 @@ html::-webkit-scrollbar,body::-webkit-scrollbar,#ciao-miniapp-root::-webkit-scro
 </style>
 <style id="cw22-style">html.cw225-booting body > *:not(#cw225-start-cover){visibility:hidden!important}
 #cw225-start-cover{position:fixed!important;inset:0!important;z-index:2147483647!important;display:grid!important;place-items:center!important;visibility:visible!important;background:radial-gradient(circle at 50% 18%,rgba(49,80,255,.24),transparent 34%),linear-gradient(180deg,#09142d,#030817)!important;color:#fff!important;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif!important}
-#cw225-start-cover .cw225-start-inner{text-align:center;padding:24px}
-#cw225-start-cover b{display:block;font-size:21px;font-weight:900}
-#cw225-start-cover span{display:block;margin-top:9px;color:#9aa9cd;font-size:12px;font-weight:700}
+/* ciao-premium-italy-loader-20260909 */
+#cw225-start-cover .cw225-start-inner{width:min(72vw,260px);text-align:center;padding:24px}
+#cw225-start-cover b{display:block;font-family:'Unbounded','Manrope',-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:22px;line-height:1.08;font-weight:800;letter-spacing:-.045em;text-shadow:0 10px 34px rgba(49,80,255,.22)}
+#cw225-start-cover .cw225-italy-loader{position:relative;width:min(56vw,214px);height:7px;margin:20px auto 0;padding:1px;overflow:hidden;border-radius:999px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.10);box-shadow:0 10px 30px rgba(0,0,0,.30),inset 0 1px 0 rgba(255,255,255,.08)}
+#cw225-start-cover .cw225-italy-loader::before{content:'';position:absolute;inset:1px auto 1px 0;width:58%;border-radius:999px;background:linear-gradient(90deg,#008C45 0 33.333%,#f5f5f0 33.333% 66.666%,#CD212A 66.666% 100%);box-shadow:0 0 18px rgba(255,255,255,.13);animation:cw225ItalyLoad 1.45s cubic-bezier(.55,.05,.45,.95) infinite}
+#cw225-start-cover .cw225-italy-loader::after{content:'';position:absolute;inset:1px;border-radius:999px;background:linear-gradient(180deg,rgba(255,255,255,.22),transparent 55%);pointer-events:none}
+#cw225-start-cover span{display:block;margin-top:11px;color:#8192ba;font-size:10px;font-weight:750;letter-spacing:.06em}
+@keyframes cw225ItalyLoad{0%{transform:translateX(-115%);opacity:.55}18%{opacity:1}82%{opacity:1}100%{transform:translateX(190%);opacity:.55}}
+@media (prefers-reduced-motion:reduce){#cw225-start-cover .cw225-italy-loader::before{animation-duration:2.8s}}
 /* ===== Ciao, Web! v22.5 product polish ===== */
 #ciao-miniapp-root{--cw22-accent:#3150ff;--cw22-live:#ff5b79;--cw22-ok:#72ddb0}
 #ciao-miniapp-root.cw22-app-loading .content{min-height:58vh}
@@ -1298,7 +1304,7 @@ html::-webkit-scrollbar,body::-webkit-scrollbar,#ciao-miniapp-root::-webkit-scro
 </style>
 
 </head>
-<body class="ciao-pronostici-page"><div id="cw225-start-cover"><div class="cw225-start-inner"><b>Ciao, Web!</b><span>Загружаем v22.5…</span></div></div>
+<body class="ciao-pronostici-page"><div id="cw225-start-cover"><div class="cw225-start-inner"><b>Ciao, Web!</b><div class="cw225-italy-loader" role="progressbar" aria-label="Загрузка"></div><span>Загрузка...</span></div></div>
 <!-- Ciao, Web! Mini App v7 — detached from Tilda shell -->
 <script>
 (function(){
