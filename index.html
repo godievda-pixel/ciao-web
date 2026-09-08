@@ -3006,7 +3006,7 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
   function __cw211FormHtml(form){const a=Array.isArray(form)?form.slice(0,5):[];return `<div class="cw211-form">${a.length?a.map(x=>{const v=String(x?.result??x??'').toUpperCase().slice(0,1),c=v==='W'?'w':v==='D'?'d':'l';return `<i class="${c}">${v||'—'}</i>`}).join(''):'<span style="font-size:7px;color:#7183ae">нет данных</span>'}</div>`}
   function __cw213FavoriteMovement(baseRows,liveRows,teamId){const b=(baseRows||[]).find(r=>Number(r.team_id)===Number(teamId)),l=(liveRows||[]).find(r=>Number(r.team_id)===Number(teamId));if(!b||!l)return '';const bp=Number(b.position)||0,lp=Number(l.position)||0;if(!bp||!lp)return '';if(lp<bp)return `Клуб сейчас поднимается на ${lp}-е место`;if(lp>bp)return `Клуб сейчас опускается на ${lp}-е место`;return `Клуб сейчас остаётся на ${lp}-м месте`}
   function __cw215FavoriteDelta(base,current,live){if(!current)return '';const parts=[],bp=Number(base?.position)||0,cp=Number(current?.position)||0,bpts=Number(base?.points)||0,cpts=Number(current?.points)||0;if(bp&&cp&&bp!==cp){const n=Math.abs(bp-cp);parts.push(`${cp<bp?'+':'−'}${n} ${n===1?'место':'места'}`)}if(cpts!==bpts){const d=cpts-bpts;parts.push(`${d>0?'+':''}${d} ${Math.abs(d)===1?'очко':'очка'}`)}const lp=Number(live?.position)||0;if(lp&&lp!==cp)parts.push(`LIVE сейчас ${lp}-е место`);return parts.length?`После тура: ${parts.join(' · ')}`:`После тура: ${cp||'—'}-е место · ${cpts} очков`}
-  function __cw211TodayHtml(){const games=__cw211TodayMatches(),rows=games.slice(0,6).map(m=>{const live=isLive(m),finished=!!m.is_finished,label=live?__cw2014LiveLabel(m):finished?`ИТОГ · ${liveScore(m)}`:fmt(m.kickoff_at),names=`${m?.home?.name||'—'} — ${m?.away?.name||'—'}`;return `<button type="button" class="cw211-today-match ${live?'live':''}" data-cw211-match="${Number(m.id||m.match_id)||0}"><b>${esc(names)}</b><span>${esc(label)}</span></button>`}).join('');return `<section class="cw211-today"><div class="cw211-today-head"><b>Сегодня в Серии A</b><span>${games.length?__cw11NumWord(games.length,'матч','матча','матчей'):'матчей нет'}</span></div>${rows?`<div class="cw211-today-list">${rows}</div>`:'<div style="margin-top:8px;font-size:8px;color:#7183ae">Сегодня матчей Серии A нет</div>'}</section>`}
+  function __cw211TodayHtml(){const games=__cw211TodayMatches(),rows=games.slice(0,6).map(m=>{const live=isLive(m),finished=!!m.is_finished,label=live?__cw2014LiveLabel(m):finished?`ИТОГ · ${liveScore(m)}`:fmt(m.kickoff_at),names=`${m?.home?.name||'—'} — ${m?.away?.name||'—'}`;return `<button type="button" class="cw211-today-match ${live?'live':''}" data-cw211-match="${Number(m.id||m.match_id)||0}"><b>${esc(names)}</b><span>${esc(label)}</span></button>`}).join('');return `<section class="cw211-today"><div class="cw211-today-head"><b>Сегодня в кальчо</b><span>${games.length?__cw11NumWord(games.length,'матч','матча','матчей'):'матчей нет'}</span></div>${rows?`<div class="cw211-today-list">${rows}</div>`:'<div style="margin-top:8px;font-size:8px;color:#7183ae">Сегодня матчей Серии A нет</div>'}</section>`}
   function __cw211FavoriteDashboard(){
     const t=S?.user?.favorite_team;if(!t)return '';const row=(S?.serie_a_table?.rows||[]).find(r=>Number(r.team_id)===Number(t.id)),d=__cw18ClubQuick.get(Number(t.id)),o=d?.overview||{},m=__cw211FavoriteMatch(t,d),mid=Number(m?.id||m?.match_id)||0,opp=__cw211TeamOpponent(m,t.id),pred=__cw211PredictionFor(mid),state=__cw2017LiveSerieAState(),liveRow=state.rows.find(r=>Number(r.team_id)===Number(t.id));
     if(row&&!__cw215FavoriteBaseline)__cw215FavoriteBaseline={...row};const movement=state.live?__cw213FavoriteMovement(S?.serie_a_table?.rows,state.rows,t.id):'',delta=__cw215FavoriteDelta(__cw215FavoriteBaseline,row,liveRow),matchLabel=m?(m.__kind==='live'?__cw2014LiveLabel(m):m.is_finished?`ИТОГ · ${liveScore(m)}`:fmt(m.kickoff_at)):'Матч не найден',score=m&&(isLive(m)||m.is_finished)?liveScore(m):'→',streak=Number(S?.stats?.streak)||0;
@@ -3760,7 +3760,7 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
   }
 
   __cwPredFixNav=__cwHomePredFixNav;
-  predict=function(){return __cwPredLegacyPredict()};
+  predict=function(){return hero()+__cw225FavoriteHome()};
   mine=function(){return __cwPredCenterHtml()};
 
   __cwPredApplyTheme=function(){
@@ -3840,7 +3840,7 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
 
   __cwHomePredFixNav();
   __cwPredApplyTheme();
-  if(tab==='predict'||tab==='mine')render();
+  try{if(tab==='predict'||tab==='mine')render()}catch(error){console.error('ciao-home-nav-initial-render',error)}
   /* /ciao-prod-home-predictions-nav-fix-20260907 */
 /* ciao-prod-prediction-live-scroll-polish-20260907 */
   function __cwPredPolishStatusBadges(){
