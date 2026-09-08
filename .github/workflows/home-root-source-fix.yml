@@ -1,0 +1,111 @@
+name: One-time direct Home source fix
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  fix-home-source:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: RED - prove Home still uses prediction renderer
+        shell: bash
+        run: |
+          set +e
+          python - <<'PY'
+          from pathlib import Path
+          s = Path('index.html').read_text(encoding='utf-8')
+          assert "predict=function(){return hero()+__cw225FavoriteHome()};" in s
+          assert "<b>Сегодня в Серии A</b>" not in s
+          assert "try{if(tab==='predict'||tab==='mine')render()}catch(error)" in s
+          PY
+          rc=$?
+          set -e
+          test "$rc" -ne 0
+          echo "RED confirmed: Home is still prediction-backed"
+
+      - name: Patch Home at source
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+
+          old_home = "  predict=function(){return __cwPredLegacyPredict()};"
+          new_home = "  predict=function(){return hero()+__cw225FavoriteHome()};"
+          assert s.count(old_home) == 1, f'expected one old Home assignment, got {s.count(old_home)}'
+          s = s.replace(old_home, new_home, 1)
+
+          old_today = '<b>Сегодня в Серии A</b>'
+          assert s.count(old_today) == 1, f'expected one legacy Today heading, got {s.count(old_today)}'
+          s = s.replace(old_today, '<b>Сегодня в кальчо</b>', 1)
+
+          old_render = "  if(tab==='predict'||tab==='mine')render();\n  /* /ciao-prod-home-predictions-nav-fix-20260907 */"
+          new_render = "  try{if(tab==='predict'||tab==='mine')render()}catch(error){console.error('ciao-home-nav-initial-render',error)}\n  /* /ciao-prod-home-predictions-nav-fix-20260907 */"
+          assert s.count(old_render) == 1, 'home/nav initial render anchor missing or duplicated'
+          s = s.replace(old_render, new_render, 1)
+
+          p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: GREEN - verify dedicated Home contract
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s = Path('index.html').read_text(encoding='utf-8')
+          assert s.count("predict=function(){return hero()+__cw225FavoriteHome()};") == 1
+          assert "predict=function(){return __cwPredLegacyPredict()};" not in s
+          assert "<b>Сегодня в Серии A</b>" not in s
+          assert "<b>Сегодня в кальчо</b>" in s
+          assert "try{if(tab==='predict'||tab==='mine')render()}catch(error){console.error('ciao-home-nav-initial-render',error)}" in s
+          assert "mine=function(){return __cwPredCenterHtml()};" in s
+          # Dedicated Home is direct source composition: hero first, favorite/today second.
+          home_line = "predict=function(){return hero()+__cw225FavoriteHome()};"
+          assert home_line in s
+          # Prediction controls remain implemented for the Predictions tab, but are no longer the Home renderer.
+          assert "__cwPredCenterHtml" in s
+          print('GREEN direct Home contract confirmed')
+          PY
+
+      - name: Parse all inline JavaScript
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re, shutil
+          s = Path('index.html').read_text(encoding='utf-8')
+          out = Path('/tmp/ciao-inline-js')
+          shutil.rmtree(out, ignore_errors=True)
+          out.mkdir()
+          scripts = re.findall(r'<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)</script>', s, flags=re.I)
+          assert scripts
+          for i, body in enumerate(scripts):
+              (out / f'{i}.js').write_text(body, encoding='utf-8')
+          print(f'inline scripts: {len(scripts)}')
+          PY
+          for f in /tmp/ciao-inline-js/*.js; do node --check "$f"; done
+
+      - name: Commit source fix and remove workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/home-root-source-fix.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --name-only | grep -Fx 'index.html'
+          git diff --cached --name-only | grep -Fx '.github/workflows/home-root-source-fix.yml'
+          test "$(git diff --cached --name-only | wc -l)" -eq 2
+          git commit -m "fix: make Home a dedicated source screen"
+          git push origin HEAD:main
