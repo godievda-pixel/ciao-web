@@ -47,6 +47,19 @@ Do not create a separate rating Edge Function and do not calculate combined stan
 
 The frontend is presentation-only for ranking calculations.
 
+## Active Season
+
+This implementation is explicitly scoped to season `2026/27`.
+
+Backend date boundaries:
+
+- inclusive start: `2026-07-01T00:00:00Z`;
+- exclusive end: `2027-07-01T00:00:00Z`.
+
+All standings, trends, streaks, recent summaries and public history must exclude matches outside this window.
+
+The boundaries live as named constants in `ciao-core-api-fast-v6`; no database migration is required. This prevents historical data from a future retained season from being accidentally mixed into 2026/27 standings.
+
 ## Competition Keys
 
 Canonical competition values:
@@ -82,6 +95,8 @@ Use:
 
 Only rows where prediction points are calculated are eligible for standings and public history.
 
+Match date for active-season filtering is `cp_matches.kickoff_at` when available, otherwise the associated `cp_rounds.nominal_date`.
+
 ### External competitions
 
 Use:
@@ -95,6 +110,8 @@ Use:
 Competition is derived from `cp_external_matches.competition`.
 
 Only rows with settled/calculated prediction points are eligible for standings and public history.
+
+Match date for active-season filtering is `cp_external_matches.kickoff_at`.
 
 ## Standings API
 
@@ -136,7 +153,7 @@ Response shape:
   ],
   "standings_meta": {
     "competition": "ucl",
-    "season_scope": "current",
+    "season": "2026/27",
     "updated_at": "..."
   }
 }
@@ -205,7 +222,7 @@ If a reliable previous block cannot be established, trend is `0` rather than gue
 
 ## Aggregate `Все`
 
-`all` combines settled Serie A and settled external predictions.
+`all` combines settled Serie A and settled external predictions inside the active 2026/27 season window.
 
 Each prediction is counted exactly once in its native source.
 
@@ -228,6 +245,8 @@ Request:
   "history_cursor": null
 }
 ```
+
+`history_limit` defaults to `20` and is clamped to `1..50` server-side.
 
 Response:
 
@@ -274,13 +293,15 @@ The profile contains its own competition switcher with the same six filters:
 
 Switching competition updates profile statistics and prediction history without closing the profile.
 
+The profile is implemented as a full-height in-app overlay/sheet, not a separate route and not the current small modal. Its own content area scrolls independently while the underlying Rating screen remains frozen. Closing the profile restores the Rating screen at the exact prior scroll position.
+
 ## Prediction History
 
 Prediction history is a block inside the predictor profile.
 
 It is not a separate Rating tab or separate route.
 
-History shows only completed and settled predictions.
+History shows only completed and settled predictions from the active 2026/27 season.
 
 Each row includes:
 
@@ -301,25 +322,29 @@ Suggested row presentation:
 
 For `all`, history is merged chronologically across all competitions.
 
+`recent_summary` is calculated from the latest up to 10 eligible settled predictions in the currently selected competition scope.
+
 ## History Privacy / Fairness Rule
 
-Another user's future, open, live, or otherwise unsettled prediction must never be returned by the backend.
+`public_predictor` history always returns settled history only, regardless of whether the requested `user_id` belongs to another user or the current user.
+
+Future, open, live, or otherwise unsettled predictions must never be returned from this public-profile endpoint.
 
 This is a server-side rule, not merely a frontend hiding rule.
 
-A manually crafted request for another user's current prediction must return no such prediction data.
+A manually crafted request for a current prediction must return no current prediction data.
 
-The user's own existing prediction flows are not changed by this public-history restriction.
+The current user's own open predictions remain available only through the existing authenticated prediction flows, which are not changed by this feature.
 
 ## History Pagination
 
-Default page size: 20 rows.
+Default page size: 20 rows. Maximum page size: 50 rows.
 
-Use cursor-style pagination where practical, based on settled match timestamp plus a stable tie-break ID.
+Use cursor-style pagination based on settled match timestamp plus a stable source-aware tie-break key so Serie A and external rows can coexist without collisions in `all`.
 
-The first profile request should return profile stats plus the first history page so the profile is useful immediately.
+The first profile request returns profile stats plus the first history page.
 
-Loading additional history must append rows without re-rendering or collapsing the profile hero.
+Loading additional history appends rows without re-rendering or collapsing the profile hero.
 
 ## Premium Rating UI
 
@@ -410,9 +435,9 @@ Favorite-club crest inside the ranking row is visual identity for the predictor;
 
 ## Premium Predictor Profile UI
 
-Replace the current small predictor modal with a larger premium profile surface suitable for Telegram mobile WebView.
+Replace the current small predictor modal with a full-height premium profile overlay suitable for Telegram mobile WebView.
 
-The profile should contain:
+The profile contains:
 
 1. hero with display name and favorite club identity;
 2. current rank and points;
@@ -420,7 +445,9 @@ The profile should contain:
 4. competition switcher;
 5. recent-summary strip;
 6. `История прогнозов` block;
-7. lazy `Показать ещё` / infinite append behavior for more history.
+7. explicit `Показать ещё` append control when more history is available.
+
+Use an explicit `Показать ещё` control rather than invisible infinite-scroll triggering so loading remains predictable in Telegram WebView.
 
 The selected tournament theme also applies inside the predictor profile.
 
@@ -456,11 +483,11 @@ The UI must never show `NaN`, `undefined`, or broken percentages.
 
 Backend standings may use the existing short-lived in-memory cache pattern.
 
-Suggested cache key includes competition.
+Cache keys must include competition and active-season key.
 
 Short TTL around 30 seconds is acceptable for standings and public predictor aggregate stats.
 
-History pages may also be cached briefly, but privacy and settlement checks must always be enforced before output.
+History pages may also be cached briefly, but settlement and active-season checks are part of the query/filter contract and cannot be bypassed by caching.
 
 ## Compatibility
 
@@ -480,17 +507,19 @@ No database migration is required for the design as currently specified.
 
 Test:
 
-1. `serie_a` standings use only settled Serie A predictions.
-2. `ucl`, `uel`, `uecl`, `coppa_italia` use only the matching external competition.
-3. `all` equals the union of settled predictions without duplicates.
-4. ranking tie-break order is points → exact → successful → name.
-5. zero-activity active users remain present.
-6. `success_rate` handles zero safely.
-7. streak uses chronological settled results.
-8. trend is deterministic and falls back to zero when prior block is unavailable.
-9. public history includes completed/settled predictions only.
-10. public history never exposes open/live/future predictions.
-11. history pagination has stable ordering and no duplicates between pages.
+1. active-season filtering excludes rows outside `2026-07-01 <= match_date < 2027-07-01`.
+2. `serie_a` standings use only settled Serie A predictions.
+3. `ucl`, `uel`, `uecl`, `coppa_italia` use only the matching external competition.
+4. `all` equals the union of settled predictions without duplicates.
+5. ranking tie-break order is points → exact → successful → name.
+6. zero-activity active users remain present.
+7. `success_rate` handles zero safely.
+8. streak uses chronological settled results.
+9. trend is deterministic and falls back to zero when prior block is unavailable.
+10. public history includes completed/settled predictions only.
+11. public history never exposes open/live/future predictions, including when requesting one's own public profile.
+12. history pagination has stable ordering and no duplicates between pages.
+13. `history_limit` is clamped to `1..50`.
 
 ### Frontend contracts
 
@@ -502,11 +531,12 @@ Test:
 4. current-user Rating hero updates per competition.
 5. top-3 and regular ranking rows remain readable on iPhone and Android widths.
 6. ranking row opens predictor profile in the active competition context.
-7. profile competition switch updates stats and history without closing.
-8. history appends without collapsing or jumping the profile.
-9. closing profile restores Rating scroll position.
-10. no current/future prediction is rendered in another user's profile.
-11. inline JavaScript passes syntax validation.
+7. favorite-club crest in the ranking row does not divert the tap into club profile navigation.
+8. profile competition switch updates stats and history without closing.
+9. `Показать ещё` appends history without collapsing or jumping the profile.
+10. closing profile restores Rating scroll position.
+11. no current/future prediction is rendered in a public predictor profile.
+12. inline JavaScript passes syntax validation.
 
 ## Rollout
 
@@ -523,12 +553,13 @@ Test:
 The redesign is complete when:
 
 - Rating supports all six competition scopes;
+- all statistics are limited to season 2026/27;
 - ranking calculations are server-side and consistent across sources;
 - the old round/month scope UI is gone;
 - each competition has a distinct premium theme without breaking Ciao visual consistency;
-- predictor profiles are premium and competition-aware;
+- predictor profiles are full-height, premium and competition-aware;
 - completed prediction history appears inside user profiles;
-- other users' current/future predictions cannot be retrieved or displayed;
+- public predictor endpoints cannot retrieve current/future predictions;
 - switching competitions and loading history is stable and does not cause visible full-screen jumping;
 - the experience works correctly in Telegram WebView on iPhone and Android;
 - final production repository tree is restored to root `index.html` only after rollout and verification.
