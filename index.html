@@ -1303,6 +1303,71 @@ html::-webkit-scrollbar,body::-webkit-scrollbar,#ciao-miniapp-root::-webkit-scro
 #ciao-miniapp-root .cwmt-match-card[data-match-source="external"],#ciao-miniapp-root .cwpred-external-card[data-match-source="external"]{cursor:pointer}
 </style>
 
+
+<style id="ciao-premium-italy-loading-system">
+/* ciao-premium-italy-loading-system-20260909 */
+@keyframes cwItSweep{
+  0%{transform:translateX(-115%);opacity:.68}
+  46%,62%{transform:translateX(72%);opacity:1}
+  100%{transform:translateX(220%);opacity:.72}
+}
+@keyframes cwItCompact{
+  0%{background-position:120% 50%;opacity:.72}
+  50%{opacity:1}
+  100%{background-position:-20% 50%;opacity:.72}
+}
+#ciao-miniapp-root .loader{min-height:45vh!important}
+#ciao-miniapp-root .loader-box{gap:12px!important}
+#ciao-miniapp-root .loader-mark{
+  position:relative!important;width:min(44vw,154px)!important;height:7px!important;min-height:7px!important;
+  aspect-ratio:auto!important;overflow:hidden!important;border-radius:999px!important;
+  border:1px solid rgba(255,255,255,.10)!important;background:rgba(255,255,255,.05)!important;
+  box-shadow:0 10px 28px rgba(0,0,0,.26),inset 0 1px 0 rgba(255,255,255,.07)!important;
+}
+#ciao-miniapp-root .loader-mark::before{
+  content:''!important;position:absolute!important;inset:1px auto 1px 0!important;width:58%!important;height:auto!important;
+  -webkit-mask:none!important;mask:none!important;border-radius:999px!important;
+  background:linear-gradient(90deg,#008C45 0 33.333%,#f5f5f0 33.333% 66.666%,#CD212A 66.666% 100%)!important;
+  background-size:100% 100%!important;background-position:center!important;
+  animation:cwItSweep 1.45s cubic-bezier(.55,.05,.45,.95) infinite!important;
+  filter:none!important;clip-path:none!important;opacity:1!important;
+}
+#ciao-miniapp-root .loader-mark::after{
+  content:''!important;display:block!important;position:absolute!important;inset:1px!important;border-radius:999px!important;
+  background:linear-gradient(180deg,rgba(255,255,255,.20),transparent 55%)!important;
+  filter:none!important;animation:none!important;pointer-events:none!important;
+}
+#ciao-miniapp-root .loader-title{font-size:16px!important}
+#ciao-miniapp-root .loader-sub{font-size:10px!important;color:#8494bb!important;max-width:240px}
+#ciao-miniapp-root .cw-it-loading,
+#ciao-miniapp-root .cw16-club-loading,
+#ciao-miniapp-root .cw209-calendar-loading{
+  display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;
+  gap:12px!important;text-align:center!important;
+}
+#ciao-miniapp-root .cw-it-loading::after,
+#ciao-miniapp-root .cw16-club-loading::after,
+#ciao-miniapp-root .cw209-calendar-loading::after{
+  content:'';display:block;width:min(42vw,146px);height:5px;border-radius:999px;
+  background:linear-gradient(90deg,transparent 0%,#008C45 20%,#f5f5f0 50%,#CD212A 80%,transparent 100%);
+  background-size:220% 100%;background-position:120% 50%;animation:cwItCompact 1.35s ease-in-out infinite;
+  box-shadow:0 0 12px rgba(255,255,255,.08);opacity:.95;
+}
+#ciao-miniapp-root .cw18-skeleton::after,
+#ciao-miniapp-root .cw30-rating-state i::after,
+#ciao-miniapp-root .cw31-profile-skeleton i::after,
+#ciao-miniapp-root .mc-lazy-loading::after,
+#ciao-miniapp-root .cw22-sk::after{
+  background:linear-gradient(90deg,transparent 0%,rgba(0,140,69,.11) 30%,rgba(255,255,255,.12) 50%,rgba(205,33,42,.11) 70%,transparent 100%)!important;
+}
+@media(prefers-reduced-motion:reduce){
+  #ciao-miniapp-root .loader-mark::before,
+  #ciao-miniapp-root .cw-it-loading::after,
+  #ciao-miniapp-root .cw16-club-loading::after,
+  #ciao-miniapp-root .cw209-calendar-loading::after{animation:none!important;transform:none!important;background-position:50% 50%!important}
+}
+</style>
+
 </head>
 <body class="ciao-pronostici-page"><div id="cw225-start-cover"><div class="cw225-start-inner"><b>Ciao, Web!</b><div class="cw225-italy-loader" role="progressbar" aria-label="Загрузка"></div><span>Загрузка...</span></div></div>
 <!-- Ciao, Web! Mini App v7 — detached from Tilda shell -->
@@ -3808,7 +3873,7 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
   function __cwMtStopRefresh(){if(__cwMtRefreshTimer){clearInterval(__cwMtRefreshTimer);__cwMtRefreshTimer=0}}
   function __cwMtStartRefresh(){__cwMtStopRefresh();if(!(tab==='calendar'&&__cwMtCompetition&&__cwMtCompetition!=='serie_a'))return;__cwMtRefreshTimer=setInterval(()=>{if(tab==='calendar'&&__cwMtCompetition&&__cwMtCompetition!=='serie_a'&&!document.hidden)__cwMtLoadCompetition(__cwMtCompetition,{quiet:true})},5000)}
 
-  function __cwMtExternalCompetitionHtml(){const meta=__cwMtMeta(__cwMtCompetition);if(!meta)return __cwMtHubHtml();const cover=__cwMtCoverHtml(__cwMtCompetition);if(__cwMtLoading&&!__cwMtPayload)return cover+'<div class="cwmt-state">Загружаем матчи…</div>';if(__cwMtError&&!__cwMtPayload)return cover+'<div class="cwmt-state"><b>Не удалось загрузить матчи</b><button type="button" data-cwmt-action="retry">Повторить</button></div>';const group=__cwMtSelectedGroup();if(!group)return cover+'<div class="cwmt-state">Матчей пока нет</div>';return cover+__cwMtStageBarHtml()+'<div class="section-title cwmt-stage-title"><h3>'+__cwMtEsc(group.label)+'</h3></div><div class="scoreboards cwmt-scoreboards">'+group.matches.map(__cwMtMatchCardHtml).join('')+'</div>'}
+  function __cwMtExternalCompetitionHtml(){const meta=__cwMtMeta(__cwMtCompetition);if(!meta)return __cwMtHubHtml();const cover=__cwMtCoverHtml(__cwMtCompetition);if(__cwMtLoading&&!__cwMtPayload)return cover+'<div class="cwmt-state cw-it-loading">Загружаем матчи…</div>';if(__cwMtError&&!__cwMtPayload)return cover+'<div class="cwmt-state"><b>Не удалось загрузить матчи</b><button type="button" data-cwmt-action="retry">Повторить</button></div>';const group=__cwMtSelectedGroup();if(!group)return cover+'<div class="cwmt-state">Матчей пока нет</div>';return cover+__cwMtStageBarHtml()+'<div class="section-title cwmt-stage-title"><h3>'+__cwMtEsc(group.label)+'</h3></div><div class="scoreboards cwmt-scoreboards">'+group.matches.map(__cwMtMatchCardHtml).join('')+'</div>'}
 
   calendar=function(){if(!__cwMtCompetition)return __cwMtHubHtml();if(__cwMtCompetition==='serie_a')return __cwMtCoverHtml('serie_a')+__cwMtLegacyCalendar();return __cwMtExternalCompetitionHtml()};
 
@@ -3988,13 +4053,13 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
   function __cwPredExternalEditCard(match){const value=__cwPredExternalScoreOf(match),key=String(match?.matchId||''),dirty=__cwPredExternalDraft.has(key),saved=!!match?.prediction;const score=match?.open?'<div class=\"cw29-score-line\"><button type=\"button\" class=\"cw29-score-pick\" data-cwpred-pick=\"h\" aria-label=\"Голы хозяев\">'+value.h+'</button><span class=\"cw29-score-colon\">:</span><button type=\"button\" class=\"cw29-score-pick\" data-cwpred-pick=\"a\" aria-label=\"Голы гостей\">'+value.a+'</button></div>':'<div class=\"cwpred-locked-prediction\">'+__cwPredEsc(__cwPredExternalPredictionText(match))+'</div>';return '<article class=\"cwpred-card cwpred-external-card '+(match?.open?'open':'closed')+'\" data-cwpred-match=\"'+__cwPredEsc(key)+'\"><div class=\"cwpred-card-top\"><span class=\"cwpred-status\">'+__cwPredEsc(__cwPredStatus(match))+'</span><span class=\"cwpred-kickoff\">'+__cwPredEsc(__cwPredDateTime(match?.kickoffAt))+'</span></div><div class=\"cwpred-card-main\">'+__cwPredExternalTeamHtml(match?.homeTeam,'home')+'<div class=\"cwpred-score-zone\">'+score+'<div class=\"cwpred-save-state '+(dirty?'dirty':saved?'saved':'')+'\">'+(dirty?'Изменено':saved?'✓ Сохранено':match?.open?'Нажмите на счёт':'Прогноз не сделан')+'</div></div>'+__cwPredExternalTeamHtml(match?.awayTeam,'away')+'</div><div class=\"cwpred-card-bottom\"><span>'+__cwPredEsc(__cwPredDeadlineText(match))+'</span>'+( __cwPredRealScore(match)?'<span>'+__cwPredEsc(__cwPredRealScore(match))+'</span>':'')+'</div></article>'}
   function __cwPredExternalMineCard(match){const prediction=__cwPredExternalPredictionText(match),score=__cwPredRealScore(match),points=__cwPredPoints(match?.prediction?.points);return '<article class="cwpred-card cwpred-external-card cwpred-mine-card" data-cwpred-match="'+__cwPredEsc(String(match?.matchId||''))+'"><div class="cwpred-card-top"><span class="cwpred-status">'+__cwPredEsc(__cwPredStatus(match))+'</span><span class="cwpred-kickoff">'+__cwPredEsc(__cwPredDateTime(match?.kickoffAt))+'</span></div><div class="cwpred-card-main">'+__cwPredExternalTeamHtml(match?.homeTeam,'home')+'<div class="cwpred-mine-zone"><div class="cwpred-mine-prediction"><small>Ваш прогноз</small><b>'+__cwPredEsc(prediction)+'</b></div>'+(score?'<div class="cwpred-real-score"><small>Счёт матча</small><b>'+__cwPredEsc(score)+'</b></div>':'')+(points?'<div class="cwpred-points">'+__cwPredEsc(points)+'</div>':'')+'</div>'+__cwPredExternalTeamHtml(match?.awayTeam,'away')+'</div></article>'}
   function __cwPredExternalCanSave(group){if(__cwPredMode!=='edit'||!group)return false;return group.matches.some(match=>match?.open&&(__cwPredExternalDraft.has(String(match?.matchId||''))||!!match?.prediction))}
-  function __cwPredExternalHtml(){const cover=__cwPredModeHtml()+__cwPredCoverHtml(__cwPredCompetition);if(__cwPredLoading&&!__cwPredExternalPayload)return cover+'<div class="cwpred-state">Загружаем прогнозы…</div>';if(__cwPredError&&!__cwPredExternalPayload)return cover+'<div class="cwpred-state cwpred-state--error"><b>Не удалось загрузить прогнозы</b><button type="button" data-cwpred-action="retry">Повторить</button></div>';const group=__cwPredSelectedGroup();if(!group)return cover+'<div class="cwpred-state">Матчей пока нет</div>';const cards=group.matches.map(match=>__cwPredMode==='mine'?__cwPredExternalMineCard(match):__cwPredExternalEditCard(match)).join('');const save=__cwPredExternalCanSave(group)?'<div class="cwpred-savebar"><button type="button" class="cwpred-save" data-cwpred-action="save" '+(__cwPredSaving?'disabled':'')+'>'+( __cwPredSaving?'Сохраняем…':'Сохранить прогнозы')+'</button></div>':'';return cover+__cwPredStageBarHtml()+'<div class="section-title cwpred-stage-title"><h3>'+__cwPredEsc(group.label)+'</h3><span>дедлайн −15 минут</span></div><div class="cwpred-cards">'+cards+'</div>'+save}
+  function __cwPredExternalHtml(){const cover=__cwPredModeHtml()+__cwPredCoverHtml(__cwPredCompetition);if(__cwPredLoading&&!__cwPredExternalPayload)return cover+'<div class="cwpred-state cw-it-loading">Загружаем прогнозы…</div>';if(__cwPredError&&!__cwPredExternalPayload)return cover+'<div class="cwpred-state cwpred-state--error"><b>Не удалось загрузить прогнозы</b><button type="button" data-cwpred-action="retry">Повторить</button></div>';const group=__cwPredSelectedGroup();if(!group)return cover+'<div class="cwpred-state">Матчей пока нет</div>';const cards=group.matches.map(match=>__cwPredMode==='mine'?__cwPredExternalMineCard(match):__cwPredExternalEditCard(match)).join('');const save=__cwPredExternalCanSave(group)?'<div class="cwpred-savebar"><button type="button" class="cwpred-save" data-cwpred-action="save" '+(__cwPredSaving?'disabled':'')+'>'+( __cwPredSaving?'Сохраняем…':'Сохранить прогнозы')+'</button></div>':'';return cover+__cwPredStageBarHtml()+'<div class="section-title cwpred-stage-title"><h3>'+__cwPredEsc(group.label)+'</h3><span>дедлайн −15 минут</span></div><div class="cwpred-cards">'+cards+'</div>'+save}
 
   function __cwPredSerieStatus(match){if(isLive(match))return 'LIVE'+(match?.live_elapsed!=null?' · '+Number(match.live_elapsed)+'′':'');if(match?.is_finished)return 'Матч завершён';return match?.open?'Матч не начался':'Прогноз закрыт'}
   function __cwPredSerieRealScore(match){return (isLive(match)||match?.is_finished)&&match?.home_score!=null&&match?.away_score!=null?String(match.home_score)+' : '+String(match.away_score):''}
   function __cwPredSerieEditCard(match){const v=scoreOf(match),saved=!!match?.prediction,dirty=draft.has(Number(match.id));const score=match.open?'<div class=\"cw29-score-line\"><button type=\"button\" class=\"cw29-score-pick\" data-cwpred-pick=\"h\" aria-label=\"Голы хозяев\">'+v.h+'</button><span class=\"cw29-score-colon\">:</span><button type=\"button\" class=\"cw29-score-pick\" data-cwpred-pick=\"a\" aria-label=\"Голы гостей\">'+v.a+'</button></div>':'<div class=\"cwpred-locked-prediction\">'+(saved?String(match.prediction.home_score)+' : '+String(match.prediction.away_score):'Прогноз не сделан')+'</div>';return '<div class=\"match cwpred-card cwpred-serie-card '+(match.open?'open':'closed')+'\" data-mid=\"'+Number(match.id)+'\"><div class=\"cwpred-card-top\"><span class=\"cwpred-status\">'+__cwPredEsc(__cwPredSerieStatus(match))+'</span><span class=\"cwpred-kickoff\">'+__cwPredEsc(typeof fmt==='function'?fmt(match.kickoff_at):'')+'</span></div><div class=\"cwpred-card-main\">'+__cwPredSerieTeamHtml(match.home,'home')+'<div class=\"cwpred-score-zone\">'+score+'<div class=\"cwpred-save-state '+(dirty?'dirty':saved?'saved':'')+'\">'+(dirty?'Изменено':saved?'✓ Сохранено':match.open?'Нажмите на счёт':'Прогноз не сделан')+'</div></div>'+__cwPredSerieTeamHtml(match.away,'away')+'</div><div class=\"cwpred-card-bottom\"><span>'+(match.open?'Дедлайн за 15 минут до начала':'Прогноз закрыт')+'</span>'+( __cwPredSerieRealScore(match)?'<span>'+__cwPredEsc(__cwPredSerieRealScore(match))+'</span>':'')+'</div></div>'}
   function __cwPredSerieMineCard(match){const p=match?.prediction,pred=p?String(p.home_score)+' : '+String(p.away_score):'Прогноз не сделан',score=__cwPredSerieRealScore(match),points=__cwPredPoints(p?.points);return '<div class="mine-match cwpred-card cwpred-serie-card cwpred-mine-card" data-mid="'+Number(match.id)+'"><div class="cwpred-card-top"><span class="cwpred-status">'+__cwPredEsc(__cwPredSerieStatus(match))+'</span><span class="cwpred-kickoff">'+__cwPredEsc(typeof fmt==='function'?fmt(match.kickoff_at):'')+'</span></div><div class="cwpred-card-main">'+__cwPredSerieTeamHtml(match.home,'home')+'<div class="cwpred-mine-zone"><div class="cwpred-mine-prediction"><small>Ваш прогноз</small><b>'+__cwPredEsc(pred)+'</b></div>'+(score?'<div class="cwpred-real-score"><small>Счёт матча</small><b>'+__cwPredEsc(score)+'</b></div>':'')+(points?'<div class="cwpred-points">'+__cwPredEsc(points)+'</div>':'')+'</div>'+__cwPredSerieTeamHtml(match.away,'away')+'</div></div>'}
-  function __cwPredSerieHtml(){if(!S?.round?.matches)return __cwPredModeHtml()+__cwPredCoverHtml('serie_a')+'<div class="cwpred-state">Загружаем тур…</div>';const cards=S.round.matches.map(match=>__cwPredMode==='mine'?__cwPredSerieMineCard(match):__cwPredSerieEditCard(match)).join('');const save=__cwPredMode==='edit'&&S.round.matches.some(match=>match.open)?'<div class="savebar cwpred-savebar"><button id="saveAll" class="save cwpred-save">Сохранить прогнозы</button></div>':'';return __cwPredModeHtml()+__cwPredCoverHtml('serie_a')+(typeof roundBar==='function'?roundBar():'')+'<div class="section-title cwpred-stage-title"><h3>'+Number(S.selected_round)+'-й тур</h3><span>дедлайн −15 минут</span></div><div class="matches cwpred-cards">'+cards+'</div>'+save}
+  function __cwPredSerieHtml(){if(!S?.round?.matches)return __cwPredModeHtml()+__cwPredCoverHtml('serie_a')+'<div class="cwpred-state cw-it-loading">Загружаем тур…</div>';const cards=S.round.matches.map(match=>__cwPredMode==='mine'?__cwPredSerieMineCard(match):__cwPredSerieEditCard(match)).join('');const save=__cwPredMode==='edit'&&S.round.matches.some(match=>match.open)?'<div class="savebar cwpred-savebar"><button id="saveAll" class="save cwpred-save">Сохранить прогнозы</button></div>':'';return __cwPredModeHtml()+__cwPredCoverHtml('serie_a')+(typeof roundBar==='function'?roundBar():'')+'<div class="section-title cwpred-stage-title"><h3>'+Number(S.selected_round)+'-й тур</h3><span>дедлайн −15 минут</span></div><div class="matches cwpred-cards">'+cards+'</div>'+save}
   function __cwPredCenterHtml(){__cwPredApplyTheme();if(!__cwPredCompetition)return __cwPredHubHtml();if(__cwPredCompetition==='serie_a')return __cwPredSerieHtml();return __cwPredExternalHtml()}
 
   async function __cwPredLoadExternal(competition,{quiet=false}={}){if(!__cwPredIsExternal(competition))return false;const version=++__cwPredRequestVersion,selected=__cwPredCompetition;if(!quiet){__cwPredLoading=true;__cwPredError='';render()}try{const response=await fetch(__CWPRED_EXTERNAL_API,{method:'POST',headers:{'content-type':'application/json','x-telegram-init-data':String(initData||'')},body:JSON.stringify({action:'state',competition}),cache:'no-store'}),body=await response.json().catch(()=>({}));if(!response.ok||!body?.ok)throw new Error(String(body?.error||('HTTP '+response.status)));if(version!==__cwPredRequestVersion||selected!==__cwPredCompetition||competition!==__cwPredCompetition)return false;const payload=body?.data;if(!payload||String(payload?.competition||'')!==competition)throw new Error('invalid_prediction_payload');const selectedStage=__cwPredStageKey;__cwPredExternalPayload=payload;__cwPredLoading=false;__cwPredError='';__cwPredRefreshError='';const groups=__cwPredExternalGroups(payload);if(selectedStage&&groups.some(g=>g.key===selectedStage))__cwPredStageKey=selectedStage;else __cwPredStageKey=groups[0]?.key||'';render();return true}catch(error){if(version!==__cwPredRequestVersion||selected!==__cwPredCompetition||competition!==__cwPredCompetition)return false;__cwPredLoading=false;if(quiet&&__cwPredExternalPayload){__cwPredRefreshError=String(error?.message||'refresh_failed');return false}__cwPredError=String(error?.message||'load_failed');render();return false}}
@@ -4165,9 +4230,9 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
   document.addEventListener('visibilitychange',__cw26PredVisibilityFlush);
   window.addEventListener?.('pagehide',()=>{__cw26PredAutosaveFlush({force:true}).catch(()=>{})});
 
-  __cwPredExternalHtml=function(){const cover=__cwPredCoverHtml(__cwPredCompetition),controls='<div class="cwpred-tournament-controls">'+__cwPredModeHtml()+__cwPredStageBarHtml()+'</div>';if(__cwPredLoading&&!__cwPredExternalPayload)return cover+controls+'<div class="cwpred-state">Загружаем прогнозы…</div>';if(__cwPredError&&!__cwPredExternalPayload)return cover+controls+'<div class="cwpred-state cwpred-state--error"><b>Не удалось загрузить прогнозы</b><button type="button" data-cwpred-action="retry">Повторить</button></div>';const group=__cwPredSelectedGroup();if(!group)return cover+controls+'<div class="cwpred-state">Матчей пока нет</div>';const locked=__cwPredUxGroupLocked(group);const cards=group.matches.map(match=>__cwPredMode==='mine'?__cwPredExternalMineCard(match):__cwPredExternalEditCard(match)).join('');const lockNote=locked?'<div class="cwpred-stage-lock-note">Прогнозы на этот тур откроются после завершения '+__cwPredUxCurrentStageLabel()+'</div>':'';return cover+controls+'<div class="section-title cwpred-stage-title"><h3>'+__cwPredEsc(group.label)+'</h3><span>'+(locked?'тур закрыт':'дедлайн −15 минут')+'</span></div>'+lockNote+'<div class="cwpred-cards">'+cards+'</div>'};
+  __cwPredExternalHtml=function(){const cover=__cwPredCoverHtml(__cwPredCompetition),controls='<div class="cwpred-tournament-controls">'+__cwPredModeHtml()+__cwPredStageBarHtml()+'</div>';if(__cwPredLoading&&!__cwPredExternalPayload)return cover+controls+'<div class="cwpred-state cw-it-loading">Загружаем прогнозы…</div>';if(__cwPredError&&!__cwPredExternalPayload)return cover+controls+'<div class="cwpred-state cwpred-state--error"><b>Не удалось загрузить прогнозы</b><button type="button" data-cwpred-action="retry">Повторить</button></div>';const group=__cwPredSelectedGroup();if(!group)return cover+controls+'<div class="cwpred-state">Матчей пока нет</div>';const locked=__cwPredUxGroupLocked(group);const cards=group.matches.map(match=>__cwPredMode==='mine'?__cwPredExternalMineCard(match):__cwPredExternalEditCard(match)).join('');const lockNote=locked?'<div class="cwpred-stage-lock-note">Прогнозы на этот тур откроются после завершения '+__cwPredUxCurrentStageLabel()+'</div>':'';return cover+controls+'<div class="section-title cwpred-stage-title"><h3>'+__cwPredEsc(group.label)+'</h3><span>'+(locked?'тур закрыт':'дедлайн −15 минут')+'</span></div>'+lockNote+'<div class="cwpred-cards">'+cards+'</div>'};
 
-  __cwPredSerieHtml=function(){const cover=__cwPredCoverHtml('serie_a'),controls='<div class="cwpred-tournament-controls">'+__cwPredModeHtml()+(typeof roundBar==='function'?roundBar():'')+'</div>';if(!S?.round?.matches)return cover+controls+'<div class="cwpred-state">Загружаем тур…</div>';const cards=S.round.matches.map(match=>__cwPredMode==='mine'?__cwPredSerieMineCard(match):__cwPredSerieEditCard(match)).join('');return cover+controls+'<div class="section-title cwpred-stage-title"><h3>'+Number(S.selected_round)+'-й тур</h3><span>дедлайн −15 минут</span></div><div class="matches cwpred-cards">'+cards+'</div>'};
+  __cwPredSerieHtml=function(){const cover=__cwPredCoverHtml('serie_a'),controls='<div class="cwpred-tournament-controls">'+__cwPredModeHtml()+(typeof roundBar==='function'?roundBar():'')+'</div>';if(!S?.round?.matches)return cover+controls+'<div class="cwpred-state cw-it-loading">Загружаем тур…</div>';const cards=S.round.matches.map(match=>__cwPredMode==='mine'?__cwPredSerieMineCard(match):__cwPredSerieEditCard(match)).join('');return cover+controls+'<div class="section-title cwpred-stage-title"><h3>'+Number(S.selected_round)+'-й тур</h3><span>дедлайн −15 минут</span></div><div class="matches cwpred-cards">'+cards+'</div>'};
 
   const __cwPredUxLegacyOpenHub=__cwPredOpenHub;
   __cwPredOpenHub=function(){__cwPredMode='edit';return __cwPredUxLegacyOpenHub()};
@@ -4339,7 +4404,7 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
     if(__cw26HomeEntryBusy)return false;__cw26HomeEntryBusy=true;
     matchViewId=null;matchData=null;root.classList.remove('match-center-open');tab='predict';
     const keptDraft=new Map(draft);
-    if(main)main.innerHTML=typeof LOADER_HTML==='string'?LOADER_HTML:'<div class="cwpred-state">Обновляем Главную…</div>';
+    if(main)main.innerHTML=typeof LOADER_HTML==='string'?LOADER_HTML:'<div class="cwpred-state cw-it-loading">Обновляем Главную…</div>';
     __cwHomeExternalLoadedAt=0;
     const ext=Promise.resolve().then(()=>__cwHomeLoadExternal()).catch(()=>false);
     try{
