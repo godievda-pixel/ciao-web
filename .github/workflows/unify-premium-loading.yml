@@ -2,9 +2,10 @@ name: Unify premium loading states
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
     paths:
-      - '.github/workflows/unify-premium-loading.yml'
+      - .github/workflows/unify-premium-loading.yml
 
 permissions:
   contents: write
@@ -16,179 +17,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: RED — shared loading system must be absent
-        shell: bash
+      - name: RED GREEN and syntax verification
+        run: python tools/unify_premium_loading.py
+      - name: Commit production patch and remove temporary tooling
         run: |
-          set -u
-          set +e
-          python - <<'PY'
-          from pathlib import Path
-          s=Path('index.html').read_text()
-          assert 'ciao-premium-italy-loading-system-20260909' in s, 'shared premium loading system marker missing'
-          PY
-          rc=$?
-          set -e
-          if [ "$rc" -eq 0 ]; then
-            echo 'RED unexpectedly passed'
-            exit 1
-          fi
-          echo 'RED failed as expected: shared loading system is not present yet'
-
-      - name: Apply minimal shared loading CSS layer
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          from pathlib import Path
-          p=Path('index.html')
-          s=p.read_text()
-          marker='ciao-premium-italy-loading-system-20260909'
-          assert marker not in s
-
-          replacements={
-            'class=\\"cwpred-state\\">Загружаем прогнозы…':'class=\\"cwpred-state cw-it-loading\\">Загружаем прогнозы…',
-            'class=\\"cwpred-state\\">Загружаем тур…':'class=\\"cwpred-state cw-it-loading\\">Загружаем тур…',
-            'class=\\"cwpred-state\\">Обновляем Главную…':'class=\\"cwpred-state cw-it-loading\\">Обновляем Главную…',
-            'class=\\"cwmt-state\\">Загружаем матчи…':'class=\\"cwmt-state cw-it-loading\\">Загружаем матчи…',
-          }
-          seen={}
-          for old,new in replacements.items():
-            n=s.count(old)
-            seen[old]=n
-            if n:
-              s=s.replace(old,new)
-          assert seen['class=\\"cwpred-state\\">Загружаем прогнозы…'] >= 1
-          assert seen['class=\\"cwpred-state\\">Загружаем тур…'] >= 1
-          assert seen['class=\\"cwmt-state\\">Загружаем матчи…'] >= 1
-
-          css=r'''
-<style id="ciao-premium-italy-loading-system">
-/* ciao-premium-italy-loading-system-20260909 */
-@keyframes cwItSweep{
-  0%{transform:translateX(-115%);opacity:.68}
-  46%,62%{transform:translateX(72%);opacity:1}
-  100%{transform:translateX(220%);opacity:.72}
-}
-@keyframes cwItCompact{
-  0%{background-position:120% 50%;opacity:.72}
-  50%{opacity:1}
-  100%{background-position:-20% 50%;opacity:.72}
-}
-/* Generic in-app loader: replace the old large logo-fill with a compact premium Italian bar. */
-#ciao-miniapp-root .loader{min-height:45vh!important}
-#ciao-miniapp-root .loader-box{gap:12px!important}
-#ciao-miniapp-root .loader-mark{
-  position:relative!important;width:min(44vw,154px)!important;height:7px!important;min-height:7px!important;
-  aspect-ratio:auto!important;overflow:hidden!important;border-radius:999px!important;
-  border:1px solid rgba(255,255,255,.10)!important;background:rgba(255,255,255,.05)!important;
-  box-shadow:0 10px 28px rgba(0,0,0,.26),inset 0 1px 0 rgba(255,255,255,.07)!important;
-}
-#ciao-miniapp-root .loader-mark::before{
-  content:''!important;position:absolute!important;inset:1px auto 1px 0!important;width:58%!important;height:auto!important;
-  -webkit-mask:none!important;mask:none!important;border-radius:999px!important;
-  background:linear-gradient(90deg,#008C45 0 33.333%,#f5f5f0 33.333% 66.666%,#CD212A 66.666% 100%)!important;
-  background-size:100% 100%!important;background-position:center!important;
-  animation:cwItSweep 1.45s cubic-bezier(.55,.05,.45,.95) infinite!important;
-  filter:none!important;clip-path:none!important;opacity:1!important;
-}
-#ciao-miniapp-root .loader-mark::after{
-  content:''!important;display:block!important;position:absolute!important;inset:1px!important;border-radius:999px!important;
-  background:linear-gradient(180deg,rgba(255,255,255,.20),transparent 55%)!important;
-  filter:none!important;animation:none!important;pointer-events:none!important;
-}
-#ciao-miniapp-root .loader-title{font-size:16px!important}
-#ciao-miniapp-root .loader-sub{font-size:10px!important;color:#8494bb!important;max-width:240px}
-/* Text-based loading states get the compact branded bar. */
-#ciao-miniapp-root .cw-it-loading,
-#ciao-miniapp-root .cw16-club-loading,
-#ciao-miniapp-root .cw209-calendar-loading{
-  display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;
-  gap:12px!important;text-align:center!important;
-}
-#ciao-miniapp-root .cw-it-loading::after,
-#ciao-miniapp-root .cw16-club-loading::after,
-#ciao-miniapp-root .cw209-calendar-loading::after{
-  content:'';display:block;width:min(42vw,146px);height:5px;border-radius:999px;
-  background:linear-gradient(90deg,transparent 0%,#008C45 20%,#f5f5f0 50%,#CD212A 80%,transparent 100%);
-  background-size:220% 100%;background-position:120% 50%;animation:cwItCompact 1.35s ease-in-out infinite;
-  box-shadow:0 0 12px rgba(255,255,255,.08);opacity:.95;
-}
-/* Existing skeletons stay skeletons, but their shimmer uses the same Italian brand language. */
-#ciao-miniapp-root .cw18-skeleton::after,
-#ciao-miniapp-root .cw30-rating-state i::after,
-#ciao-miniapp-root .cw31-profile-skeleton i::after,
-#ciao-miniapp-root .mc-lazy-loading::after,
-#ciao-miniapp-root .cw22-sk::after{
-  background:linear-gradient(90deg,transparent 0%,rgba(0,140,69,.11) 30%,rgba(255,255,255,.12) 50%,rgba(205,33,42,.11) 70%,transparent 100%)!important;
-}
-@media(prefers-reduced-motion:reduce){
-  #ciao-miniapp-root .loader-mark::before,
-  #ciao-miniapp-root .cw-it-loading::after,
-  #ciao-miniapp-root .cw16-club-loading::after,
-  #ciao-miniapp-root .cw209-calendar-loading::after{animation:none!important;transform:none!important;background-position:50% 50%!important}
-}
-</style>
-'''
-          assert '</head>' in s
-          s=s.replace('</head>',css+'\n</head>',1)
-          p.write_text(s)
-          PY
-
-      - name: GREEN — verify shared loading contract
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          from pathlib import Path
-          s=Path('index.html').read_text()
-          assert s.count('ciao-premium-italy-loading-system-20260909') == 1
-          assert '@keyframes cwItSweep' in s and '@keyframes cwItCompact' in s
-          assert '#ciao-miniapp-root .loader-mark::before' in s
-          assert '#008C45' in s and '#CD212A' in s
-          assert 'cwpred-state cw-it-loading\\">Загружаем прогнозы…' in s
-          assert 'cwpred-state cw-it-loading\\">Загружаем тур…' in s
-          assert 'cwmt-state cw-it-loading\\">Загружаем матчи…' in s
-          assert '#ciao-miniapp-root .cw16-club-loading::after' in s
-          assert '#ciao-miniapp-root .cw209-calendar-loading::after' in s
-          assert '#ciao-miniapp-root .cw30-rating-state i::after' in s
-          assert '#ciao-miniapp-root .cw31-profile-skeleton i::after' in s
-          assert '#ciao-miniapp-root .mc-lazy-loading::after' in s
-          assert 'ciao-premium-italy-loader-20260909' in s
-          assert 'ciao-v29-native-score-picker-20260908' in s
-          print('GREEN: premium loading system contract satisfied')
-          PY
-
-      - name: Check all inline JavaScript syntax
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          import re, subprocess
-          from pathlib import Path
-          s=Path('index.html').read_text()
-          scripts=re.findall(r'<script([^>]*)>(.*?)</script>',s,re.S|re.I)
-          checked=0
-          for i,(attrs,js) in enumerate(scripts):
-            a=attrs.lower()
-            if 'src=' in a or ('type=' in a and 'javascript' not in a and 'module' not in a):
-              continue
-            if not js.strip():
-              continue
-            f=Path(f'/tmp/ciao-inline-{i}.js')
-            f.write_text(js)
-            subprocess.run(['node','--check',str(f)],check=True)
-            checked+=1
-          print(f'node --check OK for {checked} inline scripts')
-          PY
-
-      - name: Commit production patch and self-delete workflow
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name 'Ciao Web Bot'
-          git config user.email 'actions@users.noreply.github.com'
+          git config user.name "Ciao Web Bot"
+          git config user.email "actions@users.noreply.github.com"
           git add index.html
-          git rm .github/workflows/unify-premium-loading.yml
-          git commit -m 'style: unify premium loading states'
+          git rm .github/workflows/unify-premium-loading.yml tools/unify_premium_loading.py
+          git commit -m "style: unify premium loading states"
           git push
