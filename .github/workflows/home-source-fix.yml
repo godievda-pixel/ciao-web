@@ -1,0 +1,126 @@
+name: One-time Home source fix
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  fix-home:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify current bug contract
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s = Path('index.html').read_text(encoding='utf-8')
+          marker = 'ciao-v23-home-first-render-fix-20260908'
+          old = """      const url=new URL('/api/cw22/matches',location.origin);
+      url.searchParams.set('competition',key);url.searchParams.set('from',range.from);url.searchParams.set('to',range.to);
+      const response=await fetch(url,{headers:{accept:'application/json','x-telegram-init-data':String(initData||'')},cache:'no-store'});
+      if(!response?.ok)throw new Error('HTTP '+Number(response?.status||0));
+      const body=await response.json();
+      return {key,matches:Array.isArray(body?.data?.matches)?body.data.matches:[]};"""
+          assert marker not in s, 'first-render fix already exists'
+          assert s.count(old) == 1, 'expected old GitHub-Pages-incompatible Home fetch exactly once'
+          assert s.count('<b>Кальчо сегодня</b>') == 1, 'expected old Home heading exactly once'
+          print('RED contract confirmed: native Home bootstrap is missing and Home uses same-origin API')
+          PY
+
+      - name: Patch index source
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+
+          old_fetch = """      const url=new URL('/api/cw22/matches',location.origin);
+      url.searchParams.set('competition',key);url.searchParams.set('from',range.from);url.searchParams.set('to',range.to);
+      const response=await fetch(url,{headers:{accept:'application/json','x-telegram-init-data':String(initData||'')},cache:'no-store'});
+      if(!response?.ok)throw new Error('HTTP '+Number(response?.status||0));
+      const body=await response.json();
+      return {key,matches:Array.isArray(body?.data?.matches)?body.data.matches:[]};"""
+          new_fetch = """      const response=await fetch(__CWPRED_EXTERNAL_API,{
+        method:'POST',
+        headers:{accept:'application/json','content-type':'application/json','x-telegram-init-data':String(initData||'')},
+        body:JSON.stringify({action:'state',competition:key}),
+        cache:'no-store'
+      });
+      const body=await response.json().catch(()=>({}));
+      if(!response?.ok||body?.ok===false)throw new Error(String(body?.error||('HTTP '+Number(response?.status||0))));
+      const payload=body?.data;
+      return {key,matches:Array.isArray(payload?.matches)?payload.matches:[]};"""
+          assert s.count(old_fetch) == 1
+          s = s.replace(old_fetch, new_fetch, 1)
+
+          s = s.replace('<b>Кальчо сегодня</b>', '<b>Сегодня в кальчо</b>', 1)
+
+          anchor = """  const __cw23HomeBindBase=bind;
+  bind=function(){const result=__cw23HomeBindBase();__cwHomeBindPolish();return result};
+
+  __cwPredMineStagePredictionBlock="""
+          replacement = """  const __cw23HomeBindBase=bind;
+  bind=function(){const result=__cw23HomeBindBase();__cwHomeBindPolish();return result};
+
+  /* ciao-v23-home-first-render-fix-20260908 */
+  queueMicrotask(()=>{try{if(tab==='predict'&&!__cwHomeExternalCenter)render()}catch(_e){}});
+
+  __cwPredMineStagePredictionBlock="""
+          assert s.count(anchor) == 1, 'native Home bind anchor not unique'
+          s = s.replace(anchor, replacement, 1)
+
+          p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Verify patched source
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s = Path('index.html').read_text(encoding='utf-8')
+          assert s.count('ciao-v23-home-first-render-fix-20260908') == 1
+          assert "new URL('/api/cw22/matches',location.origin)" not in s
+          assert "fetch(__CWPRED_EXTERNAL_API" in s
+          assert '<b>Сегодня в кальчо</b>' in s
+          assert "if(card&&card!==favorite&&card.parentElement===parent)" in s
+          assert "__cw23PolishToday(box);__cw23PolishFavorite(box)" in s
+          print('GREEN source contract confirmed')
+          PY
+
+      - name: Parse inline JavaScript
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          s = Path('index.html').read_text(encoding='utf-8')
+          scripts = re.findall(r'<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)</script>', s, flags=re.I)
+          out = Path('/tmp/ciao-inline-js')
+          out.mkdir(exist_ok=True)
+          for i, body in enumerate(scripts):
+              (out / f'{i}.js').write_text(body, encoding='utf-8')
+          print(len(scripts))
+          PY
+          for f in /tmp/ciao-inline-js/*.js; do node --check "$f"; done
+
+      - name: Commit index and remove one-time workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/home-source-fix.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          test "$(git diff --cached --name-only | tr '\n' ' ')" = "index.html "
+          git commit -m "fix: activate native Home on first render"
+          git push origin HEAD:main
