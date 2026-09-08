@@ -17,7 +17,7 @@ checks = {
     'trend': 'trend' in s,
     'direct standings action': 'action==="standings_scope"' in s or "action==='standings_scope'" in s,
     'competition response': 'standings_meta' in s and 'competition' in s,
-    'zero users retained': 'is_active' in s and ('zeroActivity' in s or 'calculated:ps.length' in s or 'calculated:0' in s),
+    'zero users retained': "eq('is_active',true)" in s and 'users.map(' in s and 'const ps=(by.get(Number(u.id))??[])' in s,
 }
 
 failed = [name for name, ok in checks.items() if not ok]
