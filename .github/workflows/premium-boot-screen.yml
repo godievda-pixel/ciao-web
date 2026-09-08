@@ -1,0 +1,88 @@
+name: Premium boot screen TDD patch
+on:
+  push:
+    paths:
+      - '.github/workflows/premium-boot-screen.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: RED - premium boot screen absent
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text()
+          assert 'Загружаем v22.5…' in s, 'expected legacy boot label is already absent'
+          assert 'ciao-premium-italy-loader-20260909' not in s, 'new boot screen unexpectedly already present'
+          print('RED confirmed: legacy boot screen present, premium loader absent')
+          PY
+      - name: Apply minimal boot-screen patch
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          old_css='''#cw225-start-cover .cw225-start-inner{text-align:center;padding:24px}\n#cw225-start-cover b{display:block;font-size:21px;font-weight:900}\n#cw225-start-cover span{display:block;margin-top:9px;color:#9aa9cd;font-size:12px;font-weight:700}'''
+          new_css='''/* ciao-premium-italy-loader-20260909 */\n#cw225-start-cover .cw225-start-inner{width:min(72vw,260px);text-align:center;padding:24px}\n#cw225-start-cover b{display:block;font-family:'Unbounded','Manrope',-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:22px;line-height:1.08;font-weight:800;letter-spacing:-.045em;text-shadow:0 10px 34px rgba(49,80,255,.22)}\n#cw225-start-cover .cw225-italy-loader{position:relative;width:min(56vw,214px);height:7px;margin:20px auto 0;padding:1px;overflow:hidden;border-radius:999px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.10);box-shadow:0 10px 30px rgba(0,0,0,.30),inset 0 1px 0 rgba(255,255,255,.08)}\n#cw225-start-cover .cw225-italy-loader::before{content:'';position:absolute;inset:1px auto 1px 0;width:58%;border-radius:999px;background:linear-gradient(90deg,#008C45 0 33.333%,#f5f5f0 33.333% 66.666%,#CD212A 66.666% 100%);box-shadow:0 0 18px rgba(255,255,255,.13);animation:cw225ItalyLoad 1.45s cubic-bezier(.55,.05,.45,.95) infinite}\n#cw225-start-cover .cw225-italy-loader::after{content:'';position:absolute;inset:1px;border-radius:999px;background:linear-gradient(180deg,rgba(255,255,255,.22),transparent 55%);pointer-events:none}\n#cw225-start-cover span{display:block;margin-top:11px;color:#8192ba;font-size:10px;font-weight:750;letter-spacing:.06em}\n@keyframes cw225ItalyLoad{0%{transform:translateX(-115%);opacity:.55}18%{opacity:1}82%{opacity:1}100%{transform:translateX(190%);opacity:.55}}\n@media (prefers-reduced-motion:reduce){#cw225-start-cover .cw225-italy-loader::before{animation-duration:2.8s}}'''
+          old_html='<body class="ciao-pronostici-page"><div id="cw225-start-cover"><div class="cw225-start-inner"><b>Ciao, Web!</b><span>Загружаем v22.5…</span></div></div>'
+          new_html='<body class="ciao-pronostici-page"><div id="cw225-start-cover"><div class="cw225-start-inner"><b>Ciao, Web!</b><div class="cw225-italy-loader" role="progressbar" aria-label="Загрузка"></div><span>Загрузка...</span></div></div>'
+          assert old_css in s, 'legacy boot CSS block not found exactly once'
+          assert s.count(old_css)==1, 'legacy boot CSS block count != 1'
+          assert old_html in s, 'legacy boot markup not found exactly once'
+          assert s.count(old_html)==1, 'legacy boot markup count != 1'
+          s=s.replace(old_css,new_css,1).replace(old_html,new_html,1)
+          p.write_text(s)
+          PY
+      - name: GREEN - premium boot screen contract
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text()
+          assert 'ciao-premium-italy-loader-20260909' in s
+          assert 'class="cw225-italy-loader"' in s
+          assert 'linear-gradient(90deg,#008C45 0 33.333%,#f5f5f0 33.333% 66.666%,#CD212A 66.666% 100%)' in s
+          assert '@keyframes cw225ItalyLoad' in s
+          assert '<span>Загрузка...</span>' in s
+          assert 'Загружаем v22.5…' not in s
+          assert s.count('id="cw225-start-cover"')==1
+          print('GREEN: premium Italian boot loader contract passed')
+          PY
+      - name: Validate inline JavaScript syntax
+        run: |
+          python3 - <<'PY'
+          import re, pathlib, subprocess, tempfile, sys
+          s=pathlib.Path('index.html').read_text()
+          scripts=re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>',s,re.S|re.I)
+          for i,js in enumerate(scripts):
+              if not js.strip(): continue
+              f=tempfile.NamedTemporaryFile('w',suffix='.js',delete=False)
+              f.write(js); f.close()
+              r=subprocess.run(['node','--check',f.name],capture_output=True,text=True)
+              if r.returncode:
+                  print(f'inline script {i} failed\n{r.stderr}')
+                  sys.exit(r.returncode)
+          print(f'node --check passed for {len(scripts)} inline scripts')
+          PY
+      - name: Verify prediction picker untouched
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text()
+          assert 'cw29-score-picker' in s
+          assert 'data-cwpred-pick="h"' in s and 'data-cwpred-pick="a"' in s
+          print('cw29 picker markers intact')
+          PY
+      - name: Commit production patch and self-delete tooling
+        run: |
+          git config user.name 'Ciao Web Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add index.html
+          git commit -m 'style: add premium Italian boot loader'
+          git rm .github/workflows/premium-boot-screen.yml
+          git commit -m 'chore: keep production tree index-only'
+          git push origin main
