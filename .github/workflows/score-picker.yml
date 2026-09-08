@@ -1,0 +1,68 @@
+name: one-time score picker
+on:
+  push:
+    paths:
+      - '.github/workflows/score-picker.yml'
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: RED — score picker contract must fail first
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text(encoding='utf-8')
+          assert 'ciao-v28-score-picker-20260908' not in s
+          assert "if(tab==='predict')return false;" in s
+          assert 'data-cwpred-pick' not in s
+          print('RED confirmed: old +/- controls and prediction refresh are still active')
+          PY
+      - name: Apply score picker patch
+        run: python tools/cw28_score_picker.py
+      - name: GREEN — score picker contract must pass
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text(encoding='utf-8')
+          assert 'ciao-v28-score-picker-20260908' in s
+          assert "if(tab==='predict'||tab==='mine')return false;" in s
+          assert 'data-cwpred-pick="h"' in s and 'data-cwpred-pick="a"' in s
+          assert 'cw28-picker-grid' in s
+          # Active late overrides must use score-pick controls, not +/- buttons.
+          tail=s[s.rfind('<!-- ciao-v28-score-picker-20260908 -->'):]
+          assert 'data-cwpred-delta' not in tail
+          assert 'data-delta=' not in tail
+          print('GREEN confirmed: tap-to-pick score UI and no periodic prediction refresh')
+          PY
+      - name: Check inline JavaScript syntax
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re, subprocess, tempfile, sys
+          s=Path('index.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)</script>',s,flags=re.I)
+          for i,code in enumerate(scripts):
+            with tempfile.NamedTemporaryFile('w',suffix='.js',delete=False,encoding='utf-8') as f:
+              f.write(code); name=f.name
+            r=subprocess.run(['node','--check',name],capture_output=True,text=True)
+            if r.returncode:
+              print(f'inline script {i} failed\n{r.stderr}')
+              sys.exit(r.returncode)
+          print(f'node --check passed for {len(scripts)} inline scripts')
+          PY
+      - name: Commit production patch and remove one-time tooling
+        run: |
+          git config user.name godievda-pixel
+          git config user.email godievda@gmail.com
+          rm -f tools/cw28_score_picker.py .github/workflows/score-picker.yml
+          rmdir tools 2>/dev/null || true
+          rmdir .github/workflows 2>/dev/null || true
+          rmdir .github 2>/dev/null || true
+          git add -A
+          git commit -m 'feat: use tap score picker for predictions'
+          git push origin main
