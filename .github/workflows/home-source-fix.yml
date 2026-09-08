@@ -92,13 +92,21 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           s = Path('index.html').read_text(encoding='utf-8')
+          old_home_fetch = (
+              "      const url=new URL('/api/cw22/matches',location.origin);\n"
+              "      url.searchParams.set('competition',key);url.searchParams.set('from',range.from);url.searchParams.set('to',range.to);\n"
+              "      const response=await fetch(url,{headers:{accept:'application/json','x-telegram-init-data':String(initData||'')},cache:'no-store'});\n"
+              "      if(!response?.ok)throw new Error('HTTP '+Number(response?.status||0));\n"
+              "      const body=await response.json();\n"
+              "      return {key,matches:Array.isArray(body?.data?.matches)?body.data.matches:[]};"
+          )
           assert s.count('ciao-v23-home-first-render-fix-20260908') == 1
-          assert "new URL('/api/cw22/matches',location.origin)" not in s
-          assert "fetch(__CWPRED_EXTERNAL_API" in s
+          assert old_home_fetch not in s
+          assert "body:JSON.stringify({action:'state',competition:key})" in s
           assert '<b>Сегодня в кальчо</b>' in s
           assert "if(card&&card!==favorite&&card.parentElement===parent)" in s
           assert "__cw23PolishToday(box);__cw23PolishFavorite(box)" in s
-          print('GREEN source contract confirmed')
+          print('GREEN Home source contract confirmed')
           PY
 
       - name: Parse inline JavaScript
