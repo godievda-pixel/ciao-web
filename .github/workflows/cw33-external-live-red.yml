@@ -1,0 +1,19 @@
+name: CW33 External Live RED
+on:
+  push:
+    paths:
+      - 'tools/cw33_external_live_contract.py'
+      - '.github/workflows/cw33-external-live-red.yml'
+  workflow_dispatch:
+jobs:
+  red:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Expect contract to fail before fix
+        run: |
+          if python tools/cw33_external_live_contract.py; then
+            echo 'ERROR: RED contract unexpectedly passed before implementation'
+            exit 1
+          fi
+          echo 'RED confirmed: current production still has broken external live/navigation paths'
