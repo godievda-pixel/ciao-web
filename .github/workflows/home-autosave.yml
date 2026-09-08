@@ -3,7 +3,7 @@ name: one-time Home entry autosave
 on:
   push:
     paths:
-      - '.github/patch_home_autosave.py'
+      - '.github/patch_home_autosave_v2.py'
       - '.github/workflows/home-autosave.yml'
 
 permissions:
@@ -21,7 +21,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          python .github/patch_home_autosave.py --green
+          python .github/patch_home_autosave_v2.py check
           status=$?
           set -e
           if [ "$status" -eq 0 ]; then
@@ -31,10 +31,10 @@ jobs:
           echo "RED confirmed"
 
       - name: Apply bounded Home and autosave patch
-        run: python .github/patch_home_autosave.py --patch
+        run: python .github/patch_home_autosave_v2.py apply
 
       - name: GREEN — desired contract must pass
-        run: python .github/patch_home_autosave.py --green
+        run: python .github/patch_home_autosave_v2.py check
 
       - name: Check inline JavaScript syntax
         shell: bash
@@ -57,7 +57,7 @@ jobs:
         run: |
           git config user.name 'godievda-pixel'
           git config user.email 'godievda@gmail.com'
-          rm -f .github/patch_home_autosave.py .github/workflows/home-autosave.yml
+          rm -f .github/patch_home_autosave.py .github/patch_home_autosave_v2.py .github/workflows/home-autosave.yml
           git add -A
           git commit -m 'feat: refresh Home on entry and autosave predictions'
           git push origin main
