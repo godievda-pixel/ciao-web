@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - .github/workflows/unify-premium-loading.yml
+      - tools/unify_premium_loading.py
 
 permissions:
   contents: write
