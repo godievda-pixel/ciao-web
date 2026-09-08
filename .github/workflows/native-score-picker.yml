@@ -1,0 +1,78 @@
+name: one-time native score picker
+on:
+  push:
+    paths:
+      - '.github/workflows/native-score-picker.yml'
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: RED — active prediction renderer still uses plus minus
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('index.html').read_text(encoding='utf-8')
+          assert 'ciao-v29-native-score-picker-20260908' not in s
+          assert 'ciao-v28-score-picker-20260908' in s
+          ext=re.search(r'^  function __cwPredExternalEditCard\(match\)\{[^\n]*$',s,re.M).group(0)
+          ser=re.search(r'^  function __cwPredSerieEditCard\(match\)\{[^\n]*$',s,re.M).group(0)
+          assert 'data-cwpred-delta' in ext
+          assert 'data-delta=' in ser
+          assert "if(tab==='predict'||tab==='mine')return false;" in s
+          print('RED confirmed: active renderers still use +/- while refresh guard is already stable')
+          PY
+      - name: Apply native score picker patch
+        run: python tools/cw29_native_score_picker.py
+      - name: GREEN — active renderers use native picker
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('index.html').read_text(encoding='utf-8')
+          assert 'ciao-v29-native-score-picker-20260908' in s
+          assert 'ciao-v28-score-picker-20260908' not in s
+          ext=re.search(r'^  function __cwPredExternalEditCard\(match\)\{[^\n]*$',s,re.M).group(0)
+          ser=re.search(r'^  function __cwPredSerieEditCard\(match\)\{[^\n]*$',s,re.M).group(0)
+          assert 'data-cwpred-pick=\\\"h\\\"' in ext and 'data-cwpred-pick=\\\"a\\\"' in ext
+          assert 'data-cwpred-pick=\\\"h\\\"' in ser and 'data-cwpred-pick=\\\"a\\\"' in ser
+          assert 'data-cwpred-delta' not in ext
+          assert 'data-delta=' not in ser
+          assert 'function __cw29PickerEnsure' in s and 'function __cw29PickerApply' in s
+          assert '.cw29-score-pick[data-cwpred-pick="h"]' in s
+          assert "if(tab==='predict'||tab==='mine')return false;" in s
+          print('GREEN confirmed: active prediction renderers use picker and background rerender stays disabled')
+          PY
+      - name: Check inline JavaScript syntax
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re, subprocess, tempfile, sys, os
+          s=Path('index.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)</script>',s,flags=re.I)
+          for i,code in enumerate(scripts):
+            fd,name=tempfile.mkstemp(suffix='.js'); os.close(fd)
+            Path(name).write_text(code,encoding='utf-8')
+            r=subprocess.run(['node','--check',name],capture_output=True,text=True)
+            os.unlink(name)
+            if r.returncode:
+              print(f'inline script {i} failed\n{r.stderr}')
+              sys.exit(r.returncode)
+          print(f'node --check passed for {len(scripts)} inline scripts')
+          PY
+      - name: Commit production patch and remove one-time tooling
+        run: |
+          git config user.name godievda-pixel
+          git config user.email godievda@gmail.com
+          rm -f tools/cw29_native_score_picker.py .github/workflows/native-score-picker.yml
+          rmdir tools 2>/dev/null || true
+          rmdir .github/workflows 2>/dev/null || true
+          rmdir .github 2>/dev/null || true
+          git add -A
+          git commit -m 'fix: wire score picker into active prediction renderer'
+          git push origin main
