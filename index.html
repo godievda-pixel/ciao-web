@@ -3827,58 +3827,7 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
   function __cwPredExternalPredictionText(match){const p=match?.prediction,d=__cwPredExternalDraft.get(String(match?.matchId||''));if(d)return String(d.h)+' : '+String(d.a);if(p)return String(p.home_score)+' : '+String(p.away_score);return 'Прогноз не сделан'}
   function __cwPredDeadlineText(match){if(match?.open){const value=match?.deadline_at?__cwPredDateTime(match.deadline_at):'';return value?'Дедлайн · '+value:'Дедлайн за 15 минут до начала'}if(match?.prediction)return 'Прогноз зафиксирован';return 'Прогноз закрыт'}
 
-  /* ciao-v29-score-picker-source-20260908 */
-  var __cw29PickerActive=null;
-  function __cw29PickerEl(){
-    let el=document.getElementById('cw28-score-picker');
-    if(el)return el;
-    el=document.createElement('div');
-    el.id='cw28-score-picker';
-    el.className='cw28-picker';
-    el.innerHTML='<div class="cw28-picker-backdrop" data-cw28-close></div><div class="cw28-picker-panel" role="dialog" aria-modal="true"><div class="cw28-picker-title"><span>Выберите голы</span><small>0–9</small></div><div class="cw28-picker-grid">'+Array.from({length:10},(_,i)=>'<button type="button" data-cw28-score="'+i+'">'+i+'</button>').join('')+'</div></div>';
-    document.body.appendChild(el);
-    el.addEventListener('click',e=>{
-      if(e.target.closest('[data-cw28-close]')){__cw29PickerClose();return}
-      const b=e.target.closest('[data-cw28-score]');
-      if(!b||!__cw29PickerActive)return;
-      __cw29PickerApply(Number(b.getAttribute('data-cw28-score')));
-      __cw29PickerClose();
-    });
-    return el;
-  }
-  function __cw29PickerClose(){const el=document.getElementById('cw28-score-picker');if(el)el.classList.remove('open');__cw29PickerActive=null}
-  function __cw29PickerOpen(btn){
-    const card=btn.closest('[data-cwpred-match],[data-mid]');
-    if(!card)return;
-    __cw29PickerActive={btn,card,side:String(btn.getAttribute('data-cwpred-pick')||'h'),external:card.hasAttribute('data-cwpred-match')};
-    __cw29PickerEl().classList.add('open');
-    try{tg?.HapticFeedback?.selectionChanged?.()}catch(_e){}
-  }
-  function __cw29PickerApply(n){
-    const active=__cw29PickerActive;
-    if(!active||!Number.isInteger(n)||n<0||n>9)return;
-    const side=active.side==='a'?'a':'h';
-    if(active.external){
-      const key=String(active.card.getAttribute('data-cwpred-match')||'');
-      const match=(__cwPredSelectedGroup()?.matches||[]).find(x=>String(x?.matchId||'')===key);
-      if(!match?.open)return;
-      const cur=__cwPredExternalScoreOf(match),next={h:Number(cur.h)||0,a:Number(cur.a)||0};
-      next[side]=n;
-      __cwPredExternalDraft.set(key,next);
-      __cw26PatchExternalCard(active.card,key,next);
-    }else{
-      const id=Number(active.card.getAttribute('data-mid')||0),match=(S?.round?.matches||[]).find(x=>Number(x.id)===id);
-      if(!match?.open)return;
-      const cur=draft.get(id)||{h:Number(match?.prediction?.home_score??0),a:Number(match?.prediction?.away_score??0)},next={h:Number(cur.h)||0,a:Number(cur.a)||0};
-      next[side]=n;
-      draft.set(id,next);
-      __cw26PatchSerieCard(active.card,id,next);
-    }
-    __cw26PredScheduleAutosave();
-    try{tg?.HapticFeedback?.selectionChanged?.()}catch(_e){}
-  }
-  document.addEventListener('keydown',e=>{if(e.key==='Escape')__cw29PickerClose()});
-  root.addEventListener('click',e=>{const b=e.target.closest('[data-cwpred-pick]');if(!b)return;e.preventDefault();e.stopPropagation();__cw29PickerOpen(b)});
+
   function __cwPredExternalEditCard(match){const value=__cwPredExternalScoreOf(match),key=String(match?.matchId||''),dirty=__cwPredExternalDraft.has(key),saved=!!match?.prediction;const score=match?.open?'<div class=\"cw29-score-line\"><button type=\"button\" class=\"cw29-score-pick\" data-cwpred-pick=\"h\" aria-label=\"Голы хозяев\">'+value.h+'</button><span class=\"cw29-score-colon\">:</span><button type=\"button\" class=\"cw29-score-pick\" data-cwpred-pick=\"a\" aria-label=\"Голы гостей\">'+value.a+'</button></div>':'<div class=\"cwpred-locked-prediction\">'+__cwPredEsc(__cwPredExternalPredictionText(match))+'</div>';return '<article class=\"cwpred-card cwpred-external-card '+(match?.open?'open':'closed')+'\" data-cwpred-match=\"'+__cwPredEsc(key)+'\"><div class=\"cwpred-card-top\"><span class=\"cwpred-status\">'+__cwPredEsc(__cwPredStatus(match))+'</span><span class=\"cwpred-kickoff\">'+__cwPredEsc(__cwPredDateTime(match?.kickoffAt))+'</span></div><div class=\"cwpred-card-main\">'+__cwPredExternalTeamHtml(match?.homeTeam,'home')+'<div class=\"cwpred-score-zone\">'+score+'<div class=\"cwpred-save-state '+(dirty?'dirty':saved?'saved':'')+'\">'+(dirty?'Изменено':saved?'✓ Сохранено':match?.open?'Нажмите на счёт':'Прогноз не сделан')+'</div></div>'+__cwPredExternalTeamHtml(match?.awayTeam,'away')+'</div><div class=\"cwpred-card-bottom\"><span>'+__cwPredEsc(__cwPredDeadlineText(match))+'</span>'+( __cwPredRealScore(match)?'<span>'+__cwPredEsc(__cwPredRealScore(match))+'</span>':'')+'</div></article>'}
   function __cwPredExternalMineCard(match){const prediction=__cwPredExternalPredictionText(match),score=__cwPredRealScore(match),points=__cwPredPoints(match?.prediction?.points);return '<article class="cwpred-card cwpred-external-card cwpred-mine-card" data-cwpred-match="'+__cwPredEsc(String(match?.matchId||''))+'"><div class="cwpred-card-top"><span class="cwpred-status">'+__cwPredEsc(__cwPredStatus(match))+'</span><span class="cwpred-kickoff">'+__cwPredEsc(__cwPredDateTime(match?.kickoffAt))+'</span></div><div class="cwpred-card-main">'+__cwPredExternalTeamHtml(match?.homeTeam,'home')+'<div class="cwpred-mine-zone"><div class="cwpred-mine-prediction"><small>Ваш прогноз</small><b>'+__cwPredEsc(prediction)+'</b></div>'+(score?'<div class="cwpred-real-score"><small>Счёт матча</small><b>'+__cwPredEsc(score)+'</b></div>':'')+(points?'<div class="cwpred-points">'+__cwPredEsc(points)+'</div>':'')+'</div>'+__cwPredExternalTeamHtml(match?.awayTeam,'away')+'</div></article>'}
   function __cwPredExternalCanSave(group){if(__cwPredMode!=='edit'||!group)return false;return group.matches.some(match=>match?.open&&(__cwPredExternalDraft.has(String(match?.matchId||''))||!!match?.prediction))}
