@@ -1,0 +1,83 @@
+name: one-time source score picker
+on:
+  push:
+    paths:
+      - '.github/workflows/score-picker-source.yml'
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: RED — active renderers still use +/-
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text(encoding='utf-8')
+          a=s.index('  function __cwPredExternalEditCard(match)')
+          b=s.index('  function __cwPredExternalMineCard',a)
+          ext=s[a:b]
+          a=s.index('  function __cwPredSerieEditCard(match)')
+          b=s.index('  function __cwPredSerieMineCard',a)
+          ser=s[a:b]
+          assert 'data-cwpred-delta' in ext
+          assert 'data-delta=' in ser
+          assert 'ciao-v29-score-picker-source-20260908' not in s
+          print('RED confirmed: active scoped renderers still use +/- controls')
+          PY
+      - name: Apply source-level score picker patch
+        run: python tools/cw29_score_picker_source.py
+      - name: GREEN — active renderers use tap picker
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text(encoding='utf-8')
+          assert 'ciao-v29-score-picker-source-20260908' in s
+          a=s.index('  function __cwPredExternalEditCard(match)')
+          b=s.index('  function __cwPredExternalMineCard',a)
+          ext=s[a:b]
+          a=s.index('  function __cwPredSerieEditCard(match)')
+          b=s.index('  function __cwPredSerieMineCard',a)
+          ser=s[a:b]
+          assert 'data-cwpred-pick="h"' in ext and 'data-cwpred-pick="a"' in ext
+          assert 'data-cwpred-delta' not in ext
+          assert 'data-cwpred-pick="h"' in ser and 'data-cwpred-pick="a"' in ser
+          assert 'data-delta=' not in ser
+          assert '__cw29PickerOpen' in s and '__cw29PickerApply' in s
+          assert '.cw28-score-pick[data-cwpred-pick="h"]' in s
+          assert "if(tab==='predict'||tab==='mine')return false;" in s
+          # The ineffective out-of-scope v28 script must be gone.
+          tail=s[s.index('<!-- ciao-v28-score-picker-20260908 -->'):]
+          assert '<script>\n(function(){\n  let active=null;' not in tail
+          print('GREEN confirmed: source-level picker is active and prediction rerender is disabled')
+          PY
+      - name: Check inline JavaScript syntax
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re, subprocess, tempfile, sys
+          s=Path('index.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)</script>',s,flags=re.I)
+          for i,code in enumerate(scripts):
+            with tempfile.NamedTemporaryFile('w',suffix='.js',delete=False,encoding='utf-8') as f:
+              f.write(code); name=f.name
+            r=subprocess.run(['node','--check',name],capture_output=True,text=True)
+            if r.returncode:
+              print(f'inline script {i} failed\n{r.stderr}')
+              sys.exit(r.returncode)
+          print(f'node --check passed for {len(scripts)} inline scripts')
+          PY
+      - name: Commit production patch and remove one-time tooling
+        run: |
+          git config user.name godievda-pixel
+          git config user.email godievda@gmail.com
+          rm -f tools/cw29_score_picker_source.py .github/workflows/score-picker-source.yml
+          rmdir tools 2>/dev/null || true
+          rmdir .github/workflows 2>/dev/null || true
+          rmdir .github 2>/dev/null || true
+          git add -A
+          git commit -m 'fix: wire score picker into active prediction module'
+          git push origin main
