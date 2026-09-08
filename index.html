@@ -1120,6 +1120,34 @@ html::-webkit-scrollbar,body::-webkit-scrollbar,#ciao-miniapp-root::-webkit-scro
 #ciao-miniapp-root .cwpred-score-side b,#ciao-miniapp-root .cwpred-score-side .score-value{min-width:18px!important;font-size:17px!important}
 }
 </style>
+
+<!-- ciao-v29-native-score-picker-20260908 -->
+<style id="cw29-score-picker-style">
+#ciao-miniapp-root .cwpred-card-main{grid-template-columns:minmax(0,1fr) 92px minmax(0,1fr)!important;gap:6px!important}
+#ciao-miniapp-root .cw29-score-line{display:grid;grid-template-columns:38px 10px 38px;align-items:center;justify-content:center;gap:3px;margin:0 auto}
+#ciao-miniapp-root .cw29-score-pick{appearance:none;width:38px;height:36px;padding:0;border:1px solid rgba(255,255,255,.13);border-radius:11px;background:linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.045));color:#fff;font:950 19px/1 'Manrope',sans-serif;box-shadow:inset 0 1px 0 rgba(255,255,255,.08);touch-action:manipulation}
+#ciao-miniapp-root .cw29-score-pick:active{transform:scale(.96);background:rgba(var(--cwpred-a-rgb,49,80,255),.20)}
+#ciao-miniapp-root .cw29-score-colon{color:rgba(255,255,255,.66);font-size:16px;font-weight:900;text-align:center}
+.cw29-picker{position:fixed;inset:0;z-index:2147483000;display:none;pointer-events:none}
+.cw29-picker.open{display:block}
+.cw29-picker-backdrop{position:absolute;inset:0;background:rgba(1,5,16,.22);pointer-events:auto}
+.cw29-picker-panel{position:absolute;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom,0px));max-width:360px;margin:auto;padding:12px;border:1px solid rgba(135,155,255,.20);border-radius:20px;background:rgba(7,14,36,.98);box-shadow:0 22px 65px rgba(0,0,0,.48),inset 0 1px 0 rgba(255,255,255,.06);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);pointer-events:auto}
+.cw29-picker-title{display:flex;align-items:center;justify-content:space-between;margin:0 2px 10px;color:#fff;font:800 12px/1.2 'Manrope',sans-serif}
+.cw29-picker-title small{color:rgba(255,255,255,.45);font-size:10px;font-weight:700}
+.cw29-picker-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
+.cw29-picker-grid button{height:43px;border:1px solid rgba(255,255,255,.09);border-radius:13px;background:rgba(255,255,255,.055);color:#fff;font:900 16px/1 'Manrope',sans-serif;touch-action:manipulation}
+.cw29-picker-grid button:active{transform:scale(.96);background:rgba(49,80,255,.25);border-color:rgba(116,139,255,.36)}
+@media(max-width:390px){
+#ciao-miniapp-root .cwpred-card-main{grid-template-columns:minmax(0,1fr) 84px minmax(0,1fr)!important;gap:4px!important}
+#ciao-miniapp-root .cw29-score-line{grid-template-columns:35px 8px 35px;gap:2px}
+#ciao-miniapp-root .cw29-score-pick{width:35px;height:34px;border-radius:10px;font-size:18px}
+.cw29-picker-panel{left:9px;right:9px;padding:10px;border-radius:18px}
+.cw29-picker-grid{gap:6px}
+.cw29-picker-grid button{height:40px;border-radius:12px;font-size:15px}
+}
+</style>
+<!-- /ciao-v29-native-score-picker-20260908 -->
+
 </head>
 <body class="ciao-pronostici-page"><div id="cw225-start-cover"><div class="cw225-start-inner"><b>Ciao, Web!</b><span>Загружаем v22.5…</span></div></div>
 <!-- Ciao, Web! Mini App v7 — detached from Tilda shell -->
@@ -3747,6 +3775,52 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
   function __cwPredSerieTeamHtml(team,side){const body=(typeof logo==='function'?logo(team):'')+'<span class=\"cwpred-team-name\">'+__cwPredEsc(team?.name||'—')+'</span>';return '<div class=\"cwpred-team cwpred-team--'+side+'\">'+body+'</div>'}
   function __cwPredDateTime(value){const time=Date.parse(value||'');if(!Number.isFinite(time))return 'Дата уточняется';try{const p=new Intl.DateTimeFormat('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}).formatToParts(new Date(time)),get=t=>p.find(x=>x.type===t)?.value||'';return get('day')+'.'+get('month')+' · '+get('hour')+':'+get('minute')}catch(_e){return typeof fmt==='function'?fmt(value):'Дата уточняется'}}
   function __cwPredStatus(match){const status=String(match?.status||'scheduled');if(status==='live'){const minute=Number(match?.minute);return 'LIVE'+(Number.isFinite(minute)?' · '+minute+'′':'')}if(status==='halftime')return 'ПЕРЕРЫВ';if(status==='extra_time')return 'ДОП. ВРЕМЯ';if(status==='penalties')return 'ПЕНАЛЬТИ';if(status==='finished')return 'Матч завершён';if(status==='postponed')return 'Матч перенесён';if(status==='cancelled')return 'Матч отменён';return 'Матч не начался'}
+
+  var __cw29PickerActive=null;
+  function __cw29PickerEnsure(){
+    let el=document.getElementById('cw29-score-picker');
+    if(el)return el;
+    el=document.createElement('div');
+    el.id='cw29-score-picker';
+    el.className='cw29-picker';
+    el.innerHTML='<div class="cw29-picker-backdrop" data-cw29-close></div><div class="cw29-picker-panel" role="dialog" aria-modal="true"><div class="cw29-picker-title"><span>Выберите голы</span><small>0–9</small></div><div class="cw29-picker-grid">'+Array.from({length:10},(_,i)=>'<button type="button" data-cw29-score="'+i+'">'+i+'</button>').join('')+'</div></div>';
+    document.body.appendChild(el);
+    el.addEventListener('click',e=>{
+      if(e.target.closest('[data-cw29-close]')){__cw29PickerClose();return}
+      const b=e.target.closest('[data-cw29-score]');
+      if(!b||!__cw29PickerActive)return;
+      __cw29PickerApply(Number(b.getAttribute('data-cw29-score')));
+      __cw29PickerClose();
+    });
+    return el;
+  }
+  function __cw29PickerClose(){const el=document.getElementById('cw29-score-picker');if(el)el.classList.remove('open');__cw29PickerActive=null}
+  function __cw29PickerOpen(btn){
+    const card=btn.closest('[data-cwpred-match],[data-mid]');
+    if(!card)return;
+    __cw29PickerActive={btn,card,side:String(btn.getAttribute('data-cwpred-pick')||'h'),external:card.hasAttribute('data-cwpred-match')};
+    __cw29PickerEnsure().classList.add('open');
+    try{tg?.HapticFeedback?.selectionChanged?.()}catch(_e){}
+  }
+  function __cw29PickerApply(n){
+    if(!__cw29PickerActive||!Number.isInteger(n)||n<0||n>9)return;
+    const x=__cw29PickerActive,side=x.side==='a'?'a':'h';
+    if(x.external){
+      const key=String(x.card.getAttribute('data-cwpred-match')||''),match=(__cwPredSelectedGroup()?.matches||[]).find(row=>String(row?.matchId||'')===key);
+      if(!match?.open)return;
+      const cur=__cwPredExternalScoreOf(match),next={h:Number(cur.h)||0,a:Number(cur.a)||0};
+      next[side]=n;__cwPredExternalDraft.set(key,next);__cw26PatchExternalCard(x.card,key,next);
+    }else{
+      const id=Number(x.card.getAttribute('data-mid')||0),match=(S?.round?.matches||[]).find(row=>Number(row.id)===id);
+      if(!match?.open)return;
+      const cur=draft.get(id)||{h:Number(match?.prediction?.home_score??0),a:Number(match?.prediction?.away_score??0)},next={h:Number(cur.h)||0,a:Number(cur.a)||0};
+      next[side]=n;draft.set(id,next);__cw26PatchSerieCard(x.card,id,next);
+    }
+    __cw26PredScheduleAutosave();
+    try{tg?.HapticFeedback?.selectionChanged?.()}catch(_e){}
+  }
+  if(!root.dataset.cw29PickerBound){root.dataset.cw29PickerBound='1';root.addEventListener('click',e=>{const b=e.target.closest('[data-cwpred-pick]');if(!b)return;e.preventDefault();e.stopPropagation();__cw29PickerOpen(b)});document.addEventListener('keydown',e=>{if(e.key==='Escape')__cw29PickerClose()})}
+
   function __cwPredRealScore(match){const active=['live','halftime','extra_time','penalties','finished'].includes(String(match?.status||''));return active&&match?.homeScore!=null&&match?.awayScore!=null?String(match.homeScore)+' : '+String(match.awayScore):''}
   function __cwPredPoints(points){const n=Number(points);if(!Number.isFinite(n))return '';if(n===5)return '+5 очков';if(n===3)return '+3 очка';if(n===2)return '+2 очка';return '0 очков'}
   function __cwPredExternalScoreOf(match){const key=String(match?.matchId||''),d=__cwPredExternalDraft.get(key);if(d)return d;const p=match?.prediction;return {h:Number(p?.home_score??0),a:Number(p?.away_score??0)}}
@@ -3754,7 +3828,7 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
   function __cwPredDeadlineText(match){if(match?.open){const value=match?.deadline_at?__cwPredDateTime(match.deadline_at):'';return value?'Дедлайн · '+value:'Дедлайн за 15 минут до начала'}if(match?.prediction)return 'Прогноз зафиксирован';return 'Прогноз закрыт'}
 
   /* ciao-v29-score-picker-source-20260908 */
-  let __cw29PickerActive=null;
+  var __cw29PickerActive=null;
   function __cw29PickerEl(){
     let el=document.getElementById('cw28-score-picker');
     if(el)return el;
@@ -3805,14 +3879,14 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
   }
   document.addEventListener('keydown',e=>{if(e.key==='Escape')__cw29PickerClose()});
   root.addEventListener('click',e=>{const b=e.target.closest('[data-cwpred-pick]');if(!b)return;e.preventDefault();e.stopPropagation();__cw29PickerOpen(b)});
-  function __cwPredExternalEditCard(match){const value=__cwPredExternalScoreOf(match),key=String(match?.matchId||''),dirty=__cwPredExternalDraft.has(key),saved=!!match?.prediction;const score=match?.open?'<div class="cw28-score-line"><button type="button" class="cw28-score-pick" data-cwpred-pick="h" aria-label="Голы хозяев">'+value.h+'</button><span class="cw28-score-colon">:</span><button type="button" class="cw28-score-pick" data-cwpred-pick="a" aria-label="Голы гостей">'+value.a+'</button></div>':'<div class="cwpred-locked-prediction">'+__cwPredEsc(__cwPredExternalPredictionText(match))+'</div>';return '<article class="cwpred-card cwpred-external-card '+(match?.open?'open':'closed')+'" data-cwpred-match="'+__cwPredEsc(key)+'"><div class="cwpred-card-top"><span class="cwpred-status">'+__cwPredEsc(__cwPredStatus(match))+'</span><span class="cwpred-kickoff">'+__cwPredEsc(__cwPredDateTime(match?.kickoffAt))+'</span></div><div class="cwpred-card-main">'+__cwPredExternalTeamHtml(match?.homeTeam,'home')+'<div class="cwpred-score-zone">'+score+'<div class="cwpred-save-state '+(dirty?'dirty':saved?'saved':'')+'">'+(dirty?'Изменено':saved?'✓ Сохранено':match?.open?'Нажмите на счёт':'Прогноз не сделан')+'</div></div>'+__cwPredExternalTeamHtml(match?.awayTeam,'away')+'</div><div class="cwpred-card-bottom"><span>'+__cwPredEsc(__cwPredDeadlineText(match))+'</span>'+(__cwPredRealScore(match)?'<span>'+__cwPredEsc(__cwPredRealScore(match))+'</span>':'')+'</div></article>'}
+  function __cwPredExternalEditCard(match){const value=__cwPredExternalScoreOf(match),key=String(match?.matchId||''),dirty=__cwPredExternalDraft.has(key),saved=!!match?.prediction;const score=match?.open?'<div class=\"cw29-score-line\"><button type=\"button\" class=\"cw29-score-pick\" data-cwpred-pick=\"h\" aria-label=\"Голы хозяев\">'+value.h+'</button><span class=\"cw29-score-colon\">:</span><button type=\"button\" class=\"cw29-score-pick\" data-cwpred-pick=\"a\" aria-label=\"Голы гостей\">'+value.a+'</button></div>':'<div class=\"cwpred-locked-prediction\">'+__cwPredEsc(__cwPredExternalPredictionText(match))+'</div>';return '<article class=\"cwpred-card cwpred-external-card '+(match?.open?'open':'closed')+'\" data-cwpred-match=\"'+__cwPredEsc(key)+'\"><div class=\"cwpred-card-top\"><span class=\"cwpred-status\">'+__cwPredEsc(__cwPredStatus(match))+'</span><span class=\"cwpred-kickoff\">'+__cwPredEsc(__cwPredDateTime(match?.kickoffAt))+'</span></div><div class=\"cwpred-card-main\">'+__cwPredExternalTeamHtml(match?.homeTeam,'home')+'<div class=\"cwpred-score-zone\">'+score+'<div class=\"cwpred-save-state '+(dirty?'dirty':saved?'saved':'')+'\">'+(dirty?'Изменено':saved?'✓ Сохранено':match?.open?'Нажмите на счёт':'Прогноз не сделан')+'</div></div>'+__cwPredExternalTeamHtml(match?.awayTeam,'away')+'</div><div class=\"cwpred-card-bottom\"><span>'+__cwPredEsc(__cwPredDeadlineText(match))+'</span>'+( __cwPredRealScore(match)?'<span>'+__cwPredEsc(__cwPredRealScore(match))+'</span>':'')+'</div></article>'}
   function __cwPredExternalMineCard(match){const prediction=__cwPredExternalPredictionText(match),score=__cwPredRealScore(match),points=__cwPredPoints(match?.prediction?.points);return '<article class="cwpred-card cwpred-external-card cwpred-mine-card" data-cwpred-match="'+__cwPredEsc(String(match?.matchId||''))+'"><div class="cwpred-card-top"><span class="cwpred-status">'+__cwPredEsc(__cwPredStatus(match))+'</span><span class="cwpred-kickoff">'+__cwPredEsc(__cwPredDateTime(match?.kickoffAt))+'</span></div><div class="cwpred-card-main">'+__cwPredExternalTeamHtml(match?.homeTeam,'home')+'<div class="cwpred-mine-zone"><div class="cwpred-mine-prediction"><small>Ваш прогноз</small><b>'+__cwPredEsc(prediction)+'</b></div>'+(score?'<div class="cwpred-real-score"><small>Счёт матча</small><b>'+__cwPredEsc(score)+'</b></div>':'')+(points?'<div class="cwpred-points">'+__cwPredEsc(points)+'</div>':'')+'</div>'+__cwPredExternalTeamHtml(match?.awayTeam,'away')+'</div></article>'}
   function __cwPredExternalCanSave(group){if(__cwPredMode!=='edit'||!group)return false;return group.matches.some(match=>match?.open&&(__cwPredExternalDraft.has(String(match?.matchId||''))||!!match?.prediction))}
   function __cwPredExternalHtml(){const cover=__cwPredModeHtml()+__cwPredCoverHtml(__cwPredCompetition);if(__cwPredLoading&&!__cwPredExternalPayload)return cover+'<div class="cwpred-state">Загружаем прогнозы…</div>';if(__cwPredError&&!__cwPredExternalPayload)return cover+'<div class="cwpred-state cwpred-state--error"><b>Не удалось загрузить прогнозы</b><button type="button" data-cwpred-action="retry">Повторить</button></div>';const group=__cwPredSelectedGroup();if(!group)return cover+'<div class="cwpred-state">Матчей пока нет</div>';const cards=group.matches.map(match=>__cwPredMode==='mine'?__cwPredExternalMineCard(match):__cwPredExternalEditCard(match)).join('');const save=__cwPredExternalCanSave(group)?'<div class="cwpred-savebar"><button type="button" class="cwpred-save" data-cwpred-action="save" '+(__cwPredSaving?'disabled':'')+'>'+( __cwPredSaving?'Сохраняем…':'Сохранить прогнозы')+'</button></div>':'';return cover+__cwPredStageBarHtml()+'<div class="section-title cwpred-stage-title"><h3>'+__cwPredEsc(group.label)+'</h3><span>дедлайн −15 минут</span></div><div class="cwpred-cards">'+cards+'</div>'+save}
 
   function __cwPredSerieStatus(match){if(isLive(match))return 'LIVE'+(match?.live_elapsed!=null?' · '+Number(match.live_elapsed)+'′':'');if(match?.is_finished)return 'Матч завершён';return match?.open?'Матч не начался':'Прогноз закрыт'}
   function __cwPredSerieRealScore(match){return (isLive(match)||match?.is_finished)&&match?.home_score!=null&&match?.away_score!=null?String(match.home_score)+' : '+String(match.away_score):''}
-  function __cwPredSerieEditCard(match){const v=scoreOf(match),saved=!!match?.prediction,dirty=draft.has(Number(match.id));const score=match.open?'<div class="cw28-score-line"><button type="button" class="cw28-score-pick" data-cwpred-pick="h" aria-label="Голы хозяев">'+v.h+'</button><span class="cw28-score-colon">:</span><button type="button" class="cw28-score-pick" data-cwpred-pick="a" aria-label="Голы гостей">'+v.a+'</button></div>':'<div class="cwpred-locked-prediction">'+(saved?String(match.prediction.home_score)+' : '+String(match.prediction.away_score):'Прогноз не сделан')+'</div>';return '<div class="match cwpred-card cwpred-serie-card '+(match.open?'open':'closed')+'" data-mid="'+Number(match.id)+'"><div class="cwpred-card-top"><span class="cwpred-status">'+__cwPredEsc(__cwPredSerieStatus(match))+'</span><span class="cwpred-kickoff">'+__cwPredEsc(typeof fmt==='function'?fmt(match.kickoff_at):'')+'</span></div><div class="cwpred-card-main">'+__cwPredSerieTeamHtml(match.home,'home')+'<div class="cwpred-score-zone">'+score+'<div class="cwpred-save-state '+(dirty?'dirty':saved?'saved':'')+'">'+(dirty?'Изменено':saved?'✓ Сохранено':match.open?'Нажмите на счёт':'Прогноз не сделан')+'</div></div>'+__cwPredSerieTeamHtml(match.away,'away')+'</div><div class="cwpred-card-bottom"><span>'+(match.open?'Дедлайн за 15 минут до начала':'Прогноз закрыт')+'</span>'+(__cwPredSerieRealScore(match)?'<span>'+__cwPredEsc(__cwPredSerieRealScore(match))+'</span>':'')+'</div></div>'}
+  function __cwPredSerieEditCard(match){const v=scoreOf(match),saved=!!match?.prediction,dirty=draft.has(Number(match.id));const score=match.open?'<div class=\"cw29-score-line\"><button type=\"button\" class=\"cw29-score-pick\" data-cwpred-pick=\"h\" aria-label=\"Голы хозяев\">'+v.h+'</button><span class=\"cw29-score-colon\">:</span><button type=\"button\" class=\"cw29-score-pick\" data-cwpred-pick=\"a\" aria-label=\"Голы гостей\">'+v.a+'</button></div>':'<div class=\"cwpred-locked-prediction\">'+(saved?String(match.prediction.home_score)+' : '+String(match.prediction.away_score):'Прогноз не сделан')+'</div>';return '<div class=\"match cwpred-card cwpred-serie-card '+(match.open?'open':'closed')+'\" data-mid=\"'+Number(match.id)+'\"><div class=\"cwpred-card-top\"><span class=\"cwpred-status\">'+__cwPredEsc(__cwPredSerieStatus(match))+'</span><span class=\"cwpred-kickoff\">'+__cwPredEsc(typeof fmt==='function'?fmt(match.kickoff_at):'')+'</span></div><div class=\"cwpred-card-main\">'+__cwPredSerieTeamHtml(match.home,'home')+'<div class=\"cwpred-score-zone\">'+score+'<div class=\"cwpred-save-state '+(dirty?'dirty':saved?'saved':'')+'\">'+(dirty?'Изменено':saved?'✓ Сохранено':match.open?'Нажмите на счёт':'Прогноз не сделан')+'</div></div>'+__cwPredSerieTeamHtml(match.away,'away')+'</div><div class=\"cwpred-card-bottom\"><span>'+(match.open?'Дедлайн за 15 минут до начала':'Прогноз закрыт')+'</span>'+( __cwPredSerieRealScore(match)?'<span>'+__cwPredEsc(__cwPredSerieRealScore(match))+'</span>':'')+'</div></div>'}
   function __cwPredSerieMineCard(match){const p=match?.prediction,pred=p?String(p.home_score)+' : '+String(p.away_score):'Прогноз не сделан',score=__cwPredSerieRealScore(match),points=__cwPredPoints(p?.points);return '<div class="mine-match cwpred-card cwpred-serie-card cwpred-mine-card" data-mid="'+Number(match.id)+'"><div class="cwpred-card-top"><span class="cwpred-status">'+__cwPredEsc(__cwPredSerieStatus(match))+'</span><span class="cwpred-kickoff">'+__cwPredEsc(typeof fmt==='function'?fmt(match.kickoff_at):'')+'</span></div><div class="cwpred-card-main">'+__cwPredSerieTeamHtml(match.home,'home')+'<div class="cwpred-mine-zone"><div class="cwpred-mine-prediction"><small>Ваш прогноз</small><b>'+__cwPredEsc(pred)+'</b></div>'+(score?'<div class="cwpred-real-score"><small>Счёт матча</small><b>'+__cwPredEsc(score)+'</b></div>':'')+(points?'<div class="cwpred-points">'+__cwPredEsc(points)+'</div>':'')+'</div>'+__cwPredSerieTeamHtml(match.away,'away')+'</div></div>'}
   function __cwPredSerieHtml(){if(!S?.round?.matches)return __cwPredModeHtml()+__cwPredCoverHtml('serie_a')+'<div class="cwpred-state">Загружаем тур…</div>';const cards=S.round.matches.map(match=>__cwPredMode==='mine'?__cwPredSerieMineCard(match):__cwPredSerieEditCard(match)).join('');const save=__cwPredMode==='edit'&&S.round.matches.some(match=>match.open)?'<div class="savebar cwpred-savebar"><button id="saveAll" class="save cwpred-save">Сохранить прогнозы</button></div>':'';return __cwPredModeHtml()+__cwPredCoverHtml('serie_a')+(typeof roundBar==='function'?roundBar():'')+'<div class="section-title cwpred-stage-title"><h3>'+Number(S.selected_round)+'-й тур</h3><span>дедлайн −15 минут</span></div><div class="matches cwpred-cards">'+cards+'</div>'+save}
   function __cwPredCenterHtml(){__cwPredApplyTheme();if(!__cwPredCompetition)return __cwPredHubHtml();if(__cwPredCompetition==='serie_a')return __cwPredSerieHtml();return __cwPredExternalHtml()}
@@ -3974,8 +4048,8 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
   function __cw26PredExternalCard(k){return [...(root.querySelectorAll?.('[data-cwpred-match]')||[])].find(e=>String(e.getAttribute?.('data-cwpred-match')||'')===String(k))||null}
   function __cw26PredSerieCard(id){return root.querySelector?.('[data-mid="'+String(Number(id))+'"]')||null}
   function __cw26PredSetState(kind,key,state,text){const card=kind==='external'?__cw26PredExternalCard(key):__cw26PredSerieCard(key),el=card?.querySelector?.('.cwpred-save-state');if(!el)return;el.classList.remove('dirty','saving','saved','error');if(state)el.classList.add(state);el.textContent=text||({dirty:'Изменено',saving:'Сохраняем…',saved:'✓ Сохранено',error:'Не сохранено · повторяем'})[state]||''}
-  function __cw26PatchExternalCard(card,key,v){const h=card?.querySelector?.('.cw28-score-pick[data-cwpred-pick="h"]'),a=card?.querySelector?.('.cw28-score-pick[data-cwpred-pick="a"]');if(h)h.textContent=String(v.h);if(a)a.textContent=String(v.a);__cw26PredSetState('external',key,'dirty')}
-  function __cw26PatchSerieCard(card,id,v){const h=card?.querySelector?.('.cw28-score-pick[data-cwpred-pick="h"]'),a=card?.querySelector?.('.cw28-score-pick[data-cwpred-pick="a"]');if(h)h.textContent=String(v.h);if(a)a.textContent=String(v.a);__cw26PredSetState('serie',id,'dirty')}
+  function __cw26PatchExternalCard(card,key,v){const h=card?.querySelector?.('.cw29-score-pick[data-cwpred-pick="h"]'),a=card?.querySelector?.('.cw29-score-pick[data-cwpred-pick="a"]');if(h)h.textContent=String(v.h);if(a)a.textContent=String(v.a);__cw26PredSetState('external',key,'dirty')}
+  function __cw26PatchSerieCard(card,id,v){const h=card?.querySelector?.('.cw29-score-pick[data-cwpred-pick="h"]'),a=card?.querySelector?.('.cw29-score-pick[data-cwpred-pick="a"]');if(h)h.textContent=String(v.h);if(a)a.textContent=String(v.a);__cw26PredSetState('serie',id,'dirty')}
   function __cw26PredHasPending(){return __cwPredCompetition&&__cwPredIsExternal(__cwPredCompetition)?__cwPredExternalDraft.size>0:draft.size>0}
   function __cw26PredScheduleAutosave(delay=__CW26_PRED_AUTOSAVE_DELAY){if(__cw26PredAutosaveTimer)clearTimeout(__cw26PredAutosaveTimer);__cw26PredAutosaveTimer=setTimeout(()=>{__cw26PredAutosaveTimer=0;__cw26PredAutosaveFlush().catch(()=>{})},Math.max(0,Number(delay)||0))}
   async function __cw26PredAutosaveSerie(){const ms=Array.isArray(S?.round?.matches)?S.round.matches:[],map=new Map(ms.map(m=>[Number(m.id),m])),b=[];for(const [id0,v] of draft){const id=Number(id0),m=map.get(id);if(m?.open)b.push({id,v:{h:Number(v.h)||0,a:Number(v.a)||0},m})}if(!b.length)return true;b.forEach(x=>__cw26PredSetState('serie',x.id,'saving'));try{await api({action:'save_predictions',round:S.selected_round,predictions:b.map(x=>({match_id:x.id,home_score:x.v.h,away_score:x.v.a}))});for(const x of b){x.m.prediction={...(x.m.prediction||{}),home_score:x.v.h,away_score:x.v.a};const cur=draft.get(x.id);if(__cw26PredSame(cur,x.v))draft.delete(x.id);__cw26PredSetState('serie',x.id,draft.has(x.id)?'dirty':'saved')}return true}catch(_e){b.forEach(x=>__cw26PredSetState('serie',x.id,'error'));return false}}
@@ -4340,34 +4414,5 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
 
 })();
 </script>
-
-
-<!-- ciao-v28-score-picker-20260908 -->
-<style id="cw28-score-picker-style">
-#ciao-miniapp-root .cwpred-card-main{grid-template-columns:minmax(0,1fr) 96px minmax(0,1fr)!important;gap:6px!important}
-#ciao-miniapp-root .cw28-score-line{display:grid;grid-template-columns:40px 10px 40px;align-items:center;justify-content:center;gap:3px;margin:0 auto}
-#ciao-miniapp-root .cw28-score-pick{appearance:none;width:40px;height:38px;padding:0;border:1px solid rgba(255,255,255,.13);border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.045));color:#fff;font:950 19px/1 'Manrope',sans-serif;box-shadow:inset 0 1px 0 rgba(255,255,255,.08);touch-action:manipulation}
-#ciao-miniapp-root .cw28-score-pick:active{transform:scale(.96);background:rgba(var(--cwpred-a-rgb,49,80,255),.20)}
-#ciao-miniapp-root .cw28-score-colon{color:rgba(255,255,255,.66);font-size:16px;font-weight:900;text-align:center}
-.cw28-picker{position:fixed;inset:0;z-index:2147483000;display:none;pointer-events:none}
-.cw28-picker.open{display:block}
-.cw28-picker-backdrop{position:absolute;inset:0;background:rgba(1,5,16,.18);pointer-events:auto}
-.cw28-picker-panel{position:absolute;left:12px;right:12px;bottom:calc(var(--ciao-nav-h,72px) + env(safe-area-inset-bottom,0px) + 12px);max-width:360px;margin:auto;padding:12px;border:1px solid rgba(135,155,255,.20);border-radius:20px;background:rgba(7,14,36,.97);box-shadow:0 22px 65px rgba(0,0,0,.48),inset 0 1px 0 rgba(255,255,255,.06);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);pointer-events:auto}
-.cw28-picker-title{display:flex;align-items:center;justify-content:space-between;margin:0 2px 10px;color:#fff;font:800 12px/1.2 'Manrope',sans-serif}
-.cw28-picker-title small{color:rgba(255,255,255,.45);font-size:10px;font-weight:700}
-.cw28-picker-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
-.cw28-picker-grid button{height:43px;border:1px solid rgba(255,255,255,.09);border-radius:13px;background:rgba(255,255,255,.055);color:#fff;font:900 16px/1 'Manrope',sans-serif;touch-action:manipulation}
-.cw28-picker-grid button:active{transform:scale(.96);background:rgba(49,80,255,.25);border-color:rgba(116,139,255,.36)}
-@media(max-width:390px){
-#ciao-miniapp-root .cwpred-card-main{grid-template-columns:minmax(0,1fr) 88px minmax(0,1fr)!important;gap:4px!important}
-#ciao-miniapp-root .cw28-score-line{grid-template-columns:36px 8px 36px;gap:2px}
-#ciao-miniapp-root .cw28-score-pick{width:36px;height:36px;border-radius:11px;font-size:18px}
-.cw28-picker-panel{left:9px;right:9px;padding:10px;border-radius:18px}
-.cw28-picker-grid{gap:6px}
-.cw28-picker-grid button{height:40px;border-radius:12px;font-size:15px}
-}
-</style>
-<!-- /ciao-v28-score-picker-20260908 -->
-
 </body>
 </html>
