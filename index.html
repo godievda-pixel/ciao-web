@@ -3943,12 +3943,16 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
     __cwHomeExternalLoading=true;
     const range=__cwHomeSeasonRange(new Date());
     const results=await Promise.allSettled(__CW_HOME_EXT_COMPETITIONS.map(async key=>{
-      const url=new URL('/api/cw22/matches',location.origin);
-      url.searchParams.set('competition',key);url.searchParams.set('from',range.from);url.searchParams.set('to',range.to);
-      const response=await fetch(url,{headers:{accept:'application/json','x-telegram-init-data':String(initData||'')},cache:'no-store'});
-      if(!response?.ok)throw new Error('HTTP '+Number(response?.status||0));
-      const body=await response.json();
-      return {key,matches:Array.isArray(body?.data?.matches)?body.data.matches:[]};
+      const response=await fetch(__CWPRED_EXTERNAL_API,{
+        method:'POST',
+        headers:{accept:'application/json','content-type':'application/json','x-telegram-init-data':String(initData||'')},
+        body:JSON.stringify({action:'state',competition:key}),
+        cache:'no-store'
+      });
+      const body=await response.json().catch(()=>({}));
+      if(!response?.ok||body?.ok===false)throw new Error(String(body?.error||('HTTP '+Number(response?.status||0))));
+      const payload=body?.data;
+      return {key,matches:Array.isArray(payload?.matches)?payload.matches:[]};
     }));
     for(const result of results)if(result.status==='fulfilled')__cwHomeExternalByCompetition.set(result.value.key,result.value.matches);
     __cwHomeExternalLoading=false;
@@ -3998,7 +4002,7 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
   function __cw23PolishToday(scope){
     const section=scope?.querySelector?.('.cw211-today');if(!section)return;
     const games=__cwHomeCalcioTodayMatches();section.classList.add('cw-home-calcio');
-    section.innerHTML='<div class="cw211-today-head cw-home-today-head"><div><small>Матчи итальянских клубов</small><b>Кальчо сегодня</b></div><span>'+(games.length?String(games.length)+' '+(games.length===1?'матч':games.length<5?'матча':'матчей'):'матчей нет')+'</span></div>'+(games.length?'<div class="cw211-today-list cw-home-today-list">'+games.slice(0,10).map(__cwHomeTodayCard).join('')+'</div>':'<div class="cw-home-today-empty">Сегодня матчей итальянских клубов нет</div>');
+    section.innerHTML='<div class="cw211-today-head cw-home-today-head"><div><small>Матчи итальянских клубов</small><b>Сегодня в кальчо</b></div><span>'+(games.length?String(games.length)+' '+(games.length===1?'матч':games.length<5?'матча':'матчей'):'матчей нет')+'</span></div>'+(games.length?'<div class="cw211-today-list cw-home-today-list">'+games.slice(0,10).map(__cwHomeTodayCard).join('')+'</div>':'<div class="cw-home-today-empty">Сегодня матчей итальянских клубов нет</div>');
   }
 
   function __cw23PolishFavorite(scope){
@@ -4051,6 +4055,9 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
 
   const __cw23HomeBindBase=bind;
   bind=function(){const result=__cw23HomeBindBase();__cwHomeBindPolish();return result};
+
+  /* ciao-v23-home-first-render-fix-20260908 */
+  queueMicrotask(()=>{try{if(tab==='predict'&&!__cwHomeExternalCenter)render()}catch(_e){}});
 
   __cwPredMineStagePredictionBlock=function(hasPrediction,prediction){return '<div class="cwpred-mine-primary"><small>ВАШ ПРОГНОЗ</small><b>'+__cwPredEsc(hasPrediction?prediction:'— : —')+'</b>'+(hasPrediction?'':'<span class="cwpred-mine-missing">Прогноз не сделан</span>')+'</div>'};
   __cwPredStageBarHtml=function(){const groups=__cwPredExternalGroups();if(!groups.length)return '';return '<div class="rounds cwpred-rounds">'+groups.map(g=>{const locked=__cwPredUxGroupLocked(g);return '<button type="button" class="round-chip '+(g.key===__cwPredStageKey?'active ':'')+(locked?'cwpred-stage-locked':'')+'" data-cwpred-stage="'+__cwPredEsc(g.key)+'" '+(locked?'disabled aria-disabled="true" tabindex="-1"':'aria-disabled="false"')+'>'+__cwPredEsc(__cwPredStageShort(g))+'</button>'}).join('')+'</div>'};
