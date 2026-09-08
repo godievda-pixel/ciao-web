@@ -11,22 +11,29 @@ if marker in s:
     raise SystemExit('RED unexpectedly passed: shared premium loading system already exists')
 print('RED failed as expected: shared premium loading system marker is absent')
 
-replacements = {
-    'class=\\"cwpred-state\\">Загружаем прогнозы…': 'class=\\"cwpred-state cw-it-loading\\">Загружаем прогнозы…',
-    'class=\\"cwpred-state\\">Загружаем тур…': 'class=\\"cwpred-state cw-it-loading\\">Загружаем тур…',
-    'class=\\"cwpred-state\\">Обновляем Главную…': 'class=\\"cwpred-state cw-it-loading\\">Обновляем Главную…',
-    'class=\\"cwmt-state\\">Загружаем матчи…': 'class=\\"cwmt-state cw-it-loading\\">Загружаем матчи…',
-}
-seen = {}
-for old, new in replacements.items():
-    n = s.count(old)
-    seen[old] = n
-    if n:
-        s = s.replace(old, new)
 
-assert seen['class=\\"cwpred-state\\">Загружаем прогнозы…'] >= 1
-assert seen['class=\\"cwpred-state\\">Загружаем тур…'] >= 1
-assert seen['class=\\"cwmt-state\\">Загружаем матчи…'] >= 1
+def mark_loading(state_class: str, text: str) -> int:
+    global s
+    total = 0
+    # Raw repository source normally has plain quotes. The escaped variant keeps
+    # the one-shot patch robust against historical JS string styles.
+    for old in (
+        f'class="{state_class}">{text}',
+        f'class=\\"{state_class}\\">{text}',
+    ):
+        n = s.count(old)
+        if n:
+            s = s.replace(old, old.replace(state_class, state_class + ' cw-it-loading', 1))
+            total += n
+    return total
+
+predictions = mark_loading('cwpred-state', 'Загружаем прогнозы…')
+rounds = mark_loading('cwpred-state', 'Загружаем тур…')
+mark_loading('cwpred-state', 'Обновляем Главную…')
+matches = mark_loading('cwmt-state', 'Загружаем матчи…')
+assert predictions >= 1, 'prediction loading state not found'
+assert rounds >= 1, 'round loading state not found'
+assert matches >= 1, 'matches loading state not found'
 
 css = r'''
 <style id="ciao-premium-italy-loading-system">
@@ -102,9 +109,9 @@ s = p.read_text()
 assert s.count(marker) == 1
 assert '@keyframes cwItSweep' in s and '@keyframes cwItCompact' in s
 assert '#008C45' in s and '#CD212A' in s
-assert 'cwpred-state cw-it-loading\\">Загружаем прогнозы…' in s
-assert 'cwpred-state cw-it-loading\\">Загружаем тур…' in s
-assert 'cwmt-state cw-it-loading\\">Загружаем матчи…' in s
+assert 'cwpred-state cw-it-loading' in s and 'Загружаем прогнозы…' in s
+assert 'Загружаем тур…' in s
+assert 'cwmt-state cw-it-loading' in s and 'Загружаем матчи…' in s
 assert '#ciao-miniapp-root .cw16-club-loading::after' in s
 assert '#ciao-miniapp-root .cw209-calendar-loading::after' in s
 assert '#ciao-miniapp-root .cw30-rating-state i::after' in s
