@@ -1,0 +1,20 @@
+name: rating backend RED
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/cw30_core_v6.ts'
+      - 'tools/cw30_rating_backend_contract.py'
+      - '.github/workflows/rating-backend-red.yml'
+jobs:
+  red:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: RED — competition-aware standings must be absent before implementation
+        run: |
+          if python tools/cw30_rating_backend_contract.py tools/cw30_core_v6.ts; then
+            echo 'RED unexpectedly passed'
+            exit 1
+          fi
+          echo 'RED failed as expected'
