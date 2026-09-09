@@ -4,23 +4,25 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#091BBD">
-<meta name="ciao-build" content="ciao-web-fast-cache-v2-20260909">
+<meta name="ciao-build" content="ciao-web-fast-cache-v3-20260909">
 <title>Ciao, Web!</title>
 <style>html,body{margin:0;min-height:100%;background:#030817;color:#fff;font-family:Arial,sans-serif}</style>
 </head>
 <body>
 <script>
 (async()=>{
-  const CACHE_KEY='ciao-final-html-v8-20260909';
+  const CACHE_KEY='ciao-final-html-v9-20260909';
+  const OLD_CACHE_KEYS=['ciao-final-html-v8-20260909'];
   const LOADER_URL='https://raw.githubusercontent.com/godievda-pixel/ciao-web/c556463b294ae466e16d3e2be06ddf0a65c12a63/index.html';
   const write=html=>{document.open();document.write(html);document.close()};
   try{
+    try{OLD_CACHE_KEYS.forEach(k=>localStorage.removeItem(k))}catch(_e){}
     try{
       const cached=localStorage.getItem(CACHE_KEY);
       if(cached&&cached.includes('Ciao, Web!')){write(cached);return}
     }catch(_e){}
 
-    const lr=await fetch(LOADER_URL,{cache:'force-cache'});
+    const lr=await fetch(LOADER_URL,{cache:'no-store'});
     if(!lr.ok)throw new Error('loader '+lr.status);
     const lt=await lr.text();
     const lm=lt.match(/const STABLE='([^']+)',BASE='([^']+)',FIX=("(?:\\.|[^"\\])*");try\{/s);
@@ -28,8 +30,8 @@
     const STABLE=lm[1],BASE=lm[2],FIX=Function('return '+lm[3])();
 
     const [vr,br]=await Promise.all([
-      fetch(STABLE,{cache:'force-cache'}),
-      fetch(BASE,{cache:'force-cache'})
+      fetch(STABLE,{cache:'no-store'}),
+      fetch(BASE,{cache:'no-store'})
     ]);
     if(!vr.ok||!br.ok)throw new Error('source '+vr.status+'/'+br.status);
     const vt=await vr.text();
