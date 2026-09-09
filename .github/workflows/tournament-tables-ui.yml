@@ -1,17 +1,50 @@
-name: Tournament tables UI RED
+name: Tournament tables UI GREEN
 on:
   push:
-    branches:
-      - tooling/tournament-tables-ui-20260909
+    branches: [tooling/tournament-tables-ui-20260909]
 permissions:
-  contents: read
+  contents: write
 jobs:
-  red:
+  green:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: feature/tournament-tables-20260909
-      - name: Expect tournament tables UI marker
+          fetch-depth: 0
+      - name: Patch index only
+        env:
+          PATCH_GZ_B64: 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
         run: |
-          grep -q 'ciao-tournament-tables-ui-v1-20260909' index.html
+          printf '%s' "$PATCH_GZ_B64" | base64 -d | gunzip > /tmp/cwtt.js
+          python - <<'PY2'
+          from pathlib import Path
+          path=Path('index.html'); text=path.read_text(); marker='ciao-tournament-tables-ui-v1-20260909'; anchor='  /* ciao-v33-external-live-navigation-fix-20260908 */\n'; patch=Path('/tmp/cwtt.js').read_text()
+          if marker in text: raise SystemExit('UI marker already exists')
+          if text.count(anchor)!=1: raise SystemExit(f'expected one insertion anchor, got {text.count(anchor)}')
+          path.write_text(text.replace(anchor,anchor+'\n'+patch+'\n',1))
+          PY2
+      - name: Verify index contract
+        run: |
+          python - <<'PY2'
+          from pathlib import Path
+          import re
+          text=Path('index.html').read_text()
+          checks={'ui marker':'ciao-tournament-tables-ui-v1-20260909' in text,'backend endpoint':'functions/v1/ciao-standings-probe' in text,'five tournament cards':text.count('data-cwtt-competition=')==5,'36-team guard':"body.rows.length!==36" in text,'uefa direct zone':'1–8 · 1/8 финала' in text,'uefa playoff zone':'9–24 · стыки' in text,'uefa eliminated zone':'25–36 · вылет' in text,'coppa bracket':'Сетка плей-офф' in text and 'cwtt-bracket' in text,'coppa placeholders':'Пара определится позже' in text,'club navigation':'data-cwtt-club' in text,'match center navigation':"openMatchCenter(id,'external')" in text,'cw29 preserved':'cw29-score-picker' in text}
+          failed=[k for k,v in checks.items() if not v]
+          if failed: raise SystemExit('failed checks: '+', '.join(failed))
+          scripts=re.findall(r'<script(?:\s[^>]*)?>([\s\S]*?)</script>',text,re.I); app=next((s for s in scripts if 'ciao-tournament-tables-ui-v1-20260909' in s),None)
+          if not app: raise SystemExit('app script not found')
+          Path('/tmp/app.js').write_text(app); print('static checks:',len(checks),'passed')
+          PY2
+          node --check /tmp/app.js
+          git diff --check
+          test "$(git status --short | sed -n '1p')" = " M index.html"
+          test "$(git status --short | wc -l)" -eq 1
+      - name: Commit feature branch
+        run: |
+          git config user.name 'Ciao Web Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add index.html
+          git commit -m 'feat: add tournament tables and Coppa bracket'
+          git push origin HEAD:feature/tournament-tables-20260909
