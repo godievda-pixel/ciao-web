@@ -183,7 +183,7 @@ fetchCoppaEvents({findSeedEvent,bsd,localTeams})
 }
 ```
 
-Do not create a row when there is no valid provider event ID or no recognized bracket stage.
+Normalize score fields through numeric parsing so provider string scores such as `"2"` are accepted. Normalize raw provider states into the existing canonical set `scheduled|live|finished|postponed|cancelled`. Do not create a row when there is no valid provider event ID or no recognized bracket stage.
 
 - [ ] **RED:** pagination test uses a fake seed detail with league/season metadata and verifies offsets `0` and `200` when provider `count` exceeds one page. Include preliminary events and events from another league; they must be filtered out.
 
@@ -298,9 +298,10 @@ git commit -m "feat: add tournament table cache service"
 
 ---
 
-## Task 5 — HTTP Edge Function, deploy, real-provider smoke
+## Task 5 — HTTP handler, Deno entrypoint, deploy, real-provider smoke
 
 **Files**
+- Create: `work/tournament-tables/backend/handler.mjs`
 - Create: `work/tournament-tables/backend/index.ts`
 - Create: `work/tournament-tables/backend/auth.mjs`
 - Create: `work/tournament-tables/backend/tests/http-contract.test.mjs`
@@ -313,17 +314,19 @@ POST {action:'standings',competition:'ucl|uel|uecl'}
 POST {action:'bracket',competition:'coppa_italia'}
 ```
 
-- [ ] Structure request dispatch so `handleRequest(req,deps)` is testable independently from final `Deno.serve(...)`.
+Keep Node-testable request dispatch separate from the Deno runtime entrypoint. `handler.mjs` exports `createRequestHandler(deps)` and contains no `Deno.*` references. `index.ts` wires Supabase/BSD dependencies and only calls `Deno.serve(handler)`.
 
-- [ ] **RED:** HTTP tests require invalid action/competition pairs to return 400, auth failure to return 401/403, and provider/service methods not to execute before auth succeeds.
+- [ ] **RED:** `http-contract.test.mjs` imports only `handler.mjs`. Require invalid action/competition pairs to return 400, auth failure to return 401/403, and service/provider methods not to execute before auth succeeds.
 
-- [ ] Implement focused `auth.mjs` from the proven Ciao custom-auth behavior:
+- [ ] Implement `handler.mjs` with CORS, JSON parsing, GET metadata, auth-first POST dispatch, and typed error-to-status mapping.
+
+- [ ] Implement focused `auth.mjs` from proven Ciao custom-auth behavior:
   - validate Telegram WebApp signature and max auth age;
   - resolve/create `cp_users` user;
   - require `@CiaoCalcio` member/admin/creator;
   - cache membership briefly as existing Ciao functions do.
 
-- [ ] Implement production repository:
+- [ ] Implement production repository in `index.ts`:
 
 ```js
 findSeedEvent: async competition => {
@@ -346,6 +349,16 @@ localTeams: async()=>{
 ```
 
 Repository `readCache`/`writeCache` uses `cp_competition_views_cache` only via service-role access inside the Edge Function.
+
+- [ ] Implement BSD fetch adapter in `index.ts` using existing production convention:
+
+```text
+base = https://sports.bzzoiro.com/api/v2
+Authorization: Token ${BSD_API_KEY}
+Accept: application/json
+```
+
+Pass production provider dependencies as `{fetchUefaView, fetchCoppaEvents, bsd}` to the service.
 
 - [ ] Implement `upsertExternalMatches(events)` using existing `cp_external_matches` schema and unique key `(competition,provider_event_id)`. For each Coppa actual event write:
   - `competition='coppa_italia'`, `provider='bsd'`;
@@ -378,7 +391,7 @@ GET metadata:
 node --test work/tournament-tables/backend/tests/*.test.mjs
 ```
 
-- [ ] Deploy exactly `index.ts`, `auth.mjs`, `domain.mjs`, `provider.mjs`, `service.mjs` as `ciao-tournament-tables-v1` with `verify_jwt=false` because custom Telegram auth is enforced inside `handleRequest`.
+- [ ] Deploy exactly `index.ts`, `handler.mjs`, `auth.mjs`, `domain.mjs`, `provider.mjs`, `service.mjs` as `ciao-tournament-tables-v1` with `verify_jwt=false` because custom Telegram auth is enforced before data dispatch.
 
 - [ ] Real-provider smoke **before frontend changes** using a valid Mini App auth request:
 
