@@ -1,0 +1,17 @@
+name: Tournament tables UI RED
+on:
+  push:
+    branches:
+      - tooling/tournament-tables-ui-20260909
+permissions:
+  contents: read
+jobs:
+  red:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/tournament-tables-20260909
+      - name: Expect tournament tables UI marker
+        run: |
+          grep -q 'ciao-tournament-tables-ui-v1-20260909' index.html
