@@ -4885,6 +4885,143 @@ try{
   document.getElementById(st.id)?.remove();document.head.appendChild(st);
 }catch(_e){}
 /* /ciao-v8-live-theme-fix-20260909 */
+
+/* ciao-v9-performance-tables-live-20260909 */
+/* One scheduler, tournament-safe tables, and cached club profiles. */
+const __CW_OPT_REFRESH_MS=10000;
+const __CW_OPT_CLUB_TTL_MS=180000;
+const __cwOptClubCacheAt=new Map();
+const __cwOptClubPending=new Map();
+
+function __cwOptViewsForComp(comp){return comp==='serie_a'?__CWTT2_VIEWS:[['table','Таблица']]}
+__cwTt2Nav=function(){
+  const views=__cwOptViewsForComp(__cwTt2Comp);
+  return '<div class="cwtt2-nav">'+__CWTT2_COMPS.map(x=>'<button class="cwtt2-nav-btn '+(x[0]===__cwTt2Comp?'active':'')+'" data-cwtt2-comp="'+x[0]+'">'+x[1]+'</button>').join('')+'</div>'+
+    '<div class="cwtt2-subnav '+(__cwTt2Comp==='serie_a'?'':'cwtt2-subnav--single')+'">'+views.map(x=>'<button class="cwtt2-sub-btn '+(x[0]===__cwTt2View?'active':'')+'" data-cwtt2-view="'+x[0]+'">'+x[1]+'</button>').join('')+'</div>';
+};
+__cwTt2ApplyTheme=function(){
+  const t=__CWTT2_THEME[__cwTt2Comp]||'serie-a';
+  try{root.setAttribute('data-cwtt2-theme',t);root.removeAttribute('data-cwpred-screen-theme')}catch(_e){}
+};
+const __cwOptBindBase=bind;
+bind=function(){
+  const out=__cwOptBindBase();
+  root.querySelectorAll('[data-cwtt2-comp]').forEach(b=>b.onclick=()=>{
+    __cwTt2Comp=String(b.dataset.cwtt2Comp||'serie_a');
+    if(__cwTt2Comp!=='serie_a')__cwTt2View='table';
+    __cwTt2ApplyTheme();
+    render();
+    __cwTt2Fetch(__cwTt2Comp,__cwTt2View);
+  });
+  root.querySelectorAll('[data-cwtt2-view]').forEach(b=>b.onclick=()=>{
+    const next=String(b.dataset.cwtt2View||'table');
+    if(__cwTt2Comp!=='serie_a'&&next!=='table')return;
+    __cwTt2View=next;render();__cwTt2Fetch(__cwTt2Comp,__cwTt2View);
+  });
+  return out;
+};
+
+function __cwOptClubKey(teamId,scope='overall'){return String(Number(teamId)||0)+':'+String(scope||'overall')}
+function __cwOptClubFresh(teamId,scope='overall'){
+  const cached=__cw16ScopeCacheGet(teamId,scope);if(!cached)return false;
+  const key=__cwOptClubKey(teamId,scope),at=Number(__cwOptClubCacheAt.get(key)||0);
+  if(!at){__cwOptClubCacheAt.set(key,Date.now());return true}
+  return Date.now()-at<__CW_OPT_CLUB_TTL_MS;
+}
+function __cwOptClubSeed(teamId,scope='overall'){
+  const id=Number(teamId)||0,team=__cw16TeamById(id)||{};
+  const row=(Array.isArray(S?.serie_a_table?.rows)?S.serie_a_table.rows:[]).find(r=>Number(r?.team_id??r?.id)===id)||null;
+  return {team,scope,serie_a:row?{position:Number(row.position)||0,points:Number(row.points)||0,played:Number(row.played)||0,won:Number(row.won)||0,drawn:Number(row.drawn)||0,lost:Number(row.lost)||0,goals_for:Number(row.goals_for)||0,goals_against:Number(row.goals_against)||0,goal_difference:Number(row.goal_difference)||0,season_label:'Серия А'}:{season_label:'Серия А'}};
+}
+function __cwOptClubRequest(teamId,sections,scope='overall'){
+  const list=[...new Set((sections||[]).map(String))].sort(),key=__cwOptClubKey(teamId,scope)+'|'+list.join(',');
+  if(__cwOptClubPending.has(key))return __cwOptClubPending.get(key);
+  const req=Promise.resolve(__cw16ClubApi(teamId,list,scope)).then(data=>{__cwOptClubCacheAt.set(__cwOptClubKey(teamId,scope),Date.now());return data}).finally(()=>__cwOptClubPending.delete(key));
+  __cwOptClubPending.set(key,req);return req;
+}
+
+loadClubSections=async function(sections){
+  if(!clubViewId||__cw16ClubSectionLoading)return;
+  const requestedId=Number(clubViewId),requestedScope=clubViewScope;
+  const needed=[...new Set((sections||[]).map(String).filter(k=>['overview','matches','squad','stats'].includes(k)))].filter(k=>!__cw16Loaded(k));
+  if(!needed.length)return;
+  __cw16ClubSectionLoading=true;render();
+  try{
+    const r=await __cwOptClubRequest(requestedId,needed,requestedScope);
+    if(Number(clubViewId)!==requestedId||requestedScope!==clubViewScope)return;
+    clubViewData=__cw16MergeClub(clubViewData,r);__cw16ScopeCacheSet(requestedId,requestedScope,clubViewData);
+  }catch(e){
+    if(Number(clubViewId)===requestedId&&requestedScope===clubViewScope){clubViewData={...(clubViewData||{}),errors:{...(clubViewData?.errors||{}),[needed[0]]:e.message}};toast(e.message||'Не удалось загрузить данные')}
+  }finally{
+    if(Number(clubViewId)===requestedId&&requestedScope===clubViewScope){__cw16ClubSectionLoading=false;render()}else __cw16ClubSectionLoading=false;
+  }
+};
+
+openClubProfile=async function(teamId){
+  const id=Number(teamId);if(!Number.isInteger(id)||id<=0)return;__cw16FavoriteOpen=false;
+  if(clubViewId){if(Number(clubViewId)===id)return;__cw16ClubHistory.push({teamId:clubViewId,data:clubViewData,tab:clubViewTab,scope:clubViewScope,scrollTop:main?.scrollTop??0})}
+  else{clubReturnSnapshot={tab,matchViewId,matchViewSource:String(matchViewSource||'serie_a'),matchCenterTab,scrollTop:main?.scrollTop??0};__cw16ClubHistory=[]}
+  clubViewId=id;clubViewTab='overview';clubViewScope='overall';__cw16ClubLoading=false;
+  const cached=__cw16ScopeCacheGet(id,'overall');clubViewData=cached||__cwOptClubSeed(id,'overall');__cw16ClubSectionLoading=!cached;
+  root.classList.remove('match-center-open');root.classList.add('club-profile-open');render();
+  if(cached&&__cwOptClubFresh(id,'overall')){__cw16ClubSectionLoading=false;if(main)main.scrollTop=0;return}
+  try{
+    const r=await __cwOptClubRequest(id,['overview'],'overall');
+    if(Number(clubViewId)!==id||clubViewScope!=='overall')return;
+    clubViewData=__cw16MergeClub(cached||clubViewData,r);__cw16ScopeCacheSet(id,'overall',clubViewData);
+  }catch(e){
+    if(Number(clubViewId)===id){if(!cached)clubViewData={...clubViewData,__error:e.message||'Не удалось загрузить клуб'};else toast(e.message||'Не удалось обновить профиль клуба')}
+  }finally{
+    if(Number(clubViewId)===id){__cw16ClubLoading=false;__cw16ClubSectionLoading=false;render();if(main)main.scrollTop=0}
+  }
+};
+
+/* Keep live data fresh without reloading the whole state/table/profile tree. */
+async function __cwOptRefreshVisibleNow(){
+  if(document.hidden||__cwRefreshBusy)return false;
+  __cwRefreshBusy=true;++__cwRefreshSeq;
+  try{
+    if(typeof matchViewId!=='undefined'&&matchViewId)return await refreshLive();
+    if(typeof clubViewId!=='undefined'&&clubViewId)return await refreshLive();
+    if((tab==='predict'||tab==='mine')&&typeof __cwPredRefreshVisible==='function')return await __cwPredRefreshVisible({quiet:true});
+    if(tab==='calendar'&&typeof __cwMtRefreshVisible==='function'){
+      const external=typeof __cwMtCompetition!=='undefined'&&__cwMtCompetition&&__cwMtCompetition!=='serie_a';
+      if(external)return await __cwMtRefreshVisible({quiet:true});
+    }
+    return await refreshLive();
+  }catch(_e){return false}
+  finally{__cwRefreshBusy=false}
+}
+__cwRefreshVisibleNow=__cwOptRefreshVisibleNow;
+try{if(__cwRefreshTimer)clearInterval(__cwRefreshTimer)}catch(_e){}
+try{if(__cw2014Timer)clearTimeout(__cw2014Timer);__cw2014Timer=null;__cw2014Schedule=function(){return 0};__cw2014Wake=function(){return false}}catch(_e){}
+try{if(__cw10PollTimer)clearTimeout(__cw10PollTimer);__cw10PollTimer=null;__cw10ScheduleNext=function(){return 0}}catch(_e){}
+try{if(__cw11SerieATimer)clearTimeout(__cw11SerieATimer);__cw11SerieATimer=null;__cw11ScheduleSerieA=function(){return 0}}catch(_e){}
+try{if(__cwMtRefreshTimer)clearTimeout(__cwMtRefreshTimer);__cwMtRefreshTimer=0;__cwMtStartRefresh=function(){return false}}catch(_e){}
+__cwRefreshTimer=setInterval(__cwRefreshVisibleNow,__CW_OPT_REFRESH_MS);
+document.addEventListener('focus',()=>{Promise.resolve(__cwRefreshVisibleNow()).catch(()=>{})},{passive:true});
+
+try{
+  const st=document.createElement('style');st.id='ciao-v9-performance-tables-style';
+  st.textContent=`
+#ciao-miniapp-root .cwtt2-subnav--single{min-height:36px}
+#ciao-miniapp-root .cwtt2-table{display:grid!important;gap:7px!important;overflow:visible!important;background:transparent!important}
+#ciao-miniapp-root .cwtt2-head{border:0!important;min-height:28px!important;padding:0 10px!important}
+#ciao-miniapp-root .cwtt2-standing{border-radius:16px!important;min-height:48px!important;padding:0 8px 0 10px!important;border:1px solid rgba(var(--cwtt2-rgb,49,80,255),.16)!important;background:linear-gradient(180deg,rgba(var(--cwtt2-rgb,49,80,255),.095),rgba(7,16,39,.94))!important;box-shadow:0 8px 22px rgba(0,0,0,.14),inset 0 1px 0 rgba(255,255,255,.018)!important}
+#ciao-miniapp-root .cwtt2-standing:active{background:linear-gradient(180deg,rgba(var(--cwtt2-rgb,49,80,255),.15),rgba(7,16,39,.96))!important}
+#ciao-miniapp-root .cwtt2-standing:before{left:0!important;top:7px!important;bottom:7px!important;width:3px!important;border-radius:0 4px 4px 0!important}
+#ciao-miniapp-root .cwtt2-standing>span,#ciao-miniapp-root .cwtt2-standing>strong{font-size:11px!important;font-variant-numeric:tabular-nums!important;font-feature-settings:"tnum" 1!important}
+#ciao-miniapp-root .cwtt2-team b{font-size:10.5px!important;font-weight:850!important}
+#ciao-miniapp-root .cwtt2-logo,#ciao-miniapp-root .cwtt2-logo-fallback{width:25px!important;height:25px!important;flex-basis:25px!important}
+#ciao-miniapp-root[data-cwtt2-theme=champions]{--cwtt2-a:#6174f4;--cwtt2-b:#4b3498;--cwtt2-rgb:97,116,244}
+#ciao-miniapp-root[data-cwtt2-theme=europa]{--cwtt2-a:#ef7419;--cwtt2-b:#8a3306;--cwtt2-rgb:239,116,25}
+#ciao-miniapp-root[data-cwtt2-theme=conference]{--cwtt2-a:#2ab873;--cwtt2-b:#0d5134;--cwtt2-rgb:42,184,115}
+#ciao-miniapp-root[data-cwtt2-theme=coppa]{--cwtt2-a:#1aaa68;--cwtt2-b:#b42f43;--cwtt2-rgb:26,170,104}
+`;
+  document.getElementById(st.id)?.remove();document.head.appendChild(st);
+}catch(_e){}
+/* /ciao-v9-performance-tables-live-20260909 */
+
 /* ===== /Ciao, Web! v22.5 product polish layer ===== */
 
 })();
