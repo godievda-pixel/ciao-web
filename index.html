@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#091BBD">
-<meta name="ciao-build" content="ciao-web-fast-cache-v1-20260909">
+<meta name="ciao-build" content="ciao-web-fast-cache-v2-20260909">
 <title>Ciao, Web!</title>
 <style>html,body{margin:0;min-height:100%;background:#030817;color:#fff;font-family:Arial,sans-serif}</style>
 </head>
 <body>
 <script>
 (async()=>{
-  const CACHE_KEY='ciao-final-html-v7-20260909';
+  const CACHE_KEY='ciao-final-html-v8-20260909';
   const LOADER_URL='https://raw.githubusercontent.com/godievda-pixel/ciao-web/c556463b294ae466e16d3e2be06ddf0a65c12a63/index.html';
   const write=html=>{document.open();document.write(html);document.close()};
   try{
@@ -39,34 +39,84 @@
     const src=await br.text();
     const marker='/* ===== /Ciao, Web! v22.5 product polish layer ===== */';
     if(!src.includes(marker))throw new Error('base marker missing');
-    const HOTFIX=`/* ciao-v7-table-scope-fix-20260909 */
+    const HOTFIX=`/* ciao-v8-live-theme-fix-20260909 */
 try{Object.assign(__CW_RU_TEAM_NAMES,{'sabah fk':'Сабах','sabah':'Сабах'})}catch(_e){}
+
+/* Tournament theme belongs to Tables only. Never reuse it as Predictions theme. */
 try{
-  const __cwV7Render=render;
-  render=function(){
-    const out=__cwV7Render();
-    requestAnimationFrame(()=>{
-      try{
-        const inTables=!!root.querySelector('.cwtt2-screen');
-        if(!inTables)root.removeAttribute('data-cwtt2-theme');
-        root.querySelectorAll('.cwtt2-team b,.cwtt2-player small,.cwtt-bracket-team b').forEach(el=>{el.textContent=__cwRuTeamName(el.textContent)});
-      }catch(_e){}
-    });
-    return out;
+  __cwTt2ApplyTheme=function(){
+    const t=__CWTT2_THEME[__cwTt2Comp]||'serie-a';
+    try{
+      root.setAttribute('data-cwtt2-theme',t);
+      root.removeAttribute('data-cwpred-screen-theme');
+    }catch(_e){}
   };
 }catch(_e){}
+
+function __cwV8ScopeTournamentTheme(){
+  try{
+    const screen=root.querySelector('.cwtt2-screen');
+    if(screen){
+      const t=String(root.getAttribute('data-cwtt2-theme')||(__CWTT2_THEME?.[__cwTt2Comp])||'serie-a');
+      screen.setAttribute('data-cwtt2-theme',t);
+      root.removeAttribute('data-cwpred-screen-theme');
+    }else{
+      root.removeAttribute('data-cwtt2-theme');
+    }
+    root.querySelectorAll('.cwtt2-team b,.cwtt2-player small,.cwtt-bracket-team b').forEach(el=>{el.textContent=__cwRuTeamName(el.textContent)});
+  }catch(_e){}
+}
+try{
+  const __cwV8Render=render;
+  render=function(){const out=__cwV8Render();requestAnimationFrame(__cwV8ScopeTournamentTheme);return out};
+  const __cwV8Observer=new MutationObserver(()=>requestAnimationFrame(__cwV8ScopeTournamentTheme));
+  if(main)__cwV8Observer.observe(main,{childList:true,subtree:false});
+}catch(_e){}
+
+/* Match center must never fall into the long idle interval while it is open. */
+try{
+  __cw2014Tick=async function(){
+    let delay=matchViewId?5000:(S?.has_live?5000:15000);
+    try{
+      if(!document.hidden){
+        const r=await refreshLive();
+        delay=matchViewId?5000:(S?.has_live?5000:Math.min(15000,Math.max(5000,Number(r?.recommended_poll_ms)||15000)));
+      }
+    }finally{__cw2014Schedule(delay)}
+  };
+  __cw2014Wake=function(){
+    if(document.hidden)return;
+    if(__cw2014Timer)clearTimeout(__cw2014Timer);
+    __cw2014Timer=null;
+    Promise.resolve(refreshLive()).finally(()=>__cw2014Schedule(matchViewId?5000:(S?.has_live?5000:15000)));
+  };
+  const __cwV8OpenMatchCenter=openMatchCenter;
+  openMatchCenter=async function(...args){
+    const out=await __cwV8OpenMatchCenter(...args);
+    try{__cw2014Wake()}catch(_e){}
+    return out;
+  };
+  const __cwV8CloseMatchCenter=closeMatchCenter;
+  closeMatchCenter=function(...args){
+    const out=__cwV8CloseMatchCenter(...args);
+    try{__cw2014Wake()}catch(_e){}
+    return out;
+  };
+  setTimeout(()=>{try{__cw2014Wake()}catch(_e){}},500);
+}catch(_e){}
+
 try{
   const st=document.createElement('style');
-  st.id='ciao-v7-table-scope-style';
+  st.id='ciao-v8-table-scope-style';
   st.textContent=`
 #ciao-miniapp-root[data-cwtt2-theme]{background:radial-gradient(circle at 50% -10%,rgba(9,27,189,.36),transparent 34%),radial-gradient(circle at 100% 12%,rgba(49,80,255,.12),transparent 28%),linear-gradient(180deg,#040919 0%,#050b1d 46%,#030817 100%)!important}
 #ciao-miniapp-root[data-cwtt2-theme] .header{background:linear-gradient(180deg,rgba(3,8,23,.96),rgba(3,8,23,.76) 78%,transparent)!important}
 #ciao-miniapp-root .cwtt2-screen{position:relative;isolation:isolate}
-#ciao-miniapp-root[data-cwtt2-theme] .cwtt2-screen:before{content:'';position:absolute;z-index:-1;inset:-10px -14px 0;border-radius:20px 20px 0 0;background:linear-gradient(180deg,rgba(var(--cwtt2-rgb,49,80,255),.10),transparent 150px);pointer-events:none}
+#ciao-miniapp-root .cwtt2-screen[data-cwtt2-theme]:before{content:'';position:absolute;z-index:-1;inset:-10px -14px 0;border-radius:20px 20px 0 0;background:linear-gradient(180deg,rgba(var(--cwtt2-rgb,49,80,255),.10),transparent 150px);pointer-events:none}
 `;
   document.getElementById(st.id)?.remove();document.head.appendChild(st);
 }catch(_e){}
-/* /ciao-v7-table-scope-fix-20260909 */`;
+/* /ciao-v8-live-theme-fix-20260909 */`;
     const finalHtml=src.replace(marker,VP+'\n'+FIX+'\n'+HOTFIX+'\n'+marker);
     try{localStorage.setItem(CACHE_KEY,finalHtml)}catch(_e){}
     write(finalHtml);
