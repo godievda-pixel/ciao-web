@@ -1,59 +1,37 @@
 # Tournament Tables Backend Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` (recommended) or `superpowers:executing-plans` to execute this plan task-by-task. Follow RED → GREEN → verification for every behavior change.
 
-**Goal:** Build `ciao-tournament-tables-v1`, a dedicated authenticated Supabase Edge Function that serves full UEFA 36-team standings and a complete Coppa Italia bracket with stale-cache fallback and existing Match Center identities.
+**Goal:** Build `ciao-tournament-tables-v1`, an authenticated Supabase Edge Function that serves complete 36-club UEFA league-phase standings and a complete Coppa Italia knockout view with stale-cache fallback and existing external Match Center IDs.
 
-**Architecture:** Keep the production `main` branch index-only. Backend source, tests, and migration live only on an implementation branch/worktree and are deployed to Supabase from there. The service discovers provider `league_id`/`season_id` from an existing `cp_external_matches.provider_event_id` via BSD `/events/{id}/`, then uses BSD official standings/teams/event endpoints; it never derives UEFA standings from the partial prediction match set.
+**Architecture:** Backend source/tests/migration live only on an implementation branch. Production `main` remains index-only. For every competition, discover current BSD `league_id` and `season_id` from an existing `cp_external_matches.provider_event_id` through `/events/{id}/`; never hard-code season IDs and never derive UEFA standings from the intentionally partial prediction match set. Cache normalized competition views in Postgres. For Coppa, upsert every provider event returned by the full competition feed into `cp_external_matches` so each real bracket card has a numeric `external_match_id` compatible with the existing Match Center.
 
-**Tech Stack:** Supabase Edge Functions (Deno/TypeScript), plain ES modules, `node:test` for pure-module tests, Supabase Postgres, BSD Sports API v2, existing Telegram Mini App custom authentication pattern.
+**Tech stack:** Supabase Edge Functions (Deno/TypeScript), plain ES modules, `node:test`, Supabase Postgres, BSD Sports API v2, existing Telegram Mini App custom auth.
 
 **Spec:** `docs/superpowers/specs/2026-09-09-tournament-tables-design.md`
 
-## Global Constraints
+## Non-negotiable contracts
 
-- Production `main` must remain root `index.html` only.
-- UEFA screens must return full official 36-team tables for `ucl`, `uel`, `uecl`.
-- Qualification zones are exactly `1–8 direct`, `9–24 playoff`, `25–36 eliminated`.
-- `local_team_id` comes only from `cp_teams.bsd_team_id` mapping; foreign clubs remain non-clickable in the frontend.
-- Coppa Italia must cover `r32`, `r16`, `qf`, `sf`, `final` and every real event must map to a numeric `cp_external_matches.id` for the existing external Match Center.
-- Provider failure returns the latest valid cache snapshot with `stale:true`; an accidental empty provider payload must never overwrite good cache.
-- Platform JWT verification remains disabled only because the function performs the same Telegram init-data + channel-membership custom auth already used by Ciao APIs.
-- No changes to prediction scoring, rating, live scheduler, or existing Match Center functions.
+- UEFA `ucl`, `uel`, `uecl`: exactly 36 unique official positions when league phase is available.
+- Zones: `1–8 direct`, `9–24 playoff`, `25–36 eliminated`.
+- `local_team_id` comes only from `cp_teams.bsd_team_id`.
+- Coppa rounds are normalized to `r32`, `r16`, `qf`, `sf`, `final`.
+- Real Coppa events retain provider event identity and expose numeric `cp_external_matches.id` as `external_match_id`.
+- Unknown future participants are never invented.
+- Good cached data is never overwritten by an empty/incomplete provider response.
+- Provider failure returns last-good payload with `stale:true`; no-cache failure returns typed `provider_unavailable`.
+- `verify_jwt=false` is allowed only because the function enforces existing Telegram init-data validation + `@CiaoCalcio` membership internally.
+- No changes to scoring, rating, live scheduler, Predictions, or Match Center functions.
 
 ---
 
-### Task 1: Create the cache schema and isolated backend workspace
+## Task 1 — Cache schema
 
-**Files:**
-- Create on implementation branch only: `work/tournament-tables/backend/migrations/20260909_competition_views_cache.sql`
+**Files**
+- Create: `work/tournament-tables/backend/migrations/20260909_competition_views_cache.sql`
 - Create: `work/tournament-tables/backend/tests/schema-contract.test.mjs`
 
-**Interfaces:**
-- Consumes: existing Supabase project `dkefzepiiudehhzbbrjn`.
-- Produces: Postgres table `cp_competition_views_cache` keyed by `(season, competition, view_type)`.
-
-- [ ] **Step 1: Write the failing schema contract test**
-
-```js
-// work/tournament-tables/backend/tests/schema-contract.test.mjs
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import fs from 'node:fs';
-
-const sql = fs.readFileSync(new URL('../migrations/20260909_competition_views_cache.sql', import.meta.url), 'utf8');
-
-test('cache migration defines the exact competition-view contract', () => {
-  assert.match(sql, /create table if not exists public\.cp_competition_views_cache/i);
-  assert.match(sql, /primary key\s*\(season,\s*competition,\s*view_type\)/i);
-  for (const col of ['payload jsonb', 'provider_updated_at timestamptz', 'fetched_at timestamptz', 'expires_at timestamptz']) {
-    assert.match(sql.toLowerCase(), new RegExp(col.replace(/\s+/g, '\\s+')));
-  }
-  assert.match(sql, /enable row level security/i);
-});
-```
-
-- [ ] **Step 2: Run the test to verify it fails**
+- [ ] **RED:** create a test that reads the migration and requires table `public.cp_competition_views_cache`, PK `(season, competition, view_type)`, `payload jsonb`, `provider_updated_at`, `fetched_at`, `expires_at`, and RLS.
 
 Run:
 
@@ -61,9 +39,9 @@ Run:
 node --test work/tournament-tables/backend/tests/schema-contract.test.mjs
 ```
 
-Expected: FAIL because the migration file does not exist.
+Expected: FAIL because migration is absent.
 
-- [ ] **Step 3: Write the migration**
+- [ ] **GREEN:** create migration:
 
 ```sql
 create table if not exists public.cp_competition_views_cache (
@@ -76,28 +54,16 @@ create table if not exists public.cp_competition_views_cache (
   expires_at timestamptz not null,
   primary key (season, competition, view_type)
 );
-
 create index if not exists cp_competition_views_cache_expires_idx
   on public.cp_competition_views_cache (expires_at);
-
 alter table public.cp_competition_views_cache enable row level security;
 ```
 
-Apply this SQL using the Supabase migration tool, not ad-hoc DDL through `execute_sql`.
+Apply with `Supabase.apply_migration`, migration name `competition_views_cache`.
 
-- [ ] **Step 4: Verify the migration and test**
+- [ ] **Verify:** rerun the test; query `information_schema`/catalog metadata and confirm PK order and RLS.
 
-Run:
-
-```bash
-node --test work/tournament-tables/backend/tests/schema-contract.test.mjs
-```
-
-Then query Supabase metadata and verify the primary key columns are exactly `season, competition, view_type` and RLS is enabled.
-
-Expected: PASS and one cache table.
-
-- [ ] **Step 5: Commit the isolated backend setup**
+- [ ] Commit:
 
 ```bash
 git add work/tournament-tables/backend/migrations work/tournament-tables/backend/tests/schema-contract.test.mjs
@@ -106,445 +72,332 @@ git commit -m "test: define tournament view cache contract"
 
 ---
 
-### Task 2: Implement provider metadata discovery and UEFA normalization
+## Task 2 — UEFA provider metadata and 36-row normalization
 
-**Files:**
+**Files**
 - Create: `work/tournament-tables/backend/domain.mjs`
 - Create: `work/tournament-tables/backend/provider.mjs`
 - Create: `work/tournament-tables/backend/tests/domain.test.mjs`
 - Create: `work/tournament-tables/backend/tests/provider.test.mjs`
 
-**Interfaces:**
-- Consumes: repository method `findSeedEvent(competition): Promise<number|null>` and BSD fetch function `bsd(path): Promise<object>`.
-- Produces:
-  - `zoneForPosition(position): 'direct'|'playoff'|'eliminated'`
-  - `discoverCompetitionMeta({competition, findSeedEvent, bsd}): Promise<{competition,seedEventId,leagueId,seasonId}>`
-  - `normalizeStandings({standingsPayload, teamsPayload, localTeams}): StandingRow[]`
-  - `fetchUefaView({competition, findSeedEvent, bsd, localTeams}): Promise<{meta,rows}>`
+**Exports**
 
-- [ ] **Step 1: Write failing domain tests**
-
-```js
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import { zoneForPosition, normalizeStandings } from '../domain.mjs';
-
-test('UEFA zones are 1-8 direct, 9-24 playoff, 25-36 eliminated', () => {
-  assert.equal(zoneForPosition(1), 'direct');
-  assert.equal(zoneForPosition(8), 'direct');
-  assert.equal(zoneForPosition(9), 'playoff');
-  assert.equal(zoneForPosition(24), 'playoff');
-  assert.equal(zoneForPosition(25), 'eliminated');
-  assert.equal(zoneForPosition(36), 'eliminated');
-});
-
-test('standings normalization joins provider team and local Ciao mapping', () => {
-  const rows = normalizeStandings({
-    standingsPayload:{standings:[{position:1,team_id:77,played:1,won:1,drawn:0,lost:0,goals_for:2,goals_against:1,points:3}]},
-    teamsPayload:{results:[{id:77,name:'Inter',short_name:'Inter',country:'ITA',crest_url:'https://crest/inter.png'}]},
-    localTeams:[{id:11,bsd_team_id:77,name:'Интер'}]
-  });
-  assert.deepEqual(rows[0], {
-    position:1,provider_team_id:77,local_team_id:11,name:'Inter',short_name:'Inter',country_code:'ITA',crest_url:'https://crest/inter.png',
-    played:1,won:1,drawn:0,lost:0,goals_for:2,goals_against:1,goal_difference:1,points:3,zone:'direct'
-  });
-});
+```text
+zoneForPosition(position)
+normalizeStandings({standingsPayload,teamsPayload,localTeams})
+discoverCompetitionMeta({competition,findSeedEvent,bsd})
+fetchUefaView({competition,findSeedEvent,bsd,localTeams})
 ```
 
-- [ ] **Step 2: Run tests and verify RED**
+- [ ] **RED:** domain tests assert boundary positions 1/8/9/24/25/36 and a provider team `bsd_team_id=77` maps to local Ciao team ID while a foreign provider ID maps to `null`.
 
-Run:
-
-```bash
-node --test work/tournament-tables/backend/tests/domain.test.mjs
-```
-
-Expected: FAIL because `domain.mjs` does not exist.
-
-- [ ] **Step 3: Implement minimal domain normalization**
-
-Implement exact exported functions:
+- [ ] Implement `zoneForPosition` and `normalizeStandings`. Required normalized row shape:
 
 ```js
-export function zoneForPosition(position){
-  const p=Number(position);
-  if(p>=1&&p<=8)return 'direct';
-  if(p>=9&&p<=24)return 'playoff';
-  return 'eliminated';
-}
-
-const arr=x=>Array.isArray(x)?x:Array.isArray(x?.results)?x.results:Array.isArray(x?.standings)?x.standings:[];
-const num=(...xs)=>{for(const x of xs){const n=Number(x);if(Number.isFinite(n))return n}return 0};
-const code=x=>String(x??'').trim().toUpperCase();
-
-export function normalizeStandings({standingsPayload,teamsPayload,localTeams=[]}){
-  const teams=new Map(arr(teamsPayload).map(t=>[Number(t.id),t]));
-  const locals=new Map(localTeams.filter(t=>Number(t.bsd_team_id)>0).map(t=>[Number(t.bsd_team_id),t]));
-  return arr(standingsPayload).map((r,i)=>{
-    const providerTeamId=num(r.team_id,r?.team?.id), t=teams.get(providerTeamId)??r.team??{}, local=locals.get(providerTeamId)??null;
-    const gf=num(r.goals_for,r.goals_scored,r.gf),ga=num(r.goals_against,r.goals_conceded,r.ga),position=num(r.position,r.rank,i+1);
-    return {position,provider_team_id:providerTeamId,local_team_id:local?Number(local.id):null,name:String(t.name??r.team_name??'—'),short_name:String(t.short_name??t.name??r.team_name??'—'),country_code:code(t.country_code??t.country),crest_url:String(t.crest_url??t.logo_url??''),played:num(r.played,r.matches_played,r.matches),won:num(r.won,r.wins),drawn:num(r.drawn,r.draws),lost:num(r.lost,r.losses),goals_for:gf,goals_against:ga,goal_difference:Number.isFinite(Number(r.goal_difference??r.gd))?Number(r.goal_difference??r.gd):gf-ga,points:num(r.points,r.pts),zone:zoneForPosition(position)};
-  }).sort((a,b)=>a.position-b.position);
+{
+  position, provider_team_id, local_team_id,
+  name, short_name, country_code, crest_url,
+  played, won, drawn, lost,
+  goals_for, goals_against, goal_difference, points,
+  zone
 }
 ```
 
-- [ ] **Step 4: Write provider discovery tests**
+Use tolerant field aliases for provider values, but output only this canonical shape.
+
+- [ ] **RED:** provider tests assert metadata discovery calls `/events/{seedEvent}/` and extracts `league_id` + `season_id`; official standings request is `/leagues/{leagueId}/standings/?season_id={seasonId}` and teams request is `/teams/?league_id={leagueId}&season_id={seasonId}&limit=100`.
+
+- [ ] Implement dynamic discovery:
 
 ```js
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import { discoverCompetitionMeta, fetchUefaView } from '../provider.mjs';
-
-test('metadata discovery reads league and season from a seed event detail', async () => {
-  const calls=[];
-  const meta=await discoverCompetitionMeta({competition:'ucl',findSeedEvent:async()=>601024,bsd:async path=>{calls.push(path);return {id:601024,league_id:7,season_id:1112}}});
-  assert.deepEqual(meta,{competition:'ucl',seedEventId:601024,leagueId:7,seasonId:1112});
-  assert.deepEqual(calls,['/events/601024/']);
-});
-
-test('UEFA view fetches official standings plus league teams', async () => {
-  const calls=[];
-  const bsd=async path=>{calls.push(path);if(path==='/events/601024/')return {league_id:7,season_id:1112};if(path==='/leagues/7/standings/?season_id=1112')return {standings:Array.from({length:36},(_,i)=>({position:i+1,team_id:i+1,played:1,points:36-i}))};if(path==='/teams/?league_id=7&season_id=1112&limit=100')return {results:Array.from({length:36},(_,i)=>({id:i+1,name:`Club ${i+1}`}))};throw new Error(path)};
-  const view=await fetchUefaView({competition:'ucl',findSeedEvent:async()=>601024,bsd,localTeams:[]});
-  assert.equal(view.rows.length,36);
-  assert.equal(new Set(view.rows.map(x=>x.position)).size,36);
-  assert.ok(calls.includes('/leagues/7/standings/?season_id=1112'));
-});
-```
-
-- [ ] **Step 5: Implement provider discovery and UEFA fetch**
-
-```js
-import { normalizeStandings } from './domain.mjs';
-
-const UEFA=new Set(['ucl','uel','uecl']);
 export async function discoverCompetitionMeta({competition,findSeedEvent,bsd}){
-  if(!['ucl','uel','uecl','coppa_italia'].includes(String(competition)))throw new Error('invalid_competition');
+  if(!['ucl','uel','uecl','coppa_italia'].includes(String(competition))) throw new Error('invalid_competition');
   const seedEventId=Number(await findSeedEvent(competition));
-  if(!Number.isSafeInteger(seedEventId)||seedEventId<=0)throw new Error('competition_seed_missing');
-  const detail=await bsd(`/events/${seedEventId}/`),leagueId=Number(detail?.league_id),seasonId=Number(detail?.season_id);
-  if(!Number.isSafeInteger(leagueId)||!Number.isSafeInteger(seasonId))throw new Error('competition_meta_missing');
+  if(!Number.isSafeInteger(seedEventId)||seedEventId<=0) throw new Error('competition_seed_missing');
+  const detail=await bsd(`/events/${seedEventId}/`);
+  const leagueId=Number(detail?.league_id),seasonId=Number(detail?.season_id);
+  if(!Number.isSafeInteger(leagueId)||!Number.isSafeInteger(seasonId)) throw new Error('competition_meta_missing');
   return {competition:String(competition),seedEventId,leagueId,seasonId};
 }
-
-export async function fetchUefaView({competition,findSeedEvent,bsd,localTeams}){
-  if(!UEFA.has(String(competition)))throw new Error('invalid_uefa_competition');
-  const meta=await discoverCompetitionMeta({competition,findSeedEvent,bsd});
-  const [standingsPayload,teamsPayload]=await Promise.all([
-    bsd(`/leagues/${meta.leagueId}/standings/?season_id=${meta.seasonId}`),
-    bsd(`/teams/?league_id=${meta.leagueId}&season_id=${meta.seasonId}&limit=100`)
-  ]);
-  const rows=normalizeStandings({standingsPayload,teamsPayload,localTeams});
-  if(rows.length!==36||new Set(rows.map(x=>x.position)).size!==36)throw new Error('standings_incomplete');
-  return {meta,rows};
-}
 ```
 
-Provider facts already verified from current Match Center cache: UCL event `601024` reports `league_id=7, season_id=1112`; UEL `601173` reports `league_id=8, season_id=1269`; UECL `601326` reports `league_id=83, season_id=1606`. Discovery remains dynamic so the next season does not require hard-coded IDs.
+- [ ] Implement `fetchUefaView(...)`, fetch standings + teams in parallel, normalize, then reject as `standings_incomplete` unless there are exactly 36 rows with unique positions 1..36.
 
-- [ ] **Step 6: Run provider/domain tests and commit**
+Provider facts already observed and useful only as smoke references, not hard-coded configuration:
 
-Run:
+```text
+UCL seed 601024 -> league 7 / season 1112
+UEL seed 601173 -> league 8 / season 1269
+UECL seed 601326 -> league 83 / season 1606
+```
+
+- [ ] Verify:
 
 ```bash
 node --test work/tournament-tables/backend/tests/domain.test.mjs work/tournament-tables/backend/tests/provider.test.mjs
 ```
 
-Expected: PASS.
+- [ ] Commit:
 
 ```bash
-git add work/tournament-tables/backend/domain.mjs work/tournament-tables/backend/provider.mjs work/tournament-tables/backend/tests
+git add work/tournament-tables/backend
 git commit -m "feat: normalize official UEFA standings"
 ```
 
 ---
 
-### Task 3: Implement complete Coppa Italia event/bracket normalization
+## Task 3 — Complete Coppa event normalization
 
-**Files:**
+**Files**
 - Modify: `work/tournament-tables/backend/domain.mjs`
 - Modify: `work/tournament-tables/backend/provider.mjs`
 - Create: `work/tournament-tables/backend/tests/coppa.test.mjs`
 
-**Interfaces:**
-- Consumes: `discoverCompetitionMeta(...)`, BSD `/events/?season_id={seasonId}&limit=200&offset={offset}`.
-- Produces:
-  - `coppaStageKey(event): 'r32'|'r16'|'qf'|'sf'|'final'|null`
-  - `fetchCoppaEvents({findSeedEvent,bsd}): Promise<{meta,events}>`
-  - normalized actual-event objects preserving `provider_event_id`.
+**Exports**
 
-- [ ] **Step 1: Write failing Coppa stage tests**
-
-```js
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import { coppaStageKey } from '../domain.mjs';
-
-const cases=[
-  [{stage_name:'Round of 32'},'r32'],
-  [{round_label:'1/8 финала'},'r16'],
-  [{stage:'quarter-finals'},'qf'],
-  [{stage_name:'Semi-finals'},'sf'],
-  [{stage_name:'Final'},'final']
-];
-for(const [event,key] of cases)test(`maps ${key}`,()=>assert.equal(coppaStageKey(event),key));
+```text
+coppaStageKey(event)
+normalizeCoppaEvent(event, localTeamMap)
+fetchCoppaEvents({findSeedEvent,bsd,localTeams})
 ```
 
-- [ ] **Step 2: Run RED**
+- [ ] **RED:** stage tests cover `Round of 32 -> r32`, `Round of 16/1/8 -> r16`, quarter-final -> `qf`, semi-final -> `sf`, final -> `final`, and preliminary/unknown -> `null`.
 
-```bash
-node --test work/tournament-tables/backend/tests/coppa.test.mjs
-```
+- [ ] Implement `coppaStageKey(event)` using `stage`, `stage_name`, `round_label`, and `round_name` aliases. Match `semi` before generic `final` so `Semi-finals` cannot be misclassified.
 
-Expected: FAIL because `coppaStageKey` is missing.
-
-- [ ] **Step 3: Implement stage mapping and event normalization**
-
-Add to `domain.mjs`:
+- [ ] Implement `normalizeCoppaEvent(event, localTeamMap)`. Canonical actual-event shape:
 
 ```js
-export function coppaStageKey(event){
-  const s=[event?.stage,event?.stage_name,event?.round_label,event?.round_name].filter(Boolean).join(' ').toLowerCase();
-  if(/semi|1\/2/.test(s))return 'sf';
-  if(/quarter|1\/4/.test(s))return 'qf';
-  if(/round of 32|1\/16|\br32\b/.test(s))return 'r32';
-  if(/round of 16|1\/8|\br16\b/.test(s))return 'r16';
-  if(/\bfinal\b/.test(s))return 'final';
-  return null;
-}
-
-export function normalizeCoppaEvent(event,locals=new Map()){
-  const key=coppaStageKey(event);if(!key)return null;
-  const team=t=>{const id=Number(t?.id??t?.team_id),local=locals.get(id)??null;return {provider_team_id:id||null,local_team_id:local?Number(local.id):null,name:String(t?.name??'—'),crest_url:String(t?.crest_url??t?.logo_url??'')}};
-  const status=String(event?.status??'scheduled').toLowerCase();
-  const hs=Number.isInteger(event?.home_score)?event.home_score:null,as=Number.isInteger(event?.away_score)?event.away_score:null;
-  return {stage_key:key,provider_event_id:Number(event?.id),kickoff_at:event?.event_date??null,status,minute:Number.isFinite(Number(event?.current_minute))?Number(event.current_minute):null,home:team(event?.home_team),away:team(event?.away_team),home_score:hs,away_score:as,winner_side:status==='finished'&&hs!=null&&as!=null&&hs!==as?(hs>as?'home':'away'):null,previous_leg_event_id:Number(event?.previous_leg_event_id)||null};
+{
+  stage_key,
+  provider_event_id,
+  kickoff_at,
+  status,
+  minute,
+  home:{provider_team_id,local_team_id,name,crest_url},
+  away:{provider_team_id,local_team_id,name,crest_url},
+  home_score,
+  away_score,
+  winner_side,
+  previous_leg_event_id
 }
 ```
 
-- [ ] **Step 4: Write pagination/filter test**
+Do not create a row when there is no valid provider event ID or no recognized bracket stage.
 
-Test `fetchCoppaEvents` with a fake seed event returning `league_id=9, season_id=1400`; fake page 1 contains R32 + preliminary events and `count=201`, page 2 contains Final. Assert only events whose `league_id===meta.leagueId` and `coppaStageKey()!=null` remain, and both offsets `0` and `200` are requested.
+- [ ] **RED:** pagination test uses a fake seed detail with league/season metadata and verifies offsets `0` and `200` when provider `count` exceeds one page. Include preliminary events and events from another league; they must be filtered out.
 
-- [ ] **Step 5: Implement paginated Coppa fetch**
+- [ ] Implement `fetchCoppaEvents({findSeedEvent,bsd,localTeams})`:
+  1. discover Coppa league + season through seed event;
+  2. page `/events/?season_id={seasonId}&limit=200&offset={offset}` up to provider count;
+  3. retain only `event.league_id===meta.leagueId`;
+  4. build `localTeamMap = new Map(localTeams.filter(x=>x.bsd_team_id).map(x=>[Number(x.bsd_team_id),x]))`;
+  5. normalize each event with `normalizeCoppaEvent(event, localTeamMap)`;
+  6. require at least one actual `r32` event, otherwise throw `coppa_r32_missing`.
 
-```js
-export async function fetchCoppaEvents({findSeedEvent,bsd}){
-  const meta=await discoverCompetitionMeta({competition:'coppa_italia',findSeedEvent,bsd});
-  const events=[];
-  for(let offset=0;offset<1000;offset+=200){
-    const page=await bsd(`/events/?season_id=${meta.seasonId}&limit=200&offset=${offset}`);
-    const rows=Array.isArray(page?.results)?page.results:Array.isArray(page)?page:[];
-    events.push(...rows.filter(e=>Number(e?.league_id)===meta.leagueId));
-    const count=Number(page?.count??events.length);
-    if(!rows.length||offset+rows.length>=count||rows.length<200)break;
-  }
-  const normalized=events.map(e=>normalizeCoppaEvent(e)).filter(Boolean);
-  if(!normalized.some(e=>e.stage_key==='r32'))throw new Error('coppa_r32_missing');
-  return {meta,events:normalized};
-}
-```
+The localization contract ends here: `fetchCoppaEvents` already returns events with `local_team_id`. There is **no** separate `localizeCoppaEvent` function.
 
-Do not invent future participants. An event is emitted only when the provider exposes a real event ID; UI placeholders are created later from missing bracket slots.
-
-- [ ] **Step 6: Run tests and commit**
+- [ ] Verify:
 
 ```bash
 node --test work/tournament-tables/backend/tests/coppa.test.mjs work/tournament-tables/backend/tests/domain.test.mjs work/tournament-tables/backend/tests/provider.test.mjs
+```
+
+- [ ] Commit:
+
+```bash
 git add work/tournament-tables/backend
 git commit -m "feat: normalize complete Coppa bracket events"
 ```
 
 ---
 
-### Task 4: Implement repository, cache service, and external Match Center upserts
+## Task 4 — Cache service and external Match Center identities
 
-**Files:**
+**Files**
 - Create: `work/tournament-tables/backend/service.mjs`
 - Create: `work/tournament-tables/backend/tests/service.test.mjs`
 
-**Interfaces:**
-- Consumes provider functions from Tasks 2–3.
-- Repository interface:
-  - `findSeedEvent(competition)`
-  - `localTeams()`
-  - `readCache(season,competition,viewType)`
-  - `writeCache(row)`
-  - `upsertExternalMatches(rows): Promise<Map<number,number>>` mapping provider event ID -> numeric `cp_external_matches.id`.
-- Produces `createTournamentTablesService({repository,provider,now})` with methods `standings(competition)` and `bracket()`.
+**Repository contract**
 
-- [ ] **Step 1: Write failing stale-cache service tests**
-
-```js
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import { createTournamentTablesService } from '../service.mjs';
-
-test('standings returns stale last-good cache when provider fails', async()=>{
-  const cached={payload:{rows:[{position:1}]},fetched_at:'2026-09-09T00:00:00Z',expires_at:'2026-09-09T00:01:00Z'};
-  const service=createTournamentTablesService({now:()=>Date.parse('2026-09-09T00:02:00Z'),repository:{readCache:async()=>cached,localTeams:async()=>[],writeCache:async()=>{},findSeedEvent:async()=>1},provider:{fetchUefaView:async()=>{throw new Error('BSD 503')}}});
-  const result=await service.standings('ucl');
-  assert.equal(result.stale,true);
-  assert.deepEqual(result.rows,[{position:1}]);
-});
-
-test('empty provider standings never replace valid cache', async()=>{
-  let writes=0;
-  const service=createTournamentTablesService({repository:{readCache:async()=>({payload:{rows:Array.from({length:36},(_,i)=>({position:i+1}))},expires_at:'2000-01-01T00:00:00Z'}),localTeams:async()=>[],writeCache:async()=>{writes++}},provider:{fetchUefaView:async()=>({meta:{},rows:[]})}});
-  const result=await service.standings('ucl');
-  assert.equal(result.stale,true);
-  assert.equal(writes,0);
-});
+```text
+findSeedEvent(competition)
+localTeams()
+readCache(season,competition,viewType)
+writeCache(row)
+upsertExternalMatches(events) -> Map<provider_event_id, cp_external_matches.id>
 ```
 
-- [ ] **Step 2: Run RED**
+**Service export**
 
-```bash
-node --test work/tournament-tables/backend/tests/service.test.mjs
+```text
+createTournamentTablesService({repository,provider,now})
+  .standings(competition)
+  .bracket()
 ```
 
-Expected: FAIL because service is missing.
+- [ ] **RED:** stale-cache test: expired good cache + provider failure returns cached payload with `stale:true`.
 
-- [ ] **Step 3: Implement cache policy**
+- [ ] **RED:** empty/incomplete provider response test: existing 36-row cache must remain untouched (`writeCache` call count stays zero) and is returned stale.
 
-Use season label `2026/27` derived from current UTC month/year. Implement TTL constants:
+- [ ] Implement season helper from UTC date (`2026/27` style) and cache TTL policy:
 
 ```js
-const TTL={standings:{live:30_000,idle:300_000},bracket:{live:15_000,idle:300_000}};
+const TTL={
+  standings:{live:30_000,idle:300_000},
+  bracket:{live:15_000,idle:300_000}
+};
 ```
 
-A cached row is fresh when `Date.parse(expires_at)>now()`. Provider payload is valid only when UEFA rows are exactly 36 unique positions or Coppa has at least one `r32` event.
+A cache row is fresh only when `Date.parse(expires_at)>now()`. A UEFA payload is valid only for exactly 36 unique positions. A Coppa payload is valid only if it contains at least one actual `r32` event.
 
-- [ ] **Step 4: Write external-match upsert contract test**
+- [ ] **RED:** Coppa identity test: fake provider events `7001`, `7002`, repository returns `Map([[7001,41],[7002,42]])`; service result must contain `external_match_id:41/42` on the corresponding actual events.
 
-Create fake Coppa events with provider IDs `7001` and `7002`; fake repository returns `Map([[7001,41],[7002,42]])`; assert service output embeds `external_match_id:41/42` into the corresponding bracket event and preserves stage keys.
-
-- [ ] **Step 5: Implement bracket service flow**
-
-The flow must be:
+- [ ] Implement Coppa service flow exactly through the already-localized provider interface:
 
 ```js
-const raw=await provider.fetchCoppaEvents({findSeedEvent:repository.findSeedEvent,bsd:provider.bsd});
 const localTeams=await repository.localTeams();
-const normalized=raw.events.map(e=>provider.localizeCoppaEvent(e,localTeams));
-const idMap=await repository.upsertExternalMatches(normalized);
-const withIds=normalized.map(e=>({...e,external_match_id:idMap.get(e.provider_event_id)??null}));
+const raw=await provider.fetchCoppaEvents({
+  findSeedEvent:repository.findSeedEvent,
+  bsd:provider.bsd,
+  localTeams
+});
+const idMap=await repository.upsertExternalMatches(raw.events);
+const withIds=raw.events.map(e=>({
+  ...e,
+  external_match_id:idMap.get(Number(e.provider_event_id))??null
+}));
 ```
 
-Group output rounds in fixed order `r32,r16,qf,sf,final`. Stage labels are `1/16`, `1/8`, `1/4`, `1/2`, `Финал`. Never fabricate `external_match_id`.
+Group actual events into fixed output round order:
 
-- [ ] **Step 6: Run service tests and commit**
+```text
+r32 -> 1/16
+r16 -> 1/8
+qf  -> 1/4
+sf  -> 1/2
+final -> Финал
+```
+
+Never fabricate an `external_match_id`; unknown future slots are a frontend concern.
+
+- [ ] Implement cache write only after validation and Match Center ID mapping succeeds. Cache payload stores canonical response content, not raw provider JSON.
+
+- [ ] Verify:
 
 ```bash
 node --test work/tournament-tables/backend/tests/*.test.mjs
+```
+
+- [ ] Commit:
+
+```bash
 git add work/tournament-tables/backend
 git commit -m "feat: add tournament table cache service"
 ```
 
 ---
 
-### Task 5: Build and deploy `ciao-tournament-tables-v1`
+## Task 5 — HTTP Edge Function, deploy, real-provider smoke
 
-**Files:**
+**Files**
 - Create: `work/tournament-tables/backend/index.ts`
 - Create: `work/tournament-tables/backend/auth.mjs`
 - Create: `work/tournament-tables/backend/tests/http-contract.test.mjs`
 
-**Interfaces:**
-- HTTP POST `{action:'standings',competition:'ucl|uel|uecl'}` -> standings response.
-- HTTP POST `{action:'bracket',competition:'coppa_italia'}` -> bracket response.
-- GET -> service metadata only.
+**HTTP contract**
 
-- [ ] **Step 1: Write HTTP contract test against exported request handler**
-
-Structure `index.ts` so request dispatch is a pure exported `handleRequest(req,deps)` plus final `Deno.serve(req=>handleRequest(req,prodDeps))`.
-
-Test invalid calls:
-
-```js
-assert.equal((await handleRequest(jsonReq({action:'standings',competition:'coppa_italia'}),deps)).status,400);
-assert.equal((await handleRequest(jsonReq({action:'bracket',competition:'ucl'}),deps)).status,400);
+```text
+GET -> service metadata
+POST {action:'standings',competition:'ucl|uel|uecl'}
+POST {action:'bracket',competition:'coppa_italia'}
 ```
 
-Test auth failure returns `401/403` and no provider method is called.
+- [ ] Structure request dispatch so `handleRequest(req,deps)` is testable independently from final `Deno.serve(...)`.
 
-- [ ] **Step 2: Run RED**
+- [ ] **RED:** HTTP tests require invalid action/competition pairs to return 400, auth failure to return 401/403, and provider/service methods not to execute before auth succeeds.
 
-```bash
-node --test work/tournament-tables/backend/tests/http-contract.test.mjs
-```
+- [ ] Implement focused `auth.mjs` from the proven Ciao custom-auth behavior:
+  - validate Telegram WebApp signature and max auth age;
+  - resolve/create `cp_users` user;
+  - require `@CiaoCalcio` member/admin/creator;
+  - cache membership briefly as existing Ciao functions do.
 
-Expected: FAIL because `index.ts` is missing.
-
-- [ ] **Step 3: Implement production repository and auth**
-
-Copy the proven Telegram validation/channel membership behavior from `ciao-club-profile-fast` / `ciao-match-center-fast-v3` into focused `auth.mjs`.
-
-Production repository queries:
+- [ ] Implement production repository:
 
 ```js
 findSeedEvent: async competition => {
-  const q=await db.from('cp_external_matches').select('provider_event_id').eq('competition',competition).order('kickoff_at',{ascending:true}).limit(1).maybeSingle();
-  if(q.error)throw q.error;return q.data?.provider_event_id??null;
+  const q=await db.from('cp_external_matches')
+    .select('provider_event_id')
+    .eq('competition',competition)
+    .order('kickoff_at',{ascending:true})
+    .limit(1)
+    .maybeSingle();
+  if(q.error)throw q.error;
+  return q.data?.provider_event_id??null;
 },
 localTeams: async()=>{
-  const q=await db.from('cp_teams').select('id,name,short_name,custom_emoji_id,bsd_team_id').not('bsd_team_id','is',null);
-  if(q.error)throw q.error;return q.data??[];
+  const q=await db.from('cp_teams')
+    .select('id,name,short_name,custom_emoji_id,bsd_team_id')
+    .not('bsd_team_id','is',null);
+  if(q.error)throw q.error;
+  return q.data??[];
 }
 ```
 
-`upsertExternalMatches` writes existing `cp_external_matches` columns using `competition='coppa_italia'`, `provider='bsd'`, canonical stage key/order, kickoff/status/team/score fields, with `onConflict:'competition,provider_event_id'`, then selects `id,provider_event_id`.
+Repository `readCache`/`writeCache` uses `cp_competition_views_cache` only via service-role access inside the Edge Function.
 
-- [ ] **Step 4: Implement request dispatch and response shape**
+- [ ] Implement `upsertExternalMatches(events)` using existing `cp_external_matches` schema and unique key `(competition,provider_event_id)`. For each Coppa actual event write:
+  - `competition='coppa_italia'`, `provider='bsd'`;
+  - provider event ID;
+  - canonical `stage_key`, `stage_label`, `stage_order` (`r32=300,r16=400,qf=500,sf=600,final=700`);
+  - kickoff/status/minute;
+  - home/away BSD IDs, names, crest URLs;
+  - scores/provider timestamps.
+  Then `.select('id,provider_event_id')` and return a `Map`.
 
-GET response:
+- [ ] Implement typed errors:
+
+```text
+invalid_competition -> 400
+competition_seed_missing -> 503
+provider_unavailable -> 503 when no cache exists
+subscription_required -> 403
+invalid/expired Telegram auth -> 401
+```
+
+GET metadata:
 
 ```json
 {"ok":true,"service":"ciao-tournament-tables-v1","version":1,"competitions":["ucl","uel","uecl","coppa_italia"]}
 ```
 
-For authenticated POST, return top-level `{ok:true,...serviceResult}`. Typed errors:
-
-- `invalid_competition` -> 400
-- `competition_seed_missing` -> 503
-- `provider_unavailable` -> 503 when no cache exists
-- `subscription_required` -> 403
-- invalid Telegram auth -> 401
-
-- [ ] **Step 5: Run full backend tests**
+- [ ] Verify all backend tests:
 
 ```bash
 node --test work/tournament-tables/backend/tests/*.test.mjs
 ```
 
-Expected: all PASS.
+- [ ] Deploy exactly `index.ts`, `auth.mjs`, `domain.mjs`, `provider.mjs`, `service.mjs` as `ciao-tournament-tables-v1` with `verify_jwt=false` because custom Telegram auth is enforced inside `handleRequest`.
 
-- [ ] **Step 6: Deploy Edge Function**
-
-Deploy `index.ts`, `auth.mjs`, `domain.mjs`, `provider.mjs`, `service.mjs` as `ciao-tournament-tables-v1` with `verify_jwt=false` because custom Telegram auth is enforced in `handleRequest`.
-
-- [ ] **Step 7: Smoke-test real provider coverage before frontend work**
-
-Using an authenticated Mini App request, verify:
+- [ ] Real-provider smoke **before frontend changes** using a valid Mini App auth request:
 
 ```text
-ucl: rows.length = 36, unique positions = 36
-uel: rows.length = 36, unique positions = 36
-uecl: rows.length = 36, unique positions = 36
-coppa_italia: rounds include r32 and every actual returned event has external_match_id > 0
+UCL: rows.length === 36; unique positions === 36
+UEL: rows.length === 36; unique positions === 36
+UECL: rows.length === 36; unique positions === 36
+Coppa: rounds include r32; every actual returned event has external_match_id > 0
 ```
 
-Also query `cp_external_matches` and confirm Coppa provider IDs remain unique under `(competition, provider_event_id)`.
+Also query `cp_external_matches` and confirm no duplicate `(competition,provider_event_id)` rows for Coppa.
 
-- [ ] **Step 8: Verify stale-cache behavior with a controlled provider failure test**
+- [ ] Cache smoke: after a successful request, a second request can be served from `cp_competition_views_cache`; unit tests cover provider failure without modifying real credentials.
 
-Do not break production credentials. Unit-test the failure path and then verify a second API request reads the newly populated cache row. Confirm cache row count is exactly one per `(season,competition,view_type)`.
-
-- [ ] **Step 9: Commit backend implementation branch**
+- [ ] Commit backend implementation source on the implementation branch:
 
 ```bash
 git add work/tournament-tables/backend
 git commit -m "feat: deploy tournament tables API"
 ```
 
-Do not merge these backend source files or migration files into production `main`; keep them on the feature/implementation branch as the auditable source used for deployment.
+**Do not merge backend source, tests, migrations, specs, or plans into production `main`.** They remain on the implementation/design branch as auditable source; production `main` receives only the verified final `index.html` during frontend rollout.
