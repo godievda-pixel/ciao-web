@@ -6143,6 +6143,7 @@ hero=function(){
     const direct=new Set();
     for(const r of records){
       if(r.type==='attributes'){
+        if(r.target.matches?.(RAIL_SELECTOR))continue;
         const rail=r.target.closest?.(RAIL_SELECTOR);if(rail)direct.add(rail);
       }
     }
@@ -6151,7 +6152,7 @@ hero=function(){
       if(!scheduled){scheduled=true;raf(()=>{scheduled=false;__cw36Scan(ROOT)})}
     }
   });
-  observer.observe(ROOT,{subtree:true,childList:true,attributes:true,attributeFilter:['class','aria-selected']});
+  observer.observe(ROOT,{subtree:true,childList:true,attributes:true,attributeFilter:['aria-selected']});
   window.addEventListener('resize',()=>__cw36Scan(ROOT),{passive:true});
   __cw36Scan(ROOT);
   window.__cw36SyncRail=__cw36SyncRail;
