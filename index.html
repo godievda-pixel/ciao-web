@@ -2017,7 +2017,7 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
       matchCenterTab=next;
       root.querySelectorAll('[data-mc-tab]').forEach(x=>{const active=x.dataset.mcTab===matchCenterTab;x.classList.toggle('active',active);x.setAttribute('aria-selected',active?'true':'false')});
       const host=main.querySelector('[data-mc-tab-content]');if(host&&matchData){host.dataset.mcTabContent=matchCenterTab;host.innerHTML=matchTabContent(matchData,matchCenterTab)}
-      btn.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+      /* ciao-v35 fixed segmented rail: no scrollIntoView */
     }));
   }
   function patchStatSection(selector,d){const box=main.querySelector(selector);if(!box)return;const temp=document.createElement('div');temp.innerHTML=selector.includes('extra')?allStatsHtml(d).extra:allStatsHtml(d).primary;const nextRows=[...temp.querySelectorAll('[data-stat-key]')];for(const nr of nextRows){const key=nr.dataset.statKey,cur=box.querySelector(`[data-stat-key="${CSS.escape(key)}"]`);if(!cur){box.appendChild(nr);continue}for(const side of ['home','away']){const nv=nr.querySelector(`[data-side="${side}"]`)?.textContent,el=cur.querySelector(`[data-side="${side}"]`);if(el&&el.textContent!==nv)el.textContent=nv??''}const nb=nr.querySelectorAll('.mc-bar i'),cb=cur.querySelectorAll('.mc-bar i');if(nb.length===2&&cb.length===2){cb[0].style.width=nb[0].style.width;cb[1].style.width=nb[1].style.width}}}
@@ -2304,7 +2304,7 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
       root.querySelectorAll('[data-mc-tab]').forEach(x=>{const active=x.dataset.mcTab===matchCenterTab;x.classList.toggle('active',active);x.setAttribute('aria-selected',active?'true':'false')});
       const host=main.querySelector('[data-mc-tab-content]');
       if(host&&matchData){host.dataset.mcTabContent=matchCenterTab;host.innerHTML=__cw9TabReady(matchCenterTab,matchData)?matchTabContent(matchData,matchCenterTab):'<div class="mc-lazy-loading">Загружаем данные…</div>'}
-      btn.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+      /* ciao-v35 fixed segmented rail: no scrollIntoView */
       if(!__cw9TabReady(matchCenterTab,matchData))await __cw9LoadSection(matchCenterTab);
     }));
   };
@@ -5761,5 +5761,169 @@ hero=function(){
 
 })();
 </script>
+
+<style id="ciao-v35-segmented-liquid-system">
+/* ciao-v35-segmented-liquid-system-20260910
+   One glass rail + one active liquid capsule. Tournament/club colour stays local. */
+#ciao-miniapp-root{
+  --cw-rail-rgb:83,103,230;
+  --cw-rail-glow:rgba(83,103,230,.24);
+  --cw-rail-glow-strong:rgba(83,103,230,.34);
+}
+
+/* Shared glass rail geometry. */
+#ciao-miniapp-root :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar){
+  position:relative!important;
+  box-sizing:border-box!important;
+  border:1px solid rgba(225,235,255,.24)!important;
+  border-radius:999px!important;
+  padding:4px!important;
+  gap:3px!important;
+  background:
+    radial-gradient(circle at 22% -70%,rgba(255,255,255,.30),transparent 48%),
+    linear-gradient(180deg,rgba(255,255,255,.105),rgba(255,255,255,.042) 46%,rgba(4,10,27,.34))!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.36),
+    inset 0 -1px 0 rgba(0,0,0,.20),
+    0 12px 30px rgba(0,0,0,.18),
+    0 0 24px var(--cw-rail-glow)!important;
+  -webkit-backdrop-filter:blur(22px) saturate(165%)!important;
+  backdrop-filter:blur(22px) saturate(165%)!important;
+  overflow:hidden!important;
+  min-height:46px;
+  isolation:isolate;
+}
+#ciao-miniapp-root :where(.cwpred-mode,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar)::before{
+  content:"";position:absolute;left:7%;right:7%;top:1px;height:1px;border-radius:999px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.62),transparent);opacity:.62;pointer-events:none
+}
+
+/* The items are transparent pieces of one field; only active item becomes the floating capsule. */
+#ciao-miniapp-root :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar) > button,
+#ciao-miniapp-root .cwpred-rounds .round-chip{
+  position:relative!important;z-index:1!important;box-sizing:border-box!important;
+  min-height:38px!important;border-radius:999px!important;
+  border:1px solid transparent!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+  color:#9daacf!important;
+  transition:transform .16s ease,color .18s ease,background .22s ease,border-color .22s ease,box-shadow .22s ease!important;
+}
+#ciao-miniapp-root :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar) > button.active,
+#ciao-miniapp-root .cwpred-rounds .round-chip.active{
+  color:#fff!important;
+  border-color:rgba(240,246,255,.40)!important;
+  background:
+    radial-gradient(circle at 30% -38%,rgba(255,255,255,.55),transparent 46%),
+    linear-gradient(180deg,rgba(var(--cw-rail-rgb),.56),rgba(var(--cw-rail-rgb),.25) 62%,rgba(8,16,38,.30))!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.58),
+    inset 0 -1px 0 rgba(0,0,0,.18),
+    0 8px 22px var(--cw-rail-glow-strong),
+    0 0 22px var(--cw-rail-glow)!important;
+}
+#ciao-miniapp-root :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar) > button:active{transform:scale(.975)!important}
+
+/* Prediction switch + round switch are two separate rails, as in the supplied reference. */
+#ciao-miniapp-root .cwpred-mode{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;width:100%!important;margin-bottom:9px!important}
+#ciao-miniapp-root .cwpred-mode>button{width:100%!important;margin:0!important}
+#ciao-miniapp-root .cwpred-rounds{display:flex!important;overflow-x:auto!important;overflow-y:hidden!important;width:100%!important;padding:4px!important;scrollbar-width:none}
+#ciao-miniapp-root .cwpred-rounds::-webkit-scrollbar{display:none}
+#ciao-miniapp-root .cwpred-rounds .round-chip{flex:0 0 38px!important;width:38px!important;min-width:38px!important;padding:0!important}
+
+/* Tournament context for prediction rails. */
+#ciao-miniapp-root[data-cwpred-screen-theme='serie-a'] :where(.cwpred-mode,.cwpred-rounds){--cw-rail-rgb:49,80,255;--cw-rail-glow:rgba(49,80,255,.25);--cw-rail-glow-strong:rgba(49,80,255,.38)}
+#ciao-miniapp-root[data-cwpred-screen-theme='coppa'] :where(.cwpred-mode,.cwpred-rounds){--cw-rail-rgb:21,148,87;--cw-rail-glow:rgba(21,148,87,.25);--cw-rail-glow-strong:rgba(180,47,67,.30)}
+#ciao-miniapp-root[data-cwpred-screen-theme='champions'] :where(.cwpred-mode,.cwpred-rounds){--cw-rail-rgb:83,103,230;--cw-rail-glow:rgba(83,103,230,.29);--cw-rail-glow-strong:rgba(120,78,255,.40)}
+#ciao-miniapp-root[data-cwpred-screen-theme='europa'] :where(.cwpred-mode,.cwpred-rounds){--cw-rail-rgb:230,106,19;--cw-rail-glow:rgba(230,106,19,.27);--cw-rail-glow-strong:rgba(255,130,45,.40)}
+#ciao-miniapp-root[data-cwpred-screen-theme='conference'] :where(.cwpred-mode,.cwpred-rounds){--cw-rail-rgb:40,169,104;--cw-rail-glow:rgba(40,169,104,.28);--cw-rail-glow-strong:rgba(65,218,138,.40)}
+
+/* Tables: one rail per level, fixed geometry. */
+#ciao-miniapp-root .cwtt2-nav{display:grid!important;grid-template-columns:1fr 1.45fr .72fr .72fr .72fr!important;width:100%!important;overflow:hidden!important;min-height:46px!important}
+#ciao-miniapp-root .cwtt2-subnav{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;width:100%!important;overflow:hidden!important;min-height:46px!important}
+#ciao-miniapp-root .cwtt2-subnav--single{grid-template-columns:1fr!important}
+#ciao-miniapp-root .cwtt2-nav-btn,#ciao-miniapp-root .cwtt2-sub-btn{min-width:0!important;width:100%!important;padding:0 5px!important;font-size:9px!important;white-space:nowrap!important}
+#ciao-miniapp-root[data-cwtt2-theme='serie-a'] :where(.cwtt2-nav,.cwtt2-subnav){--cw-rail-rgb:49,80,255;--cw-rail-glow:rgba(49,80,255,.24);--cw-rail-glow-strong:rgba(49,80,255,.38)}
+#ciao-miniapp-root[data-cwtt2-theme='champions'] :where(.cwtt2-nav,.cwtt2-subnav){--cw-rail-rgb:83,103,230;--cw-rail-glow:rgba(83,103,230,.29);--cw-rail-glow-strong:rgba(120,78,255,.40)}
+#ciao-miniapp-root[data-cwtt2-theme='europa'] :where(.cwtt2-nav,.cwtt2-subnav){--cw-rail-rgb:230,106,19;--cw-rail-glow:rgba(230,106,19,.26);--cw-rail-glow-strong:rgba(255,130,45,.40)}
+#ciao-miniapp-root[data-cwtt2-theme='conference'] :where(.cwtt2-nav,.cwtt2-subnav){--cw-rail-rgb:40,169,104;--cw-rail-glow:rgba(40,169,104,.27);--cw-rail-glow-strong:rgba(65,218,138,.40)}
+#ciao-miniapp-root[data-cwtt2-theme='coppa'] :where(.cwtt2-nav,.cwtt2-subnav){--cw-rail-rgb:21,148,87;--cw-rail-glow:rgba(21,148,87,.25);--cw-rail-glow-strong:rgba(180,47,67,.32)}
+
+/* Match centre: tournament colour owns the entire local atmosphere. */
+#ciao-miniapp-root .mc-shell{--mc-rgb:49,80,255;--mc-rgb2:30,56,170;--mc-glow:rgba(49,80,255,.24);--cw-rail-rgb:49,80,255;--cw-rail-glow:rgba(49,80,255,.25);--cw-rail-glow-strong:rgba(49,80,255,.40)}
+#ciao-miniapp-root .mc-shell.mc-theme-ucl{--mc-rgb:83,103,230;--mc-rgb2:119,66,230;--mc-glow:rgba(83,103,230,.30);--cw-rail-rgb:83,103,230;--cw-rail-glow:rgba(83,103,230,.31);--cw-rail-glow-strong:rgba(120,78,255,.44)}
+#ciao-miniapp-root .mc-shell.mc-theme-uel{--mc-rgb:230,106,19;--mc-rgb2:151,63,8;--mc-glow:rgba(230,106,19,.28);--cw-rail-rgb:230,106,19;--cw-rail-glow:rgba(230,106,19,.29);--cw-rail-glow-strong:rgba(255,130,45,.43)}
+#ciao-miniapp-root .mc-shell.mc-theme-uecl{--mc-rgb:40,169,104;--mc-rgb2:13,103,65;--mc-glow:rgba(40,169,104,.30);--cw-rail-rgb:40,169,104;--cw-rail-glow:rgba(40,169,104,.32);--cw-rail-glow-strong:rgba(65,218,138,.46)}
+#ciao-miniapp-root .mc-shell.mc-theme-coppa{--mc-rgb:21,148,87;--mc-rgb2:180,47,67;--mc-glow:rgba(21,148,87,.27);--cw-rail-rgb:21,148,87;--cw-rail-glow:rgba(21,148,87,.28);--cw-rail-glow-strong:rgba(180,47,67,.36)}
+#ciao-miniapp-root .mc-tabs-wrap{margin:10px 0 12px!important;padding:0!important;background:transparent!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+#ciao-miniapp-root .mc-tabs{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;width:100%!important;min-height:48px!important;overflow:hidden!important}
+#ciao-miniapp-root .mc-tab{width:100%!important;min-width:0!important;padding:0 3px!important;font-size:8.8px!important}
+#ciao-miniapp-root .mc-shell :where(.mc-section,.mc-kpi,.mc-form-row,.mc-info-card,.cw14-form-card,.cw14-shot-summary,.cw14-shot-detail),
+#ciao-miniapp-root .mc-shell :where(.mc-toolbar,.mc-hero,.mc-pitch-panel){
+  border-color:rgba(var(--mc-rgb),.25)!important;
+  background:
+    radial-gradient(circle at 88% -20%,rgba(var(--mc-rgb),.22),transparent 42%),
+    radial-gradient(circle at 5% 110%,rgba(var(--mc-rgb2),.13),transparent 38%),
+    linear-gradient(145deg,rgba(255,255,255,.052),rgba(var(--mc-rgb),.075) 54%,rgba(5,12,30,.90))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 14px 36px rgba(0,0,0,.17),0 0 24px var(--mc-glow)!important;
+  -webkit-backdrop-filter:blur(18px) saturate(145%)!important;backdrop-filter:blur(18px) saturate(145%)!important;
+}
+#ciao-miniapp-root .mc-shell .mc-hero{border-color:rgba(var(--mc-rgb),.44)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.13),0 18px 50px rgba(0,0,0,.22),0 0 36px var(--mc-glow)!important}
+#ciao-miniapp-root .mc-shell :where(.mc-pitch,.cw14-shot-pitch,.cw14-shotmap-wrap){
+  border-color:rgba(var(--mc-rgb),.36)!important;
+  background:
+    radial-gradient(circle at 50% 0,rgba(var(--mc-rgb),.32),transparent 52%),
+    linear-gradient(180deg,rgba(var(--mc-rgb2),.34),rgba(4,26,26,.88))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12),inset 0 0 44px rgba(var(--mc-rgb),.15),0 0 28px var(--mc-glow)!important;
+}
+#ciao-miniapp-root .mc-shell :where(.mc-pitch-line,.mc-pitch-box){border-color:rgba(238,247,255,.48)!important}
+
+/* Tournament hub cards = coloured glass, not identical navy cards. Used by both Predictions and Matches. */
+#ciao-miniapp-root .cwpred-tournament-card[data-cwpred-theme]{
+  -webkit-backdrop-filter:blur(20px) saturate(165%)!important;backdrop-filter:blur(20px) saturate(165%)!important;
+  border-color:rgba(var(--cw-card-rgb),.54)!important;
+  background:
+    radial-gradient(circle at 78% -12%,rgba(255,255,255,.30),transparent 36%),
+    radial-gradient(circle at 16% 20%,rgba(var(--cw-card-rgb),.42),transparent 56%),
+    linear-gradient(145deg,rgba(var(--cw-card-rgb),.29),rgba(var(--cw-card-rgb),.13) 46%,rgba(5,12,30,.74))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(0,0,0,.18),0 16px 38px rgba(0,0,0,.20),0 0 28px rgba(var(--cw-card-rgb),.22)!important;
+}
+#ciao-miniapp-root .cwpred-tournament-card[data-cwpred-theme]:active{transform:translateY(1px) scale(.986)!important}
+
+/* Club segmented controls use the selected club, not tournament globals. */
+#ciao-miniapp-root .cw23-club-shell :where(.cw23-scope-strip,.cw16-club-tabs){--cw-rail-glow:var(--club-accent-faint);--cw-rail-glow-strong:var(--club-accent-soft);border-color:var(--club-accent-faint)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.30),0 12px 30px rgba(0,0,0,.18),0 0 25px var(--club-accent-faint)!important}
+#ciao-miniapp-root .cw23-club-shell :where(.cw23-scope-strip,.cw16-club-tabs)>button.active{border-color:var(--club-accent-light)!important;background:radial-gradient(circle at 30% -38%,rgba(255,255,255,.52),transparent 46%),linear-gradient(180deg,var(--club-accent-soft),var(--club-accent-2-soft))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.50),0 8px 24px var(--club-accent-soft),0 0 22px var(--club-accent-faint)!important}
+#ciao-miniapp-root .cw23-scope-strip,#ciao-miniapp-root .cw16-club-tabs{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;width:100%!important;overflow:hidden!important}
+#ciao-miniapp-root .cw23-scope-strip>button,#ciao-miniapp-root .cw16-club-tabs>button{min-width:0!important;width:100%!important;padding:0 4px!important;font-size:8.3px!important;white-space:normal!important;line-height:1.05!important}
+
+/* Rating and public-profile filters use a rail while each active competition keeps its own accent. */
+#ciao-miniapp-root .cw30-comp-scroll,#ciao-miniapp-root .cw31-profile-comp-scroll{margin:0!important;padding:0!important;overflow-x:auto!important;scrollbar-width:none}
+#ciao-miniapp-root .cw30-comp-scroll::-webkit-scrollbar,#ciao-miniapp-root .cw31-profile-comp-scroll::-webkit-scrollbar{display:none}
+#ciao-miniapp-root .cw30-compbar,#ciao-miniapp-root .cw31-profile-compbar{display:flex!important;width:max-content!important;min-width:100%!important;overflow:visible!important}
+#ciao-miniapp-root .cw30-comp,#ciao-miniapp-root .cw31-profile-comp{flex:0 0 auto!important;min-width:52px!important}
+
+/* ciao-v35-layout-stability: keep dynamic areas geometrically stable during live/cache refreshes. */
+#ciao-miniapp-root .mc-shell,#ciao-miniapp-root .mc-tab-content,#ciao-miniapp-root .cwtt2-screen,#ciao-miniapp-root .cwtt2-table,#ciao-miniapp-root .hero.cw34-user-hero{overflow-anchor:none!important}
+#ciao-miniapp-root .mc-tabs,#ciao-miniapp-root .cwtt2-nav,#ciao-miniapp-root .cwtt2-subnav,#ciao-miniapp-root .cwpred-mode{contain:layout paint}
+#ciao-miniapp-root .mc-tab-content{animation:none!important;min-height:220px}
+#ciao-miniapp-root .mc-score.flash{animation:none!important;transform:none!important}
+#ciao-miniapp-root .mc-score,#ciao-miniapp-root .cwtt2-standing,#ciao-miniapp-root .cwtt2-standing *,#ciao-miniapp-root .hero .rank{font-variant-numeric:tabular-nums!important}
+#ciao-miniapp-root .hero.cw34-user-hero{min-height:96px!important;box-sizing:border-box!important}
+#ciao-miniapp-root .hero.cw34-user-hero .rank{min-width:64px;text-align:right}
+#ciao-miniapp-root .cwtt2-head{min-height:28px!important}
+#ciao-miniapp-root .cwtt2-standing{min-height:50px!important;contain:layout style paint}
+#ciao-miniapp-root.mc-live-patch :where(.mc-hero,.mc-section,.mc-tabs,.mc-tab-content){transition:none!important}
+
+@media(max-width:390px){
+ #ciao-miniapp-root .cwtt2-nav-btn,#ciao-miniapp-root .cwtt2-sub-btn{font-size:8px!important;padding:0 3px!important}
+ #ciao-miniapp-root .mc-tab{font-size:7.8px!important;padding:0 1px!important}
+ #ciao-miniapp-root .cw23-scope-strip>button,#ciao-miniapp-root .cw16-club-tabs>button{font-size:7.6px!important;padding:0 2px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ #ciao-miniapp-root :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar)>button{transition:none!important}
+}
+</style>
+
 </body>
 </html>
