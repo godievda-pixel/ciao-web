@@ -5326,6 +5326,229 @@ try{const st=document.createElement('style');st.id='ciao-v12-performance-style';
 `;document.getElementById(st.id)?.remove();document.head.appendChild(st)}catch(_e){}
 /* /ciao-v12-performance-stability-20260910 */
 
+
+/* ===== Ciao, Web! v32 club atmosphere theming ===== */
+try{
+  const st=document.createElement('style');
+  st.id='ciao-v32-club-atmosphere';
+  st.textContent=`
+#ciao-miniapp-root .hero.cw32-user-hero{position:relative;overflow:hidden;isolation:isolate}
+#ciao-miniapp-root .hero.cw32-user-hero::before{content:'';position:absolute;right:-46px;top:-58px;width:185px;height:185px;border-radius:50%;background:radial-gradient(circle,var(--club-accent-soft,rgba(93,120,255,.24)),rgba(255,255,255,0) 70%);pointer-events:none;z-index:-1}
+#ciao-miniapp-root .hero.cw32-user-hero::after{content:'';position:absolute;left:18%;right:-12%;bottom:-78px;height:152px;border-radius:50%;background:radial-gradient(circle at center,var(--club-accent-2-soft,rgba(16,26,56,.36)),rgba(255,255,255,0) 69%);pointer-events:none;z-index:-1}
+#ciao-miniapp-root .hero.cw32-user-hero.cw32-user-hero--themed{border-color:var(--club-accent-faint)!important;background:radial-gradient(circle at 84% 8%,var(--club-accent-soft),transparent 28%),linear-gradient(135deg,var(--club-accent-2-soft),rgba(19,31,76,.96) 48%,rgba(7,16,39,.98) 100%)!important;box-shadow:0 18px 44px rgba(0,0,0,.22),0 0 0 1px var(--club-accent-faint) inset,inset 0 1px 0 rgba(255,255,255,.05)!important}
+#ciao-miniapp-root .hero.cw32-user-hero .rank{color:#fff;text-shadow:0 0 18px var(--club-accent-soft,rgba(93,120,255,.15))}
+#ciao-miniapp-root .hero.cw32-user-hero p{color:#b7c5ea!important}
+#ciao-miniapp-root .hero.cw32-user-hero .cw32-user-kicker{display:block;margin-top:6px;font-size:9px;line-height:1.3;color:var(--club-accent-light,#aebcff);font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+#ciao-miniapp-root.club-profile-open[data-cw32-club-theme='1'] .content{position:relative}
+#ciao-miniapp-root.club-profile-open[data-cw32-club-theme='1'] .content::before{content:'';position:absolute;left:-6px;right:-6px;top:0;bottom:0;pointer-events:none;background:radial-gradient(circle at 92% 0,var(--club-accent-soft,rgba(93,120,255,.18)),rgba(255,255,255,0) 27%),radial-gradient(circle at 4% 12%,var(--club-accent-2-soft,rgba(16,26,56,.30)),rgba(255,255,255,0) 24%);opacity:.9}
+#ciao-miniapp-root .cw23-club-shell{position:relative;isolation:isolate}
+#ciao-miniapp-root .cw23-club-shell::before{content:'';position:absolute;inset:-8px -4px -12px;border-radius:30px;pointer-events:none;z-index:-2;background:radial-gradient(circle at 88% 2%,var(--club-accent-soft),transparent 28%),radial-gradient(circle at 12% 18%,var(--club-accent-2-soft),transparent 24%),linear-gradient(160deg,var(--club-accent-2-soft),rgba(8,16,40,.97) 38%,rgba(4,10,28,.99) 100%);box-shadow:0 24px 64px rgba(0,0,0,.24)}
+#ciao-miniapp-root .cw23-club-shell::after{content:'';position:absolute;left:10px;right:10px;top:74px;bottom:0;border-radius:28px;pointer-events:none;z-index:-1;background:linear-gradient(180deg,rgba(255,255,255,.016),rgba(255,255,255,0) 16%,rgba(255,255,255,.012) 100%)}
+#ciao-miniapp-root .cw23-club-shell .cw16-club-toolbar{border:1px solid var(--club-accent-faint)!important;box-shadow:0 12px 30px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.04)!important}
+#ciao-miniapp-root .cw23-club-shell .cw16-club-toolbar::after{background:linear-gradient(90deg,transparent,var(--club-accent-soft) 16%,var(--club-accent-light) 50%,var(--club-accent-soft) 84%,transparent)!important;opacity:.78!important}
+#ciao-miniapp-root .cw23-club-shell .cw16-club-back{border-color:var(--club-accent-faint)!important;background:linear-gradient(180deg,var(--club-accent-soft),rgba(255,255,255,.03))!important;box-shadow:0 10px 24px rgba(0,0,0,.16)!important}
+#ciao-miniapp-root .cw23-club-shell .cw16-club-hero{border-color:var(--club-accent-faint)!important;background:radial-gradient(circle at 84% 12%,var(--club-accent-soft),transparent 30%),linear-gradient(135deg,var(--club-accent-faint),var(--club-accent-2-soft) 22%,rgba(10,19,46,.98) 58%,rgba(7,16,40,.99) 100%)!important}
+#ciao-miniapp-root .cw23-club-shell .cw17-hero-stats,#ciao-miniapp-root .cw23-club-shell .cw23-season-metrics,#ciao-miniapp-root .cw23-club-shell .cw23-team-stats,#ciao-miniapp-root .cw23-club-shell .cw17-player-metrics{gap:7px!important}
+#ciao-miniapp-root .cw23-club-shell .cw16-club-section,
+#ciao-miniapp-root .cw23-club-shell .cw16-info-card,
+#ciao-miniapp-root .cw23-club-shell .cw17-player-stat-card,
+#ciao-miniapp-root .cw23-club-shell .cw17-transfer-card,
+#ciao-miniapp-root .cw23-club-shell .cw16-player-row,
+#ciao-miniapp-root .cw23-club-shell .cw23-season-metrics>div,
+#ciao-miniapp-root .cw23-club-shell .cw17-stat-metric,
+#ciao-miniapp-root .cw23-club-shell .cw17-match-card,
+#ciao-miniapp-root .cw23-club-shell .cw23-match-card,
+#ciao-miniapp-root .cw23-club-shell .cw23-squad-metrics span,
+#ciao-miniapp-root .cw23-club-shell .cw16-player-num,
+#ciao-miniapp-root .cw23-club-shell .cw16-unavailable span,
+#ciao-miniapp-root .cw23-club-shell .cw16-leader-card,
+#ciao-miniapp-root .cw23-club-shell .cw16-leader,
+#ciao-miniapp-root .cw23-club-shell .cw16-leaders>div,
+#ciao-miniapp-root .cw23-club-shell .cw23-leaders-5>div{border-color:var(--club-accent-faint)!important;background:radial-gradient(circle at 100% 0,rgba(255,255,255,.05),transparent 28%),linear-gradient(135deg,rgba(255,255,255,.055),rgba(255,255,255,.018) 34%,var(--club-accent-2-soft) 100%)!important;box-shadow:0 14px 38px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.03)!important}
+#ciao-miniapp-root .cw23-club-shell .cw23-scope-strip button,
+#ciao-miniapp-root .cw23-club-shell .cw23-club-tabs .cw16-club-tab{border-color:var(--club-accent-faint)!important;background:radial-gradient(circle at 16% -30%,rgba(255,255,255,.12),transparent 40%),linear-gradient(135deg,rgba(255,255,255,.055),var(--club-accent-2-soft))!important;color:#b9c7ea!important}
+#ciao-miniapp-root .cw23-club-shell .cw23-scope-strip button.active,
+#ciao-miniapp-root .cw23-club-shell .cw23-club-tabs .cw16-club-tab.active{color:#fff!important;background:radial-gradient(circle at 24% -20%,rgba(255,255,255,.16),transparent 45%),linear-gradient(135deg,var(--club-accent-soft),var(--club-accent-2-soft)),rgba(15,24,48,.96)!important;box-shadow:0 10px 28px var(--club-accent-faint),inset 0 1px 0 rgba(255,255,255,.14),inset 0 -1px 0 rgba(0,0,0,.18)!important}
+#ciao-miniapp-root .cw23-club-shell .cw16-club-season,#ciao-miniapp-root .cw23-club-shell .cw16-club-section-note,#ciao-miniapp-root .cw23-club-shell .cw16-player-meta,#ciao-miniapp-root .cw23-club-shell .cw17-transfer-route,#ciao-miniapp-root .cw23-club-shell .cw17-transfer-date,#ciao-miniapp-root .cw23-club-shell .cw17-transfer-title span,#ciao-miniapp-root .cw23-club-shell .cw23-squad-metrics span{color:#9fb0d9!important}
+#ciao-miniapp-root .cw23-club-shell .cw23-squad-metrics span b,#ciao-miniapp-root .cw23-club-shell .cw17-stat-metric.primary b,#ciao-miniapp-root .cw23-club-shell .cw23-scope-kicker,#ciao-miniapp-root .cw23-club-shell .cw17-transfer-mark{color:var(--club-accent-light)!important}
+#ciao-miniapp-root .cw23-club-shell .cw16-form i.w{background:var(--club-accent-soft)!important;border-color:var(--club-accent-faint)!important;color:#fff!important}
+#ciao-miniapp-root .cw23-club-shell .cw16-form i.d{background:rgba(142,158,197,.14)!important;border-color:rgba(142,158,197,.24)!important}
+#ciao-miniapp-root .cw23-club-shell .cw16-form i.l{background:rgba(255,79,105,.13)!important}
+`;
+  document.getElementById(st.id)?.remove();
+  document.head.appendChild(st);
+}catch(_e){}
+
+function __cw32ThemeVars(t){
+  const a=typeof __cw17ClubAccent==='function'?__cw17ClubAccent(t):{solid:'#5d78ff',light:'#9aabff',soft:'rgba(93,120,255,.28)',faint:'rgba(93,120,255,.10)'};
+  const b=typeof __cw23ClubSecondary==='function'?__cw23ClubSecondary(t):{solid:'#101a38',soft:'rgba(16,26,56,.42)'};
+  return {'--club-accent':a.solid,'--club-accent-light':a.light,'--club-accent-soft':a.soft,'--club-accent-faint':a.faint,'--club-accent-2':b.solid,'--club-accent-2-soft':b.soft};
+}
+function __cw32ProfileThemeTeam(){
+  try{
+    if(clubViewId){
+      const cached=typeof __cw18ClubQuick!=='undefined'&&__cw18ClubQuick&&typeof __cw18ClubQuick.get==='function'?__cw18ClubQuick.get(Number(clubViewId)):null;
+      return cached?.team||(typeof __cw16TeamById==='function'?__cw16TeamById(clubViewId):null)||S?.favorite_club_profile?.team||S?.user?.favorite_team||null;
+    }
+    return S?.user?.favorite_team||null;
+  }catch(_e){return null}
+}
+function __cw32ApplyRootTheme(){
+  try{
+    if(!root)return;
+    const t=__cw32ProfileThemeTeam();
+    const vars=__cw32ThemeVars(t);
+    root.dataset.cw32ClubTheme=t?'1':'0';
+    for(const [k,v] of Object.entries(vars))root.style.setProperty(k,t?v:'');
+  }catch(_e){}
+}
+const __cw32HeroBase=hero;
+hero=function(){
+  const fav=S?.user?.favorite_team||null;
+  const themed=!!fav&&typeof __cw17AccentStyle==='function';
+  const style=themed?__cw17AccentStyle(fav):'';
+  const favLine=fav?`<span class="cw32-user-kicker">Любимый клуб · ${esc(fav.name||'')}</span>`:'';
+  return `<div class="hero cw32-user-hero ${themed?'cw32-user-hero--themed':''}" ${style?`style="${style}"`:''}><div class="hero-top"><div><h2>${esc(S.user.display_name)}</h2><p>${S.user.username?'@'+esc(S.user.username):'Игрок Ciao, Web!'}</p>${favLine}</div><div><div class="rank">#${S.stats.rank}</div><p>место</p></div></div></div>`;
+};
+const __cw32RenderBase=render;
+render=function(){const out=__cw32RenderBase();__cw32ApplyRootTheme();return out};
+__cw32ApplyRootTheme();
+/* ===== /Ciao, Web! v32 club atmosphere theming ===== */
+
+
+
+/* ===== Ciao, Web! v33 premium liquid glass ===== */
+try{
+  const st=document.createElement('style');
+  st.id='ciao-v33-liquid-glass';
+  st.textContent=`
+#ciao-miniapp-root.cw33-glass-context{
+  --cw-glass-accent:#5367e6;
+  --cw-glass-accent-soft:rgba(83,103,230,.28);
+  --cw-glass-accent-faint:rgba(83,103,230,.13);
+  --cw-glass-edge:rgba(255,255,255,.13);
+  --cw-glass-top:rgba(255,255,255,.12);
+  --cw-glass-bottom:rgba(255,255,255,.035);
+}
+#ciao-miniapp-root.cw33-glass-context :where(
+  .round-chip,.save,.cwpred-save,.cwpred-back,.cwmt-back,.mc-back,.mc-tab,.mc-shot,
+  .cw14-shot-chip,.cw16-club-back,.cw16-club-tab,.cw16-favorite-action,.cw16-picker-item,
+  .cw18-open-club,.cw18-fav-predict,.cw18-ghost-btn,.cw18-scope,.cw18-mini-switch,
+  .cw2017-favorite-go,.cw211-profile-btn,.cw211-match-btn,.cw22-share,
+  .cw30-comp,.cw31-profile-back,.cw31-profile-comp,.cw31-more,
+  .cwtt2-nav-btn,.cwtt2-sub-btn,.subscription-primary,.subscription-secondary,.fav-club
+){
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  border:1px solid var(--cw-glass-edge)!important;
+  background:
+    radial-gradient(circle at 24% -35%,rgba(255,255,255,.22),transparent 42%),
+    linear-gradient(145deg,var(--cw-glass-top),rgba(255,255,255,.055) 38%,var(--cw-glass-bottom) 72%,rgba(8,16,38,.34))!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.17),
+    inset 0 -1px 0 rgba(0,0,0,.20),
+    0 9px 24px rgba(0,0,0,.18),
+    0 0 0 1px rgba(255,255,255,.015)!important;
+  -webkit-backdrop-filter:blur(12px) saturate(138%);
+  backdrop-filter:blur(12px) saturate(138%);
+  transition:transform .14s ease,border-color .18s ease,box-shadow .18s ease,background .18s ease,color .18s ease,opacity .18s ease;
+}
+#ciao-miniapp-root.cw33-glass-context :where(
+  .round-chip,.save,.cwpred-save,.cwpred-back,.cwmt-back,.mc-back,.mc-tab,.mc-shot,
+  .cw14-shot-chip,.cw16-club-back,.cw16-club-tab,.cw16-favorite-action,.cw16-picker-item,
+  .cw18-open-club,.cw18-fav-predict,.cw18-ghost-btn,.cw18-scope,.cw18-mini-switch,
+  .cw2017-favorite-go,.cw211-profile-btn,.cw211-match-btn,.cw22-share,
+  .cw30-comp,.cw31-profile-back,.cw31-profile-comp,.cw31-more,
+  .cwtt2-nav-btn,.cwtt2-sub-btn,.subscription-primary,.subscription-secondary,.fav-club
+):active{transform:translateY(1px) scale(.975);box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 4px 14px rgba(0,0,0,.18)!important}
+#ciao-miniapp-root.cw33-glass-context :where(
+  .round-chip.active,.mc-tab.active,.cw16-club-tab.active,.cw18-scope.active,.cw18-mini-switch.active,
+  .cw30-comp.active,.cw31-profile-comp.active,.cwtt2-nav-btn.active,.cwtt2-sub-btn.active,.fav-club.active,
+  .save:not(:disabled),.cwpred-save:not(:disabled),.subscription-primary
+){
+  color:#fff!important;
+  border-color:rgba(133,151,255,.45)!important;
+  background:
+    radial-gradient(circle at 26% -25%,rgba(255,255,255,.28),transparent 44%),
+    linear-gradient(145deg,rgba(98,118,255,.52),rgba(55,72,203,.34) 54%,rgba(18,29,82,.46))!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.24),
+    inset 0 -1px 0 rgba(0,0,0,.18),
+    0 10px 30px rgba(49,80,255,.24),
+    0 0 22px rgba(83,103,230,.13)!important;
+}
+#ciao-miniapp-root.cw33-glass-context .nav{background:linear-gradient(180deg,rgba(7,14,34,.78),rgba(4,10,27,.94))!important;-webkit-backdrop-filter:blur(24px) saturate(145%);backdrop-filter:blur(24px) saturate(145%);border-top-color:rgba(255,255,255,.09)!important;box-shadow:0 -12px 36px rgba(0,0,0,.20),inset 0 1px 0 rgba(255,255,255,.045)!important}
+#ciao-miniapp-root.cw33-glass-context .nav button{position:relative;border:1px solid transparent!important;border-radius:17px!important;background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,255,255,.008))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.015)!important;transition:transform .14s ease,background .18s ease,border-color .18s ease,box-shadow .18s ease,color .18s ease}
+#ciao-miniapp-root.cw33-glass-context .nav button.active{border-color:rgba(117,139,255,.34)!important;background:radial-gradient(circle at 28% -18%,rgba(255,255,255,.22),transparent 42%),linear-gradient(145deg,rgba(66,87,226,.52),rgba(24,42,128,.44))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 8px 24px rgba(31,55,181,.24),0 0 18px rgba(83,103,230,.10)!important;color:#fff!important}
+#ciao-miniapp-root.cw33-glass-context .nav button:active{transform:scale(.965)}
+#ciao-miniapp-root.cw33-glass-context .switch{border:1px solid rgba(255,255,255,.12)!important;background:linear-gradient(145deg,rgba(255,255,255,.11),rgba(255,255,255,.035))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.11),0 7px 18px rgba(0,0,0,.16)!important;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+#ciao-miniapp-root.cw33-glass-context .switch.on{border-color:rgba(108,132,255,.45)!important;background:linear-gradient(145deg,rgba(83,103,230,.72),rgba(35,52,156,.66))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.20),0 8px 24px rgba(49,80,255,.22)!important}
+#ciao-miniapp-root.cw33-glass-context .switch i{box-shadow:0 3px 9px rgba(0,0,0,.26),inset 0 1px 0 rgba(255,255,255,.72)}
+
+
+#ciao-miniapp-root.cw33-glass-context :where(.cwpred-tournament-card,.cw29-score-pick,.cw18-modal-close,.cw18-retry,.cw20-predictor-retry,.cw209-calendar-retry,.score button){
+  border:1px solid var(--cw-glass-edge)!important;
+  background:radial-gradient(circle at 24% -34%,rgba(255,255,255,.22),transparent 42%),linear-gradient(145deg,var(--cw-glass-top),rgba(255,255,255,.05) 42%,rgba(8,16,38,.36))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16),inset 0 -1px 0 rgba(0,0,0,.18),0 9px 24px rgba(0,0,0,.18)!important;
+  -webkit-backdrop-filter:blur(12px) saturate(138%);backdrop-filter:blur(12px) saturate(138%);
+  transition:transform .14s ease,border-color .18s ease,box-shadow .18s ease,background .18s ease,color .18s ease;
+}
+#ciao-miniapp-root.cw33-glass-context :where(.cwpred-tournament-card,.cw29-score-pick,.cw18-modal-close,.cw18-retry,.cw20-predictor-retry,.cw209-calendar-retry,.score button):active{transform:translateY(1px) scale(.975)}
+#ciao-miniapp-root.cw33-glass-context .cwpred-tournament-card[data-cwpred-theme='serie-a']{box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 12px 30px rgba(49,80,255,.14)!important}
+#ciao-miniapp-root.cw33-glass-context .cwpred-tournament-card[data-cwpred-theme='coppa']{box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 12px 30px rgba(21,148,87,.13)!important}
+#ciao-miniapp-root.cw33-glass-context .cwpred-tournament-card[data-cwpred-theme='champions']{box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 12px 30px rgba(83,103,230,.15)!important}
+#ciao-miniapp-root.cw33-glass-context .cwpred-tournament-card[data-cwpred-theme='europa']{box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 12px 30px rgba(230,106,19,.14)!important}
+#ciao-miniapp-root.cw33-glass-context .cwpred-tournament-card[data-cwpred-theme='conference']{box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 12px 30px rgba(40,169,104,.14)!important}
+
+/* Tournament glass keeps the common geometry and changes only the competition accent. */
+#ciao-miniapp-root[data-cwtt2-theme='champions'] :where(.cwtt2-nav-btn.active,.cwtt2-sub-btn.active){border-color:rgba(118,130,255,.46)!important;background:radial-gradient(circle at 25% -20%,rgba(255,255,255,.25),transparent 44%),linear-gradient(145deg,rgba(82,99,224,.56),rgba(55,38,141,.40))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.20),0 9px 26px rgba(83,103,230,.22)!important}
+#ciao-miniapp-root[data-cwtt2-theme='europa'] :where(.cwtt2-nav-btn.active,.cwtt2-sub-btn.active){border-color:rgba(255,146,74,.44)!important;background:radial-gradient(circle at 25% -20%,rgba(255,255,255,.24),transparent 44%),linear-gradient(145deg,rgba(230,106,19,.58),rgba(118,55,14,.40))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 9px 26px rgba(230,106,19,.20)!important}
+#ciao-miniapp-root[data-cwtt2-theme='conference'] :where(.cwtt2-nav-btn.active,.cwtt2-sub-btn.active){border-color:rgba(81,208,143,.42)!important;background:radial-gradient(circle at 25% -20%,rgba(255,255,255,.24),transparent 44%),linear-gradient(145deg,rgba(40,169,104,.58),rgba(17,91,60,.40))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 9px 26px rgba(40,169,104,.18)!important}
+#ciao-miniapp-root[data-cwtt2-theme='coppa'] :where(.cwtt2-nav-btn.active,.cwtt2-sub-btn.active){border-color:rgba(72,193,124,.40)!important;background:radial-gradient(circle at 25% -20%,rgba(255,255,255,.24),transparent 44%),linear-gradient(145deg,rgba(21,148,87,.54),rgba(134,35,49,.34))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 9px 26px rgba(21,148,87,.18)!important}
+
+/* Club profile: every interactive surface inherits the club palette, locally only. */
+#ciao-miniapp-root .cw23-club-shell button:not(.cw16-match-team):not(.cw16-transfer-club){
+  border-color:var(--club-accent-faint)!important;
+  background:radial-gradient(circle at 24% -28%,rgba(255,255,255,.20),transparent 43%),linear-gradient(145deg,rgba(255,255,255,.085),var(--club-accent-2-soft) 72%)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 9px 25px rgba(0,0,0,.18)!important;
+  -webkit-backdrop-filter:blur(13px) saturate(142%);backdrop-filter:blur(13px) saturate(142%);
+}
+#ciao-miniapp-root .cw23-club-shell button.active,
+#ciao-miniapp-root .cw23-club-shell .cw16-club-tab.active,
+#ciao-miniapp-root .cw23-club-shell .cw23-scope-strip button.active{
+  color:#fff!important;
+  border-color:var(--club-accent-light)!important;
+  background:radial-gradient(circle at 22% -20%,rgba(255,255,255,.28),transparent 43%),linear-gradient(145deg,var(--club-accent-soft),var(--club-accent-2-soft))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 10px 30px var(--club-accent-faint),0 0 22px var(--club-accent-faint)!important;
+}
+#ciao-miniapp-root .cw23-club-shell .cw16-club-section,
+#ciao-miniapp-root .cw23-club-shell .cw16-info-card,
+#ciao-miniapp-root .cw23-club-shell .cw17-player-stat-card,
+#ciao-miniapp-root .cw23-club-shell .cw17-transfer-card,
+#ciao-miniapp-root .cw23-club-shell .cw16-player-row,
+#ciao-miniapp-root .cw23-club-shell .cw17-match-card,
+#ciao-miniapp-root .cw23-club-shell .cw23-match-card{
+  -webkit-backdrop-filter:blur(10px) saturate(125%);backdrop-filter:blur(10px) saturate(125%);
+}
+
+/* Favorite-club user plaque uses the same liquid-glass treatment. */
+#ciao-miniapp-root .hero.cw32-user-hero.cw32-user-hero--themed{
+  -webkit-backdrop-filter:blur(16px) saturate(140%);backdrop-filter:blur(16px) saturate(140%);
+  background:radial-gradient(circle at 82% 0,rgba(255,255,255,.10),transparent 24%),radial-gradient(circle at 84% 12%,var(--club-accent-soft),transparent 33%),linear-gradient(135deg,var(--club-accent-2-soft),rgba(17,29,67,.84) 50%,rgba(6,14,34,.92) 100%)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 16px 42px rgba(0,0,0,.24),0 0 28px var(--club-accent-faint)!important;
+}
+
+@media (hover:hover){
+#ciao-miniapp-root.cw33-glass-context :where(.round-chip,.save,.cwpred-save,.cwpred-back,.cwmt-back,.mc-back,.mc-tab,.cw14-shot-chip,.cw16-club-back,.cw16-club-tab,.cw18-open-club,.cw18-scope,.cw211-profile-btn,.cw211-match-btn,.cw22-share,.cw30-comp,.cw31-profile-back,.cw31-profile-comp,.cwtt2-nav-btn,.cwtt2-sub-btn):hover{border-color:rgba(164,180,255,.32)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.20),0 11px 28px rgba(0,0,0,.20)!important}}
+@media (prefers-reduced-motion:reduce){#ciao-miniapp-root.cw33-glass-context button{transition:none!important}}
+`;
+  document.getElementById(st.id)?.remove();
+  document.head.appendChild(st);
+}catch(_e){}
+try{root?.classList.add('cw33-glass-context')}catch(_e){}
+/* ===== /Ciao, Web! v33 premium liquid glass ===== */
+
 /* ===== /Ciao, Web! v22.5 product polish layer ===== */
 
 })();
