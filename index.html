@@ -5549,6 +5549,214 @@ try{
 try{root?.classList.add('cw33-glass-context')}catch(_e){}
 /* ===== /Ciao, Web! v33 premium liquid glass ===== */
 
+
+/* ===== Ciao, Web! v34 liquid glass controls ===== */
+try{
+  const st=document.createElement('style');
+  st.id='ciao-v34-liquid-glass-controls';
+  st.textContent=`
+#ciao-miniapp-root.cw34-liquid-controls{
+  --cw-control-accent:#5367e6;
+  --cw-control-accent-rgb:83,103,230;
+  --cw-control-deep:#263dba;
+  --cw-control-edge:rgba(226,236,255,.30);
+}
+
+/* Base liquid-glass surface for real controls, not clickable data rows. */
+#ciao-miniapp-root.cw34-liquid-controls button:not(.cwtt2-standing):not(.board-team):not(.cwmt-team):not(.cw16-match-team):not(.cw16-transfer-club){
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  border:1px solid var(--cw-control-edge)!important;
+  border-radius:18px!important;
+  color:#dfe7ff;
+  background:
+    radial-gradient(circle at 24% -42%,rgba(255,255,255,.34),transparent 45%),
+    linear-gradient(180deg,rgba(255,255,255,.16) 0%,rgba(255,255,255,.065) 34%,rgba(255,255,255,.025) 66%,rgba(6,14,34,.30) 100%)!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.42),
+    inset 0 -1px 0 rgba(0,0,0,.24),
+    0 9px 24px rgba(0,0,0,.20),
+    0 0 16px rgba(var(--cw-control-accent-rgb),.055)!important;
+  -webkit-backdrop-filter:blur(18px) saturate(158%);
+  backdrop-filter:blur(18px) saturate(158%);
+  transition:transform .14s ease,border-color .18s ease,box-shadow .18s ease,background .18s ease,color .18s ease,filter .18s ease!important;
+}
+#ciao-miniapp-root.cw34-liquid-controls button:not(.cwtt2-standing):not(.board-team):not(.cwmt-team):not(.cw16-match-team):not(.cw16-transfer-club):active{
+  transform:translateY(1px) scale(.976);
+  filter:brightness(.94);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 4px 14px rgba(0,0,0,.22)!important;
+}
+
+/* Capsule controls: close to the supplied liquid-glass reference. */
+#ciao-miniapp-root.cw34-liquid-controls :where(
+  .round-chip,.mc-tab,.cw14-shot-chip,.cw16-club-tab,.cw18-scope,.cw18-mini-switch,
+  .cw30-comp,.cw31-profile-comp,.cwtt2-nav-btn,.cwtt2-sub-btn,.fav-club,
+  .cwpred-mode button,.cwpred-rounds button,.cw23-scope-strip button,.cw23-club-tabs button,
+  .cw29-score-pick,.score button
+){border-radius:999px!important}
+
+/* Active glass uses the local context color. */
+#ciao-miniapp-root.cw34-liquid-controls :where(
+  .round-chip.active,.mc-tab.active,.cw14-shot-chip.active,.cw16-club-tab.active,
+  .cw18-scope.active,.cw18-mini-switch.active,.cw30-comp.active,.cw31-profile-comp.active,
+  .cwtt2-nav-btn.active,.cwtt2-sub-btn.active,.fav-club.active,.cwpred-mode button.active,
+  .cwpred-rounds button.active,.cw23-scope-strip button.active,.cw23-club-tabs button.active,
+  .save:not(:disabled),.cwpred-save:not(:disabled),.subscription-primary
+){
+  color:#fff!important;
+  border-color:rgba(var(--cw-control-accent-rgb),.68)!important;
+  background:
+    radial-gradient(circle at 28% -30%,rgba(255,255,255,.42),transparent 45%),
+    linear-gradient(145deg,rgba(var(--cw-control-accent-rgb),.66),rgba(var(--cw-control-accent-rgb),.34) 58%,rgba(10,18,44,.38))!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.46),
+    inset 0 -1px 0 rgba(0,0,0,.20),
+    0 10px 28px rgba(var(--cw-control-accent-rgb),.24),
+    0 0 22px rgba(var(--cw-control-accent-rgb),.18)!important;
+}
+
+/* Keep large action cards glassy but not pill-shaped. */
+#ciao-miniapp-root.cw34-liquid-controls :where(.cwpred-tournament-card,.cw18-open-club,.cw2017-favorite-go,.cw211-profile-btn,.cw211-match-btn){border-radius:24px!important}
+#ciao-miniapp-root.cw34-liquid-controls :where(.cwpred-back,.cwmt-back,.mc-back,.cw16-club-back,.cw31-profile-back){border-radius:50%!important}
+
+/* Tournament cards keep their own palette even on the hub. */
+#ciao-miniapp-root .cwpred-tournament-card[data-cwpred-theme='serie-a']{--cw-card-rgb:49,80,255;--cw-card-a:#3150ff}
+#ciao-miniapp-root .cwpred-tournament-card[data-cwpred-theme='coppa']{--cw-card-rgb:21,148,87;--cw-card-a:#159457}
+#ciao-miniapp-root .cwpred-tournament-card[data-cwpred-theme='champions']{--cw-card-rgb:83,103,230;--cw-card-a:#5367e6}
+#ciao-miniapp-root .cwpred-tournament-card[data-cwpred-theme='europa']{--cw-card-rgb:230,106,19;--cw-card-a:#e66a13}
+#ciao-miniapp-root .cwpred-tournament-card[data-cwpred-theme='conference']{--cw-card-rgb:40,169,104;--cw-card-a:#28a968}
+#ciao-miniapp-root.cw34-liquid-controls .cwpred-tournament-card[data-cwpred-theme]{
+  border-color:rgba(var(--cw-card-rgb),.40)!important;
+  background:radial-gradient(circle at 18% -22%,rgba(255,255,255,.24),transparent 42%),linear-gradient(145deg,rgba(var(--cw-card-rgb),.24),rgba(255,255,255,.045) 52%,rgba(4,10,27,.48))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.26),0 12px 30px rgba(var(--cw-card-rgb),.13),0 0 20px rgba(var(--cw-card-rgb),.07)!important;
+}
+
+/* Prediction controls inherit the selected tournament, without recoloring bottom navigation. */
+#ciao-miniapp-root[data-cwpred-screen-theme='serie-a'] :where(.cwpred-mode,.cwpred-cover,.cwpred-rounds,.cwpred-list){--cw-control-accent:#3150ff;--cw-control-accent-rgb:49,80,255}
+#ciao-miniapp-root[data-cwpred-screen-theme='coppa'] :where(.cwpred-mode,.cwpred-cover,.cwpred-rounds,.cwpred-list){--cw-control-accent:#159457;--cw-control-accent-rgb:21,148,87}
+#ciao-miniapp-root[data-cwpred-screen-theme='champions'] :where(.cwpred-mode,.cwpred-cover,.cwpred-rounds,.cwpred-list){--cw-control-accent:#5367e6;--cw-control-accent-rgb:83,103,230}
+#ciao-miniapp-root[data-cwpred-screen-theme='europa'] :where(.cwpred-mode,.cwpred-cover,.cwpred-rounds,.cwpred-list){--cw-control-accent:#e66a13;--cw-control-accent-rgb:230,106,19}
+#ciao-miniapp-root[data-cwpred-screen-theme='conference'] :where(.cwpred-mode,.cwpred-cover,.cwpred-rounds,.cwpred-list){--cw-control-accent:#28a968;--cw-control-accent-rgb:40,169,104}
+
+/* Tables: clean horizontal capsules instead of boxed/squared tabs. */
+#ciao-miniapp-root .cwtt2-screen{--cw-control-accent:var(--cwtt2-a,#3150ff);--cw-control-accent-rgb:var(--cwtt2-rgb,49,80,255)}
+#ciao-miniapp-root .cwtt2-nav,#ciao-miniapp-root .cwtt2-subnav{
+  display:flex!important;
+  align-items:center!important;
+  gap:8px!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  padding:5px 2px 9px!important;
+  border-bottom:0!important;
+  scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+}
+#ciao-miniapp-root .cwtt2-nav::-webkit-scrollbar,#ciao-miniapp-root .cwtt2-subnav::-webkit-scrollbar{display:none}
+#ciao-miniapp-root .cwtt2-nav-btn,#ciao-miniapp-root .cwtt2-sub-btn{
+  flex:0 0 auto!important;
+  min-height:38px!important;
+  padding:0 14px!important;
+  border-radius:999px!important;
+  white-space:nowrap!important;
+  line-height:1!important;
+  font-size:10px!important;
+  border-color:rgba(var(--cwtt2-rgb),.22)!important;
+  background:radial-gradient(circle at 25% -30%,rgba(255,255,255,.18),transparent 45%),linear-gradient(145deg,rgba(var(--cwtt2-rgb),.11),rgba(255,255,255,.035) 58%,rgba(4,10,27,.34))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 7px 18px rgba(0,0,0,.16),0 0 12px rgba(var(--cwtt2-rgb),.05)!important;
+}
+#ciao-miniapp-root .cwtt2-nav-btn.active,#ciao-miniapp-root .cwtt2-sub-btn.active{
+  border-color:rgba(var(--cwtt2-rgb),.72)!important;
+  background:radial-gradient(circle at 27% -28%,rgba(255,255,255,.40),transparent 45%),linear-gradient(145deg,rgba(var(--cwtt2-rgb),.68),rgba(var(--cwtt2-rgb),.30) 64%,rgba(6,13,32,.40))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.42),0 10px 28px rgba(var(--cwtt2-rgb),.25),0 0 22px rgba(var(--cwtt2-rgb),.17)!important;
+}
+#ciao-miniapp-root .cwtt2-nav-btn::after,#ciao-miniapp-root .cwtt2-sub-btn::after{display:none!important}
+
+/* Match centre: five equal-width liquid-glass tabs across the screen. */
+#ciao-miniapp-root .mc-tabs-wrap{padding:8px 0 9px!important;margin:12px 0 0!important;background:linear-gradient(180deg,rgba(5,11,36,.68),rgba(5,11,36,.40) 76%,transparent)!important;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
+#ciao-miniapp-root .mc-tabs{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;width:100%!important;gap:6px!important;overflow:visible!important;padding:1px 0 4px!important}
+#ciao-miniapp-root .mc-tab{width:100%!important;min-width:0!important;min-height:42px!important;padding:0 3px!important;border-radius:999px!important;font-size:9px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:clip!important}
+#ciao-miniapp-root .mc-shell{--cw-control-accent:#3150ff;--cw-control-accent-rgb:49,80,255}
+#ciao-miniapp-root .mc-shell.mc-theme-ucl{--cw-control-accent:#5367e6;--cw-control-accent-rgb:83,103,230}
+#ciao-miniapp-root .mc-shell.mc-theme-uel{--cw-control-accent:#e66a13;--cw-control-accent-rgb:230,106,19}
+#ciao-miniapp-root .mc-shell.mc-theme-uecl{--cw-control-accent:#28a968;--cw-control-accent-rgb:40,169,104}
+#ciao-miniapp-root .mc-shell.mc-theme-coppa{--cw-control-accent:#159457;--cw-control-accent-rgb:21,148,87}
+#ciao-miniapp-root .mc-shell .mc-tab.active{
+  border-color:rgba(var(--cw-control-accent-rgb),.76)!important;
+  background:radial-gradient(circle at 28% -30%,rgba(255,255,255,.42),transparent 46%),linear-gradient(145deg,rgba(var(--cw-control-accent-rgb),.72),rgba(var(--cw-control-accent-rgb),.34) 62%,rgba(6,13,32,.42))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.46),0 10px 28px rgba(var(--cw-control-accent-rgb),.26),0 0 22px rgba(var(--cw-control-accent-rgb),.17)!important;
+}
+
+/* Club profile: club palette is the only accent inside the profile. */
+#ciao-miniapp-root .cw23-club-shell{--cw-control-accent:var(--club-accent,#5367e6)}
+#ciao-miniapp-root .cw23-club-shell button:not(.cw16-match-team):not(.cw16-transfer-club){
+  border-color:var(--club-accent-faint)!important;
+  background:radial-gradient(circle at 25% -35%,rgba(255,255,255,.30),transparent 46%),linear-gradient(145deg,rgba(255,255,255,.13),var(--club-accent-2-soft) 72%,rgba(5,12,30,.36))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.36),inset 0 -1px 0 rgba(0,0,0,.20),0 10px 28px rgba(0,0,0,.18),0 0 18px var(--club-accent-faint)!important;
+  -webkit-backdrop-filter:blur(18px) saturate(158%);backdrop-filter:blur(18px) saturate(158%);
+}
+#ciao-miniapp-root .cw23-club-shell :where(button.active,.cw16-club-tab.active,.cw23-scope-strip button.active){
+  color:#fff!important;
+  border-color:var(--club-accent-light)!important;
+  background:radial-gradient(circle at 26% -30%,rgba(255,255,255,.42),transparent 45%),linear-gradient(145deg,var(--club-accent-soft),var(--club-accent-2-soft))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.42),0 10px 30px var(--club-accent-faint),0 0 24px var(--club-accent-faint)!important;
+}
+#ciao-miniapp-root .cw23-club-shell :where(.cw16-club-section,.cw16-info-card,.cw17-player-stat-card,.cw17-transfer-card,.cw16-player-row,.cw17-match-card,.cw23-match-card,.cw16-leader-card,.cw16-leader,.cw23-season-metrics>div,.cw17-stat-metric){
+  border-color:var(--club-accent-faint)!important;
+  background:radial-gradient(circle at 92% -10%,var(--club-accent-soft),transparent 34%),linear-gradient(145deg,rgba(255,255,255,.055),var(--club-accent-2-soft) 100%)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 14px 34px rgba(0,0,0,.16)!important;
+  -webkit-backdrop-filter:blur(15px) saturate(136%);backdrop-filter:blur(15px) saturate(136%);
+}
+
+/* User plaque keeps favorite-club color but no explicit favorite-club label. */
+#ciao-miniapp-root .hero.cw34-user-hero.cw32-user-hero--themed{
+  border-color:var(--club-accent-faint)!important;
+  background:radial-gradient(circle at 86% -6%,rgba(255,255,255,.16),transparent 28%),radial-gradient(circle at 84% 16%,var(--club-accent-soft),transparent 38%),linear-gradient(135deg,var(--club-accent-2-soft),rgba(15,27,65,.82) 52%,rgba(5,12,30,.94))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 16px 42px rgba(0,0,0,.24),0 0 30px var(--club-accent-faint)!important;
+  -webkit-backdrop-filter:blur(18px) saturate(154%);backdrop-filter:blur(18px) saturate(154%);
+}
+
+/* Rating/predictor competition buttons keep competition identity. */
+#ciao-miniapp-root :where([data-cw30-rating-comp='serie_a'],[data-cw31-comp='serie_a']){--cw-control-accent-rgb:49,80,255}
+#ciao-miniapp-root :where([data-cw30-rating-comp='coppa_italia'],[data-cw31-comp='coppa_italia']){--cw-control-accent-rgb:21,148,87}
+#ciao-miniapp-root :where([data-cw30-rating-comp='ucl'],[data-cw31-comp='ucl']){--cw-control-accent-rgb:83,103,230}
+#ciao-miniapp-root :where([data-cw30-rating-comp='uel'],[data-cw31-comp='uel']){--cw-control-accent-rgb:230,106,19}
+#ciao-miniapp-root :where([data-cw30-rating-comp='uecl'],[data-cw31-comp='uecl']){--cw-control-accent-rgb:40,169,104}
+#ciao-miniapp-root :where([data-cw30-rating-comp],[data-cw31-comp]).active{
+  border-color:rgba(var(--cw-control-accent-rgb),.68)!important;
+  background:radial-gradient(circle at 28% -30%,rgba(255,255,255,.40),transparent 45%),linear-gradient(145deg,rgba(var(--cw-control-accent-rgb),.64),rgba(var(--cw-control-accent-rgb),.26) 66%,rgba(6,13,32,.40))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.40),0 9px 26px rgba(var(--cw-control-accent-rgb),.23),0 0 18px rgba(var(--cw-control-accent-rgb),.14)!important;
+}
+
+/* Bottom nav stays product-blue: tournament/club context never leaks into it. */
+#ciao-miniapp-root.cw34-liquid-controls .nav button{--cw-control-accent-rgb:83,103,230!important;border-radius:20px!important}
+#ciao-miniapp-root.cw34-liquid-controls .nav button.active{border-color:rgba(83,103,230,.54)!important;background:radial-gradient(circle at 28% -28%,rgba(255,255,255,.30),transparent 44%),linear-gradient(145deg,rgba(83,103,230,.62),rgba(35,54,151,.40))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.30),0 8px 24px rgba(49,80,255,.22),0 0 18px rgba(83,103,230,.12)!important}
+
+@media(max-width:390px){
+  #ciao-miniapp-root .cwtt2-nav-btn,#ciao-miniapp-root .cwtt2-sub-btn{min-height:36px!important;padding:0 12px!important;font-size:9px!important}
+  #ciao-miniapp-root .mc-tabs{gap:5px!important}
+  #ciao-miniapp-root .mc-tab{font-size:8.2px!important;padding:0 2px!important;min-height:40px!important}
+}
+@media(hover:hover){
+  #ciao-miniapp-root.cw34-liquid-controls button:not(.cwtt2-standing):not(.board-team):not(.cwmt-team):not(.cw16-match-team):not(.cw16-transfer-club):hover{border-color:rgba(226,236,255,.44)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.48),0 11px 30px rgba(0,0,0,.20),0 0 20px rgba(var(--cw-control-accent-rgb),.10)!important}
+}
+@media(prefers-reduced-motion:reduce){#ciao-miniapp-root.cw34-liquid-controls button{transition:none!important}}
+`;
+  document.getElementById(st.id)?.remove();
+  document.head.appendChild(st);
+}catch(_e){}
+try{root?.classList.add('cw34-liquid-controls')}catch(_e){}
+
+/* Latest home hero: favorite club controls the palette, not the copy. */
+hero=function(){
+  const fav=S?.user?.favorite_team||null;
+  const themed=!!fav&&typeof __cw17AccentStyle==='function';
+  const style=themed?__cw17AccentStyle(fav):'';
+  return `<div class="hero cw32-user-hero cw34-user-hero ${themed?'cw32-user-hero--themed':''}" ${style?`style="${style}"`:''}><div class="hero-top"><div><h2>${esc(S.user.display_name)}</h2><p>${S.user.username?'@'+esc(S.user.username):'Игрок Ciao, Web!'}</p></div><div><div class="rank">#${S.stats.rank}</div><p>место</p></div></div></div>`;
+};
+/* ===== /Ciao, Web! v34 liquid glass controls ===== */
+
+
 /* ===== /Ciao, Web! v22.5 product polish layer ===== */
 
 })();
