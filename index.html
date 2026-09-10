@@ -5925,5 +5925,238 @@ hero=function(){
 }
 </style>
 
+
+<style id="ciao-v36-ios-liquid-lens">
+/* ciao-v36-ios-liquid-lens-20260910
+   iOS-like segmented selection: one moving coloured lens per glass rail. */
+#ciao-miniapp-root :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar){
+  --cw-lens-x:4px;
+  --cw-lens-w:0px;
+  --cw-lens-opacity:0;
+  --cw-lens-rgb:var(--cw-rail-rgb);
+  --cw-lens-rgb2:var(--cw-rail-rgb);
+  position:relative!important;
+  isolation:isolate!important;
+  overflow:hidden!important;
+  border-color:rgba(224,235,255,.14)!important;
+  background:
+    radial-gradient(circle at 22% -85%,rgba(255,255,255,.075),transparent 48%),
+    linear-gradient(180deg,rgba(255,255,255,.050),rgba(255,255,255,.020) 48%,rgba(4,10,27,.32))!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.10),
+    inset 0 -1px 0 rgba(0,0,0,.16),
+    0 10px 26px rgba(0,0,0,.15),
+    0 0 20px var(--cw-rail-glow)!important;
+}
+#ciao-miniapp-root :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar)::before{
+  opacity:.16!important;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.24),transparent)!important;
+}
+#ciao-miniapp-root :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar)::after{
+  content:"";
+  position:absolute;
+  z-index:0;
+  left:0;
+  top:4px;
+  bottom:4px;
+  width:var(--cw-lens-w);
+  border:0;
+  border-radius:999px;
+  pointer-events:none;
+  opacity:var(--cw-lens-opacity);
+  transform:translate3d(var(--cw-lens-x),0,0);
+  background:
+    radial-gradient(circle at 44% -24%,rgba(255,255,255,.105),transparent 45%),
+    linear-gradient(135deg,rgba(var(--cw-lens-rgb),.62),rgba(var(--cw-lens-rgb2),.43) 58%,rgba(var(--cw-lens-rgb),.25));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.12),
+    inset 0 -10px 24px rgba(var(--cw-lens-rgb),.09),
+    0 0 18px rgba(var(--cw-lens-rgb),.34),
+    0 0 30px rgba(var(--cw-lens-rgb2),.18);
+  transition:none;
+  will-change:transform,width,opacity;
+}
+#ciao-miniapp-root :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar).cw36-lens-ready::after{
+  transition:
+    transform 300ms cubic-bezier(.22,.8,.26,1),
+    width 300ms cubic-bezier(.22,.8,.26,1),
+    opacity 150ms ease;
+}
+
+/* The selected text sits above the lens. The segment itself has no capsule outline/background. */
+#ciao-miniapp-root :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar)>button,
+#ciao-miniapp-root .cwpred-rounds>.round-chip{
+  z-index:1!important;
+  border-color:transparent!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+  transform:none!important;
+  transition:color 190ms ease,opacity 190ms ease!important;
+}
+#ciao-miniapp-root :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar)>button.active,
+#ciao-miniapp-root .cwpred-rounds>.round-chip.active,
+#ciao-miniapp-root :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar)>button.active:hover{
+  color:#fff!important;
+  border-color:transparent!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  transform:none!important;
+}
+#ciao-miniapp-root :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar)>button:hover,
+#ciao-miniapp-root .cwpred-rounds>.round-chip:hover,
+#ciao-miniapp-root :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar)>button:active,
+#ciao-miniapp-root .cwpred-rounds>.round-chip:active{
+  border-color:transparent!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  transform:none!important;
+}
+
+/* Tournament dual-colour lens palettes. */
+#ciao-miniapp-root[data-cwpred-screen-theme='serie-a'] :where(.cwpred-mode,.cwpred-rounds),
+#ciao-miniapp-root[data-cwtt2-theme='serie-a'] :where(.cwtt2-nav,.cwtt2-subnav){--cw-lens-rgb:49,80,255;--cw-lens-rgb2:49,80,255}
+#ciao-miniapp-root[data-cwpred-screen-theme='champions'] :where(.cwpred-mode,.cwpred-rounds),
+#ciao-miniapp-root[data-cwtt2-theme='champions'] :where(.cwtt2-nav,.cwtt2-subnav){--cw-lens-rgb:83,103,230;--cw-lens-rgb2:120,78,255}
+#ciao-miniapp-root[data-cwpred-screen-theme='europa'] :where(.cwpred-mode,.cwpred-rounds),
+#ciao-miniapp-root[data-cwtt2-theme='europa'] :where(.cwtt2-nav,.cwtt2-subnav){--cw-lens-rgb:230,106,19;--cw-lens-rgb2:255,130,45}
+#ciao-miniapp-root[data-cwpred-screen-theme='conference'] :where(.cwpred-mode,.cwpred-rounds),
+#ciao-miniapp-root[data-cwtt2-theme='conference'] :where(.cwtt2-nav,.cwtt2-subnav){--cw-lens-rgb:40,169,104;--cw-lens-rgb2:65,218,138}
+#ciao-miniapp-root[data-cwpred-screen-theme='coppa'] :where(.cwpred-mode,.cwpred-rounds),
+#ciao-miniapp-root[data-cwtt2-theme='coppa'] :where(.cwtt2-nav,.cwtt2-subnav){--cw-lens-rgb:21,148,87;--cw-lens-rgb2:180,47,67}
+
+#ciao-miniapp-root .mc-shell{--cw-lens-rgb:49,80,255;--cw-lens-rgb2:30,56,170}
+#ciao-miniapp-root .mc-shell.mc-theme-ucl{--cw-lens-rgb:83,103,230;--cw-lens-rgb2:119,66,230}
+#ciao-miniapp-root .mc-shell.mc-theme-uel{--cw-lens-rgb:230,106,19;--cw-lens-rgb2:255,130,45}
+#ciao-miniapp-root .mc-shell.mc-theme-uecl{--cw-lens-rgb:40,169,104;--cw-lens-rgb2:65,218,138}
+#ciao-miniapp-root .mc-shell.mc-theme-coppa{--cw-lens-rgb:21,148,87;--cw-lens-rgb2:180,47,67}
+
+/* Club rails glow from the club itself; no tournament colour can leak in. */
+#ciao-miniapp-root .cw23-club-shell :where(.cw23-scope-strip,.cw16-club-tabs)::after{
+  background:
+    radial-gradient(circle at 44% -24%,rgba(255,255,255,.09),transparent 45%),
+    linear-gradient(135deg,var(--club-accent-soft),var(--club-accent-2-soft));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.11),
+    inset 0 -10px 24px var(--club-accent-faint),
+    0 0 20px var(--club-accent-soft),
+    0 0 32px var(--club-accent-faint)!important;
+}
+#ciao-miniapp-root .cw23-club-shell :where(.cw23-scope-strip,.cw16-club-tabs)>button.active{
+  border-color:transparent!important;background:transparent!important;box-shadow:none!important;
+}
+
+@media(prefers-reduced-motion:reduce){
+  #ciao-miniapp-root :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar).cw36-lens-ready::after{
+    transition:opacity 80ms linear!important;
+  }
+}
+</style>
+<script id="ciao-v36-ios-liquid-lens-js">
+(()=>{
+  const ROOT=document.getElementById('ciao-miniapp-root');
+  if(!ROOT)return;
+  const RAIL_SELECTOR='.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar';
+  const initialized=new WeakSet();
+  const observed=new WeakSet();
+  const pendingFrom=new Map();
+  const raf=window.requestAnimationFrame?window.requestAnimationFrame.bind(window):(fn=>setTimeout(fn,16));
+
+  function __cw36RailKey(rail){
+    if(rail.classList.contains('cwpred-mode'))return'pred-mode';
+    if(rail.classList.contains('cwpred-rounds'))return'pred-rounds';
+    if(rail.classList.contains('mc-tabs'))return'match-tabs';
+    if(rail.classList.contains('cwtt2-nav'))return'table-nav';
+    if(rail.classList.contains('cwtt2-subnav'))return'table-subnav';
+    if(rail.classList.contains('cw23-scope-strip'))return'club-scope';
+    if(rail.classList.contains('cw16-club-tabs'))return'club-tabs';
+    if(rail.classList.contains('cw30-compbar'))return'rating-comp';
+    if(rail.classList.contains('cw31-profile-compbar'))return'predictor-comp';
+    return'';
+  }
+  function __cw36Items(rail){
+    return Array.from(rail.children).filter(el=>el instanceof HTMLElement&&(el.tagName==='BUTTON'||el.classList.contains('round-chip')));
+  }
+  function __cw36Active(rail){return __cw36Items(rail).find(el=>el.classList.contains('active')||el.getAttribute('aria-selected')==='true')||null}
+  function __cw36Box(el){return el?{x:el.offsetLeft,w:el.offsetWidth}:null}
+  function __cw36Set(rail,box){
+    if(!box||!box.w){rail.style.setProperty('--cw-lens-opacity','0');return}
+    rail.style.setProperty('--cw-lens-x',`${box.x}px`);
+    rail.style.setProperty('--cw-lens-w',`${box.w}px`);
+    rail.style.setProperty('--cw-lens-opacity','1');
+  }
+  function __cw36AdoptButtonColour(rail,item){
+    if(!item||rail.closest('.cw23-club-shell'))return;
+    const rgb=getComputedStyle(item).getPropertyValue('--cw-control-accent-rgb').trim();
+    if(rgb){rail.style.setProperty('--cw-lens-rgb',rgb);rail.style.setProperty('--cw-lens-rgb2',rgb)}
+  }
+  function __cw36SyncRail(rail){
+    if(!(rail instanceof HTMLElement))return;
+    const active=__cw36Active(rail),target=__cw36Box(active),key=__cw36RailKey(rail);
+    __cw36AdoptButtonColour(rail,active);
+    if(!target){__cw36Set(rail,null);return}
+    if(initialized.has(rail)){
+      rail.classList.add('cw36-lens-ready');
+      __cw36Set(rail,target);
+      return;
+    }
+    initialized.add(rail);
+    const pending=key?pendingFrom.get(key):null;
+    rail.classList.remove('cw36-lens-ready');
+    if(pending&&Date.now()-pending.at<850&&pending.box){
+      __cw36Set(rail,pending.box);
+      void rail.offsetWidth;
+      rail.classList.add('cw36-lens-ready');
+      raf(()=>raf(()=>__cw36Set(rail,target)));
+      pendingFrom.delete(key);
+    }else{
+      __cw36Set(rail,target);
+      raf(()=>rail.classList.add('cw36-lens-ready'));
+    }
+    if(window.ResizeObserver&&!observed.has(rail)){
+      observed.add(rail);
+      new ResizeObserver(()=>__cw36SyncRail(rail)).observe(rail);
+    }
+  }
+  function __cw36Scan(scope=ROOT){
+    if(scope.matches?.(RAIL_SELECTOR))__cw36SyncRail(scope);
+    scope.querySelectorAll?.(RAIL_SELECTOR).forEach(__cw36SyncRail);
+  }
+  function __cw36PrimeMove(target){
+    const item=target.closest?.('button,.round-chip');
+    if(!item)return;
+    const rail=item.parentElement?.matches?.(RAIL_SELECTOR)?item.parentElement:item.closest?.(RAIL_SELECTOR);
+    if(!rail||!rail.contains(item))return;
+    const active=__cw36Active(rail),from=__cw36Box(active),to=__cw36Box(item),key=__cw36RailKey(rail);
+    if(key&&from)pendingFrom.set(key,{box:from,at:Date.now()});
+    __cw36AdoptButtonColour(rail,item);
+    rail.classList.add('cw36-lens-ready');
+    if(to)__cw36Set(rail,to);
+    if(key)setTimeout(()=>{const p=pendingFrom.get(key);if(p&&Date.now()-p.at>=800)pendingFrom.delete(key)},900);
+  }
+
+  ROOT.addEventListener('pointerdown',e=>__cw36PrimeMove(e.target),true);
+  ROOT.addEventListener('click',e=>{if(e.detail===0)__cw36PrimeMove(e.target)},true);
+  let scheduled=false;
+  const observer=new MutationObserver(records=>{
+    const direct=new Set();
+    for(const r of records){
+      if(r.type==='attributes'){
+        const rail=r.target.closest?.(RAIL_SELECTOR);if(rail)direct.add(rail);
+      }
+    }
+    direct.forEach(__cw36SyncRail);
+    if(records.some(r=>r.type==='childList')){
+      if(!scheduled){scheduled=true;raf(()=>{scheduled=false;__cw36Scan(ROOT)})}
+    }
+  });
+  observer.observe(ROOT,{subtree:true,childList:true,attributes:true,attributeFilter:['class','aria-selected']});
+  window.addEventListener('resize',()=>__cw36Scan(ROOT),{passive:true});
+  __cw36Scan(ROOT);
+  window.__cw36SyncRail=__cw36SyncRail;
+})();
+</script>
+
 </body>
 </html>
