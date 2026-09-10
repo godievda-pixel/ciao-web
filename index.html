@@ -5022,6 +5022,57 @@ try{
 }catch(_e){}
 /* /ciao-v9-performance-tables-live-20260909 */
 
+
+/* ciao-v10-serie-a-health-20260910 */
+/* The transient provider-health state stays internal; only maintenance blocks users. */
+try{
+  __cw19SystemBanner=function(){
+    const x=S?.system;
+    if(!x||x.mode!=='maintenance')return '';
+    return '<div class="cw19-system-banner maintenance" data-cw19-system-banner><b>Ciao, Web! временно на техническом обслуживании</b>'+(x.provider_updated_at?'<span>'+__cw19Age(x.provider_updated_at)+'</span>':'')+'</div>';
+  };
+}catch(_e){}
+
+/* Render Serie A through the same table component as European competitions. */
+function __cwV10SeriePayload(){
+  const t=S?.serie_a_table||{},rows=Array.isArray(t?.rows)?t.rows:[];
+  return {
+    competition:'serie_a',
+    fetched_at:t?.updated_at||t?.fetched_at||null,
+    rows:rows.map(r=>({
+      position:Number(r?.position)||0,
+      provider_team_id:Number(r?.bsd_team_id??r?.provider_team_id)||null,
+      local_team_id:Number(r?.team_id??r?.local_team_id)||null,
+      local_custom_emoji_id:r?.custom_emoji_id??r?.local_custom_emoji_id??null,
+      name:String(r?.team_name??r?.name??'Команда'),
+      played:Number(r?.played)||0,
+      won:Number(r?.won??r?.wins)||0,
+      drawn:Number(r?.drawn??r?.draws)||0,
+      lost:Number(r?.lost??r?.losses)||0,
+      goals_for:Number(r?.goals_for)||0,
+      goals_against:Number(r?.goals_against)||0,
+      goal_difference:Number(r?.goal_difference)||0,
+      points:Number(r?.points)||0
+    }))
+  };
+}
+try{
+  const __cwV10BodyBase=__cwTt2Body;
+  __cwTt2Body=function(){
+    if(__cwTt2Comp==='serie_a'&&__cwTt2View==='table')return __cwTt2Standings(__cwV10SeriePayload());
+    return __cwV10BodyBase();
+  };
+}catch(_e){}
+
+try{
+  const s=document.createElement('style');s.id='ciao-v10-serie-a-style';s.textContent=`
+#ciao-miniapp-root[data-cwtt2-theme=serie-a] .cwtt2-standing:nth-child(n+2):nth-child(-n+5):before{content:'';position:absolute;left:0;top:7px;bottom:7px;width:3px;border-radius:0 4px 4px 0;background:#3150ff}
+#ciao-miniapp-root[data-cwtt2-theme=serie-a] .cwtt2-standing:nth-last-child(-n+3):before{content:'';position:absolute;left:0;top:7px;bottom:7px;width:3px;border-radius:0 4px 4px 0;background:#d34f68}
+`;
+  document.getElementById(s.id)?.remove();document.head.appendChild(s);
+}catch(_e){}
+/* /ciao-v10-serie-a-health-20260910 */
+
 /* ===== /Ciao, Web! v22.5 product polish layer ===== */
 
 })();
