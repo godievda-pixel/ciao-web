@@ -5330,5 +5330,164 @@ try{const st=document.createElement('style');st.id='ciao-v12-performance-style';
 
 })();
 </script>
+
+
+<!-- cw34-contextual-segmented-nav -->
+<style id="cw34-contextual-segmented-nav">
+/* Ciao, Web! — reference-style segmented navigation.
+   No glass buttons: one shared frame, flat inactive items, contextual active color. */
+
+/* MATCH CENTER */
+#ciao-miniapp-root .mc-tabs-wrap{
+  min-height:0!important;
+  margin:0 0 12px!important;
+  padding:0!important;
+  overflow:visible!important;
+}
+#ciao-miniapp-root.match-center-open .mc-tabs-wrap{
+  padding:6px 0 8px!important;
+  background:linear-gradient(180deg,rgba(4,10,28,.985),rgba(4,10,28,.96) 82%,rgba(4,10,28,0))!important;
+  border-radius:0!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+#ciao-miniapp-root .mc-shell{--cw34-match-a:var(--cwmt-a,#3150ff);--cw34-match-b:var(--cwmt-b,#183a86)}
+#ciao-miniapp-root .mc-shell.mc-theme-ucl{--cw34-match-a:#5367e6;--cw34-match-b:#49318f}
+#ciao-miniapp-root .mc-shell.mc-theme-uel{--cw34-match-a:#e66a13;--cw34-match-b:#7a2c05}
+#ciao-miniapp-root .mc-shell.mc-theme-uecl{--cw34-match-a:#28a968;--cw34-match-b:#0b3b28}
+#ciao-miniapp-root .mc-shell.mc-theme-coppa{--cw34-match-a:#159457;--cw34-match-b:#9f2435}
+#ciao-miniapp-root .mc-tabs{
+  --cw34-match-active:linear-gradient(135deg,var(--cw34-match-a,var(--cwmt-a,#3150ff)),var(--cw34-match-b,var(--cwmt-b,#183a86)));
+  display:flex!important;
+  align-items:stretch!important;
+  gap:2px!important;
+  padding:3px!important;
+  border:1px solid rgba(145,160,214,.30)!important;
+  border-radius:18px!important;
+  background:rgba(6,12,31,.92)!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  overflow-x:auto!important;
+  scrollbar-width:none!important;
+}
+#ciao-miniapp-root .mc-tab{
+  flex:1 0 auto!important;
+  min-height:40px!important;
+  padding:0 13px!important;
+  border:0!important;
+  border-radius:13px!important;
+  background:transparent!important;
+  color:#8f9bbb!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  font-size:9.5px!important;
+  font-weight:850!important;
+  transition:background .16s ease,color .16s ease,transform .14s ease!important;
+}
+#ciao-miniapp-root .mc-tab::before,
+#ciao-miniapp-root .mc-tab::after{display:none!important;content:none!important}
+#ciao-miniapp-root .mc-tab.active{
+  color:#fff!important;
+  border:0!important;
+  background:var(--cw34-match-active)!important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)!important;
+  text-shadow:0 1px 8px rgba(0,0,0,.22)!important;
+}
+#ciao-miniapp-root .mc-tab:active{transform:scale(.975)!important}
+
+/* Small match center opened from Home uses the same visual language. */
+#ciao-miniapp-root .cw-home-mc-tabs{
+  --cw34-match-active:linear-gradient(135deg,var(--cwmt-a,#3150ff),var(--cwmt-b,#183a86));
+  gap:2px!important;
+  padding:3px!important;
+  border:1px solid rgba(145,160,214,.30)!important;
+  border-radius:16px!important;
+  background:rgba(6,12,31,.92)!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  overflow:hidden!important;
+}
+#ciao-miniapp-root .cw-home-mc-tabs span{
+  padding:10px 4px!important;
+  border:0!important;
+  border-radius:12px!important;
+  background:transparent!important;
+  color:#8794b5!important;
+  box-shadow:none!important;
+}
+#ciao-miniapp-root .cw-home-mc-tabs span.active{
+  color:#fff!important;
+  background:var(--cw34-match-active)!important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)!important;
+}
+
+/* CLUB PROFILE — tournament selector and profile sections */
+#ciao-miniapp-root .cw23-scope-strip,
+#ciao-miniapp-root .cw23-club-tabs.cw17-sticky-tabs{
+  gap:2px!important;
+  padding:3px!important;
+  border:1px solid rgba(145,160,214,.28)!important;
+  border-radius:18px!important;
+  background:rgba(6,12,31,.90)!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+#ciao-miniapp-root .cw23-scope-strip{
+  margin:10px 0 10px!important;
+}
+#ciao-miniapp-root .cw23-club-tabs.cw17-sticky-tabs{
+  margin:0 0 10px!important;
+}
+#ciao-miniapp-root.club-profile-open .cw23-club-tabs.cw17-sticky-tabs{
+  background:rgba(6,12,31,.90)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+#ciao-miniapp-root .cw23-scope-strip button,
+#ciao-miniapp-root .cw23-club-tabs .cw16-club-tab{
+  min-height:40px!important;
+  border:0!important;
+  border-radius:13px!important;
+  background:transparent!important;
+  color:#8f9bbb!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  text-shadow:none!important;
+  transition:background .16s ease,color .16s ease,transform .14s ease!important;
+}
+#ciao-miniapp-root .cw23-scope-strip button::before,
+#ciao-miniapp-root .cw23-scope-strip button::after,
+#ciao-miniapp-root .cw23-club-tabs .cw16-club-tab::before,
+#ciao-miniapp-root .cw23-club-tabs .cw16-club-tab::after{
+  display:none!important;
+  content:none!important;
+}
+#ciao-miniapp-root .cw23-scope-strip button.active,
+#ciao-miniapp-root .cw23-club-tabs .cw16-club-tab.active{
+  color:#fff!important;
+  border:0!important;
+  background:linear-gradient(135deg,var(--club-accent),var(--club-accent-2))!important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)!important;
+  text-shadow:0 1px 8px rgba(0,0,0,.22)!important;
+}
+#ciao-miniapp-root .cw23-scope-strip button:active,
+#ciao-miniapp-root .cw23-club-tabs .cw16-club-tab:active{transform:scale(.975)!important}
+
+@media(max-width:390px){
+  #ciao-miniapp-root .mc-tabs{padding:3px!important;gap:2px!important;border-radius:16px!important}
+  #ciao-miniapp-root .mc-tab{min-height:38px!important;padding:0 10px!important;font-size:9px!important;border-radius:12px!important}
+  #ciao-miniapp-root .cw23-scope-strip,
+  #ciao-miniapp-root .cw23-club-tabs.cw17-sticky-tabs{border-radius:16px!important}
+  #ciao-miniapp-root .cw23-scope-strip button,
+  #ciao-miniapp-root .cw23-club-tabs .cw16-club-tab{min-height:38px!important;border-radius:12px!important}
+}
+</style>
+<!-- /cw34-contextual-segmented-nav -->
+
 </body>
 </html>
