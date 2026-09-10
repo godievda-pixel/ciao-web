@@ -2008,7 +2008,7 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
   function playersTabHtml(d){return `<section class="mc-section"><div class="mc-section-head"><div class="mc-section-title">Игроки</div><div class="mc-section-note">рейтинг · голы · ассисты · xG · xA</div></div><div class="mc-player-list" data-mc="players">${playersHtml(d)}</div></section>`}
   function matchTabContent(d,key=matchCenterTab){if(key==='stats')return statsTabHtml(d);if(key==='events')return eventsTabHtml(d);if(key==='lineups')return lineupsTabHtml(d);if(key==='players')return playersTabHtml(d);return overviewTabHtml(d)}
   function matchCenterHtml(d){const m=d.match,st=String(d.status??'').toLowerCase(),live=st==='live',pred=m?.prediction;return `<div class="mc-shell"><div class="mc-toolbar"><button class="mc-back" id="mcBack" aria-label="Назад"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button><div class="mc-toolbar-title">Матч-центр</div><span class="mc-toolbar-spacer"></span></div><section class="mc-hero" data-mc="hero"><div class="mc-state-row"><span class="mc-status ${live?'live':''}" data-mc="status">${esc(matchStatusText(d))}</span></div><div class="mc-scoreboard"><div class="mc-team">${logo(m.home)}<div class="mc-team-name">${esc(m.home.name)}</div></div><div class="mc-center"><div class="mc-score" data-mc="score">${esc(matchCenterScore(d))}</div><div class="mc-minute" data-mc="minute">${live?'счёт обновляется автоматически':m.is_finished?'финальный счёт':'ожидаем начало'}</div></div><div class="mc-team">${logo(m.away)}<div class="mc-team-name">${esc(m.away.name)}</div></div></div><div class="mc-kickoff">${m.round?.number?`${m.round.number}-й тур · `:''}${fmt(m.kickoff_at)}</div>${pred?`<div class="mc-prediction">Твой прогноз <b>${pred.home_score}:${pred.away_score}</b>${pred.points!=null?` · <b>+${pred.points}</b>`:''}</div>`:''}</section>${matchTabsHtml()}<div class="mc-tab-content" data-mc-tab-content="${matchCenterTab}">${matchTabContent(d,matchCenterTab)}</div></div>`}
-  async function openMatchCenter(id){if(matchLoading)return;matchLoading=true;matchReturnTab=tab;matchViewId=Number(id);matchCenterTab='overview';root.classList.add('match-center-open');main.innerHTML='<div class="mc-shell"><div class="mc-toolbar"><button class="mc-back" id="mcBack"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button><div class="mc-toolbar-title">Матч-центр</div><span class="mc-toolbar-spacer"></span></div>'+LOADER_HTML+'</div>';root.querySelector('#mcBack')?.addEventListener('click',closeMatchCenter);try{matchData=await matchApi(matchViewId);main.innerHTML=matchCenterHtml(matchData);bindMatchCenter();main.scrollTop=0;}catch(e){main.innerHTML=`<div class="mc-shell"><div class="mc-toolbar"><button class="mc-back" id="mcBack"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button><div class="mc-toolbar-title">Матч-центр</div><span class="mc-toolbar-spacer"></span></div><div class="empty"><b>Не удалось загрузить матч</b><br><br>${esc(e.message)}</div></div>`;root.querySelector('#mcBack')?.addEventListener('click',closeMatchCenter);}finally{matchLoading=false}}
+  async function openMatchCenter(id){if(matchLoading)return;matchLoading=true;matchReturnTab=tab;matchViewId=Number(id);matchCenterTab='overview';root.classList.add('match-center-open');main.innerHTML='<div class="mc-shell"><div class="mc-toolbar"><button class="mc-back" id="mcBack"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button><div class="mc-toolbar-title">Матч-центр</div><span class="mc-toolbar-spacer"></span></div>'+LOADER_HTML+'</div>';root.querySelector('#mcBack')?.addEventListener('click',closeMatchCenter);try{matchData=await matchApi(matchViewId);main.innerHTML=matchCenterHtml(matchData);bindMatchCenter();try{window.__cw37ScheduleScan?.(false)}catch(_e){}main.scrollTop=0;}catch(e){main.innerHTML=`<div class="mc-shell"><div class="mc-toolbar"><button class="mc-back" id="mcBack"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button><div class="mc-toolbar-title">Матч-центр</div><span class="mc-toolbar-spacer"></span></div><div class="empty"><b>Не удалось загрузить матч</b><br><br>${esc(e.message)}</div></div>`;root.querySelector('#mcBack')?.addEventListener('click',closeMatchCenter);}finally{matchLoading=false}}
   function closeMatchCenter(){matchViewId=null;matchData=null;matchCenterTab='overview';root.classList.remove('match-center-open');tab=matchReturnTab;render()}
   function bindMatchCenter(){
     root.querySelector('#mcBack')?.addEventListener('click',closeMatchCenter);
@@ -5757,6 +5757,17 @@ hero=function(){
 /* ===== /Ciao, Web! v34 liquid glass controls ===== */
 
 
+/* ===== Ciao, Web! v37 mobile-safe lens render hook ===== */
+try{
+  const __cw37BaseRender=render;
+  render=function(){
+    const out=__cw37BaseRender();
+    try{window.__cw37ScheduleScan?.(true)}catch(_e){}
+    return out;
+  };
+}catch(_e){}
+/* ===== /Ciao, Web! v37 mobile-safe lens render hook ===== */
+
 /* ===== /Ciao, Web! v22.5 product polish layer ===== */
 
 })();
@@ -5926,9 +5937,10 @@ hero=function(){
 </style>
 
 
-<style id="ciao-v36-ios-liquid-lens">
-/* ciao-v36-ios-liquid-lens-20260910
-   iOS-like segmented selection: one moving coloured lens per glass rail. */
+<style id="ciao-v37-mobile-safe-liquid-lens">
+/* ciao-v37-mobile-safe-20260910
+   One iOS-like coloured lens. Geometry is clamped to the current rail.
+   The animation is transform-only; mobile WebViews avoid expensive per-control blur. */
 #ciao-miniapp-root :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar){
   --cw-lens-x:4px;
   --cw-lens-w:0px;
@@ -5938,19 +5950,22 @@ hero=function(){
   position:relative!important;
   isolation:isolate!important;
   overflow:hidden!important;
-  border-color:rgba(224,235,255,.14)!important;
+  contain:none!important;
+  border-color:rgba(224,235,255,.13)!important;
   background:
-    radial-gradient(circle at 22% -85%,rgba(255,255,255,.075),transparent 48%),
-    linear-gradient(180deg,rgba(255,255,255,.050),rgba(255,255,255,.020) 48%,rgba(4,10,27,.32))!important;
+    radial-gradient(circle at 22% -95%,rgba(255,255,255,.055),transparent 50%),
+    linear-gradient(180deg,rgba(255,255,255,.046),rgba(255,255,255,.019) 48%,rgba(4,10,27,.32))!important;
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.10),
-    inset 0 -1px 0 rgba(0,0,0,.16),
-    0 10px 26px rgba(0,0,0,.15),
-    0 0 20px var(--cw-rail-glow)!important;
+    inset 0 1px 0 rgba(255,255,255,.075),
+    inset 0 -1px 0 rgba(0,0,0,.15),
+    0 8px 22px rgba(0,0,0,.14),
+    0 0 16px var(--cw-rail-glow)!important;
+  -webkit-backdrop-filter:blur(10px) saturate(138%)!important;
+  backdrop-filter:blur(10px) saturate(138%)!important;
 }
 #ciao-miniapp-root :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar)::before{
-  opacity:.16!important;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,.24),transparent)!important;
+  opacity:.11!important;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent)!important;
 }
 #ciao-miniapp-root :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar)::after{
   content:"";
@@ -5966,24 +5981,19 @@ hero=function(){
   opacity:var(--cw-lens-opacity);
   transform:translate3d(var(--cw-lens-x),0,0);
   background:
-    radial-gradient(circle at 44% -24%,rgba(255,255,255,.105),transparent 45%),
-    linear-gradient(135deg,rgba(var(--cw-lens-rgb),.62),rgba(var(--cw-lens-rgb2),.43) 58%,rgba(var(--cw-lens-rgb),.25));
+    radial-gradient(circle at 42% -42%,rgba(255,255,255,.075),transparent 43%),
+    linear-gradient(135deg,rgba(var(--cw-lens-rgb),.60),rgba(var(--cw-lens-rgb2),.42) 58%,rgba(var(--cw-lens-rgb),.23));
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.12),
-    inset 0 -10px 24px rgba(var(--cw-lens-rgb),.09),
-    0 0 18px rgba(var(--cw-lens-rgb),.34),
-    0 0 30px rgba(var(--cw-lens-rgb2),.18);
+    inset 0 1px 0 rgba(255,255,255,.09),
+    inset 0 -7px 18px rgba(var(--cw-lens-rgb),.07),
+    0 0 14px rgba(var(--cw-lens-rgb),.30),
+    0 0 24px rgba(var(--cw-lens-rgb2),.14);
   transition:none;
-  will-change:transform,width,opacity;
+  will-change:transform;
 }
-#ciao-miniapp-root :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar).cw36-lens-ready::after{
-  transition:
-    transform 300ms cubic-bezier(.22,.8,.26,1),
-    width 300ms cubic-bezier(.22,.8,.26,1),
-    opacity 150ms ease;
+#ciao-miniapp-root :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar).cw37-lens-ready::after{
+  transition:transform 270ms cubic-bezier(.22,.78,.22,1),opacity 120ms ease;
 }
-
-/* The selected text sits above the lens. The segment itself has no capsule outline/background. */
 #ciao-miniapp-root :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar)>button,
 #ciao-miniapp-root .cwpred-rounds>.round-chip{
   z-index:1!important;
@@ -5993,28 +6003,18 @@ hero=function(){
   -webkit-backdrop-filter:none!important;
   backdrop-filter:none!important;
   transform:none!important;
-  transition:color 190ms ease,opacity 190ms ease!important;
+  transition:color 160ms ease,opacity 160ms ease!important;
 }
 #ciao-miniapp-root :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar)>button.active,
 #ciao-miniapp-root .cwpred-rounds>.round-chip.active,
-#ciao-miniapp-root :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar)>button.active:hover{
+#ciao-miniapp-root :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar)>button:active{
   color:#fff!important;
   border-color:transparent!important;
   background:transparent!important;
   box-shadow:none!important;
   transform:none!important;
 }
-#ciao-miniapp-root :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar)>button:hover,
-#ciao-miniapp-root .cwpred-rounds>.round-chip:hover,
-#ciao-miniapp-root :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar)>button:active,
-#ciao-miniapp-root .cwpred-rounds>.round-chip:active{
-  border-color:transparent!important;
-  background:transparent!important;
-  box-shadow:none!important;
-  transform:none!important;
-}
-
-/* Tournament dual-colour lens palettes. */
+/* Tournament palettes. */
 #ciao-miniapp-root[data-cwpred-screen-theme='serie-a'] :where(.cwpred-mode,.cwpred-rounds),
 #ciao-miniapp-root[data-cwtt2-theme='serie-a'] :where(.cwtt2-nav,.cwtt2-subnav){--cw-lens-rgb:49,80,255;--cw-lens-rgb2:49,80,255}
 #ciao-miniapp-root[data-cwpred-screen-theme='champions'] :where(.cwpred-mode,.cwpred-rounds),
@@ -6025,45 +6025,54 @@ hero=function(){
 #ciao-miniapp-root[data-cwtt2-theme='conference'] :where(.cwtt2-nav,.cwtt2-subnav){--cw-lens-rgb:40,169,104;--cw-lens-rgb2:65,218,138}
 #ciao-miniapp-root[data-cwpred-screen-theme='coppa'] :where(.cwpred-mode,.cwpred-rounds),
 #ciao-miniapp-root[data-cwtt2-theme='coppa'] :where(.cwtt2-nav,.cwtt2-subnav){--cw-lens-rgb:21,148,87;--cw-lens-rgb2:180,47,67}
-
 #ciao-miniapp-root .mc-shell{--cw-lens-rgb:49,80,255;--cw-lens-rgb2:30,56,170}
 #ciao-miniapp-root .mc-shell.mc-theme-ucl{--cw-lens-rgb:83,103,230;--cw-lens-rgb2:119,66,230}
 #ciao-miniapp-root .mc-shell.mc-theme-uel{--cw-lens-rgb:230,106,19;--cw-lens-rgb2:255,130,45}
 #ciao-miniapp-root .mc-shell.mc-theme-uecl{--cw-lens-rgb:40,169,104;--cw-lens-rgb2:65,218,138}
 #ciao-miniapp-root .mc-shell.mc-theme-coppa{--cw-lens-rgb:21,148,87;--cw-lens-rgb2:180,47,67}
-
-/* Club rails glow from the club itself; no tournament colour can leak in. */
+/* Club rails use the club palette. */
 #ciao-miniapp-root .cw23-club-shell :where(.cw23-scope-strip,.cw16-club-tabs)::after{
-  background:
-    radial-gradient(circle at 44% -24%,rgba(255,255,255,.09),transparent 45%),
-    linear-gradient(135deg,var(--club-accent-soft),var(--club-accent-2-soft));
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.11),
-    inset 0 -10px 24px var(--club-accent-faint),
-    0 0 20px var(--club-accent-soft),
-    0 0 32px var(--club-accent-faint)!important;
+  background:linear-gradient(135deg,var(--club-accent-soft),var(--club-accent-2-soft));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 0 15px var(--club-accent-soft),0 0 24px var(--club-accent-faint)!important;
 }
-#ciao-miniapp-root .cw23-club-shell :where(.cw23-scope-strip,.cw16-club-tabs)>button.active{
-  border-color:transparent!important;background:transparent!important;box-shadow:none!important;
-}
-
-@media(prefers-reduced-motion:reduce){
-  #ciao-miniapp-root :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar).cw36-lens-ready::after{
-    transition:opacity 80ms linear!important;
+/* Mobile Telegram/iOS: emulate glass with gradients instead of many live blur layers. */
+@media (hover:none), (pointer:coarse), (max-width:600px){
+  #ciao-miniapp-root.cw37-mobile-safe button{
+    -webkit-backdrop-filter:none!important;
+    backdrop-filter:none!important;
   }
+  #ciao-miniapp-root.cw37-mobile-safe :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar){
+    -webkit-backdrop-filter:none!important;
+    backdrop-filter:none!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 6px 18px rgba(0,0,0,.13),0 0 13px var(--cw-rail-glow)!important;
+  }
+  #ciao-miniapp-root.cw37-mobile-safe .nav{
+    -webkit-backdrop-filter:blur(7px) saturate(125%)!important;
+    backdrop-filter:blur(7px) saturate(125%)!important;
+  }
+  #ciao-miniapp-root.cw37-mobile-safe .mc-shell :where(.mc-section,.mc-kpi,.mc-form-row,.mc-info-card,.cw14-form-card,.cw14-shot-summary,.cw14-shot-detail,.mc-toolbar,.mc-hero,.mc-pitch-panel),
+  #ciao-miniapp-root.cw37-mobile-safe .cwpred-tournament-card[data-cwpred-theme],
+  #ciao-miniapp-root.cw37-mobile-safe .cw23-club-shell :where(.cw16-club-section,.cw16-info-card,.cw17-player-stat-card,.cw17-transfer-card,.cw16-player-row,.cw17-match-card,.cw23-match-card){
+    -webkit-backdrop-filter:none!important;
+    backdrop-filter:none!important;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  #ciao-miniapp-root :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar).cw37-lens-ready::after{transition:opacity 70ms linear!important}
 }
 </style>
 <script id="ciao-v36-ios-liquid-lens-js">
 (()=>{
   const ROOT=document.getElementById('ciao-miniapp-root');
   if(!ROOT)return;
+  ROOT.classList.add('cw37-mobile-safe');
   const RAIL_SELECTOR='.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar';
-  const initialized=new WeakSet();
-  const observed=new WeakSet();
-  const pendingFrom=new Map();
+  const previousIndex=new Map();
+  const pendingIndex=new Map();
   const raf=window.requestAnimationFrame?window.requestAnimationFrame.bind(window):(fn=>setTimeout(fn,16));
+  let scheduled=0,scheduledAnimate=false;
 
-  function __cw36RailKey(rail){
+  function __cw37RailKey(rail){
     if(rail.classList.contains('cwpred-mode'))return'pred-mode';
     if(rail.classList.contains('cwpred-rounds'))return'pred-rounds';
     if(rail.classList.contains('mc-tabs'))return'match-tabs';
@@ -6075,87 +6084,81 @@ hero=function(){
     if(rail.classList.contains('cw31-profile-compbar'))return'predictor-comp';
     return'';
   }
-  function __cw36Items(rail){
-    return Array.from(rail.children).filter(el=>el instanceof HTMLElement&&(el.tagName==='BUTTON'||el.classList.contains('round-chip')));
+  function __cw37Items(rail){return Array.from(rail.children).filter(el=>el instanceof HTMLElement&&(el.tagName==='BUTTON'||el.classList.contains('round-chip')))}
+  function __cw37ActiveIndex(items){const i=items.findIndex(el=>el.classList.contains('active')||el.getAttribute('aria-selected')==='true');return i<0?0:i}
+  function __cw37Clamp(v,min,max){return Math.min(Math.max(v,min),Math.max(min,max))}
+  function __cw37Box(rail,item){
+    if(!item)return null;
+    const rr=rail.getBoundingClientRect(),ir=item.getBoundingClientRect(),inset=5,avail=Math.max(0,rail.clientWidth-inset*2);
+    const w=Math.min(Math.max(0,ir.width-2),avail);
+    if(!w)return null;
+    const raw=ir.left-rr.left-(rail.clientLeft||0)+1;
+    const x=__cw37Clamp(raw,inset,rail.clientWidth-inset-w);
+    return{x,w};
   }
-  function __cw36Active(rail){return __cw36Items(rail).find(el=>el.classList.contains('active')||el.getAttribute('aria-selected')==='true')||null}
-  function __cw36Box(el){return el?{x:el.offsetLeft,w:el.offsetWidth}:null}
-  function __cw36Set(rail,box){
+  function __cw37Set(rail,box){
     if(!box||!box.w){rail.style.setProperty('--cw-lens-opacity','0');return}
-    rail.style.setProperty('--cw-lens-x',`${box.x}px`);
     rail.style.setProperty('--cw-lens-w',`${box.w}px`);
+    rail.style.setProperty('--cw-lens-x',`${box.x}px`);
     rail.style.setProperty('--cw-lens-opacity','1');
   }
-  function __cw36AdoptButtonColour(rail,item){
+  function __cw37AdoptColour(rail,item){
     if(!item||rail.closest('.cw23-club-shell'))return;
     const rgb=getComputedStyle(item).getPropertyValue('--cw-control-accent-rgb').trim();
     if(rgb){rail.style.setProperty('--cw-lens-rgb',rgb);rail.style.setProperty('--cw-lens-rgb2',rgb)}
   }
-  function __cw36SyncRail(rail){
+  function __cw37SyncRail(rail,animate=true){
     if(!(rail instanceof HTMLElement))return;
-    const active=__cw36Active(rail),target=__cw36Box(active),key=__cw36RailKey(rail);
-    __cw36AdoptButtonColour(rail,active);
-    if(!target){__cw36Set(rail,null);return}
-    if(initialized.has(rail)){
-      rail.classList.add('cw36-lens-ready');
-      __cw36Set(rail,target);
-      return;
-    }
-    initialized.add(rail);
-    const pending=key?pendingFrom.get(key):null;
     rail.classList.remove('cw36-lens-ready');
-    if(pending&&Date.now()-pending.at<850&&pending.box){
-      __cw36Set(rail,pending.box);
-      void rail.offsetWidth;
-      rail.classList.add('cw36-lens-ready');
-      raf(()=>raf(()=>__cw36Set(rail,target)));
-      pendingFrom.delete(key);
+    const items=__cw37Items(rail);if(!items.length)return;
+    const key=__cw37RailKey(rail),toIndex=__cw37ActiveIndex(items),target=__cw37Box(rail,items[toIndex]);
+    if(!target)return;
+    __cw37AdoptColour(rail,items[toIndex]);
+    const pending=key?pendingIndex.get(key):null;
+    let fromIndex=pending&&performance.now()-pending.at<900?pending.from:previousIndex.get(key);
+    if(!Number.isInteger(fromIndex))fromIndex=toIndex;
+    fromIndex=__cw37Clamp(fromIndex,0,items.length-1);
+    const source=__cw37Box(rail,items[fromIndex])||target;
+    previousIndex.set(key,toIndex);if(key)pendingIndex.delete(key);
+    rail.classList.remove('cw37-lens-ready');
+    /* Width is set once to the target width; only transform is animated. */
+    rail.style.setProperty('--cw-lens-w',`${target.w}px`);
+    if(animate&&fromIndex!==toIndex){
+      rail.style.setProperty('--cw-lens-x',`${source.x}px`);
+      rail.style.setProperty('--cw-lens-opacity','1');
+      raf(()=>{if(!rail.isConnected)return;rail.classList.add('cw37-lens-ready');raf(()=>{if(rail.isConnected)rail.style.setProperty('--cw-lens-x',`${target.x}px`)})});
     }else{
-      __cw36Set(rail,target);
-      raf(()=>rail.classList.add('cw36-lens-ready'));
-    }
-    if(window.ResizeObserver&&!observed.has(rail)){
-      observed.add(rail);
-      new ResizeObserver(()=>__cw36SyncRail(rail)).observe(rail);
+      __cw37Set(rail,target);
+      raf(()=>{if(rail.isConnected)rail.classList.add('cw37-lens-ready')});
     }
   }
-  function __cw36Scan(scope=ROOT){
-    if(scope.matches?.(RAIL_SELECTOR))__cw36SyncRail(scope);
-    scope.querySelectorAll?.(RAIL_SELECTOR).forEach(__cw36SyncRail);
+  function __cw37Scan(animate=true){ROOT.querySelectorAll(RAIL_SELECTOR).forEach(rail=>__cw37SyncRail(rail,animate))}
+  function __cw37ScheduleScan(animate=true){
+    scheduledAnimate=scheduledAnimate||!!animate;
+    if(scheduled)return;
+    scheduled=raf(()=>{scheduled=0;const a=scheduledAnimate;scheduledAnimate=false;__cw37Scan(a)});
   }
-  function __cw36PrimeMove(target){
-    const item=target.closest?.('button,.round-chip');
-    if(!item)return;
+  function __cw37ClickedRail(target){
+    const item=target?.closest?.('button,.round-chip');if(!item)return null;
     const rail=item.parentElement?.matches?.(RAIL_SELECTOR)?item.parentElement:item.closest?.(RAIL_SELECTOR);
-    if(!rail||!rail.contains(item))return;
-    const active=__cw36Active(rail),from=__cw36Box(active),to=__cw36Box(item),key=__cw36RailKey(rail);
-    if(key&&from)pendingFrom.set(key,{box:from,at:Date.now()});
-    __cw36AdoptButtonColour(rail,item);
-    rail.classList.add('cw36-lens-ready');
-    if(to)__cw36Set(rail,to);
-    if(key)setTimeout(()=>{const p=pendingFrom.get(key);if(p&&Date.now()-p.at>=800)pendingFrom.delete(key)},900);
+    return rail&&rail.contains(item)?rail:null;
   }
-
-  ROOT.addEventListener('pointerdown',e=>__cw36PrimeMove(e.target),true);
-  ROOT.addEventListener('click',e=>{if(e.detail===0)__cw36PrimeMove(e.target)},true);
-  let scheduled=false;
-  const observer=new MutationObserver(records=>{
-    const direct=new Set();
-    for(const r of records){
-      if(r.type==='attributes'){
-        if(r.target.matches?.(RAIL_SELECTOR))continue;
-        const rail=r.target.closest?.(RAIL_SELECTOR);if(rail)direct.add(rail);
-      }
-    }
-    direct.forEach(__cw36SyncRail);
-    if(records.some(r=>r.type==='childList')){
-      if(!scheduled){scheduled=true;raf(()=>{scheduled=false;__cw36Scan(ROOT)})}
-    }
-  });
-  observer.observe(ROOT,{subtree:true,childList:true,attributes:true,attributeFilter:['aria-selected']});
-  window.addEventListener('resize',()=>__cw36Scan(ROOT),{passive:true});
-  __cw36Scan(ROOT);
-  window.__cw36SyncRail=__cw36SyncRail;
+  function __cw37Capture(target){
+    const rail=__cw37ClickedRail(target);if(!rail)return;
+    const item=target?.closest?.('button,.round-chip');if(!item)return;
+    const items=__cw37Items(rail),from=__cw37ActiveIndex(items),to=items.indexOf(item),key=__cw37RailKey(rail);
+    if(key&&to>=0)pendingIndex.set(key,{from,to,at:performance.now()});
+  }
+  ROOT.addEventListener('pointerdown',e=>__cw37Capture(e.target),true);
+  ROOT.addEventListener('click',e=>{
+    const rail=__cw37ClickedRail(e.target);if(!rail)return;
+    raf(()=>{if(rail.isConnected)__cw37SyncRail(rail,true);else __cw37ScheduleScan(true)});
+  },false);
+  window.addEventListener('resize',()=>__cw37ScheduleScan(false),{passive:true});
+  window.addEventListener('orientationchange',()=>__cw37ScheduleScan(false),{passive:true});
+  window.__cw37ScheduleScan=__cw37ScheduleScan;
+  window.__cw37SyncRail=__cw37SyncRail;
+  __cw37ScheduleScan(false);
 })();
 </script>
 
