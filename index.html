@@ -6083,6 +6083,135 @@ try{
     transition:opacity 70ms linear!important
   }
 }
+
+
+/* ===== v37 specificity shield: kill legacy per-button chrome ===== */
+
+/* Match Center */
+#ciao-miniapp-root .mc-tab{
+  position:relative!important;
+  z-index:1!important;
+  border:0!important;
+  outline:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:#9aa6c7!important;
+  text-shadow:none!important;
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+  transform:none!important;
+}
+#ciao-miniapp-root .mc-tab.active{
+  border:0!important;
+  outline:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:#fff!important;
+}
+#ciao-miniapp-root .mc-shell.mc-theme-ucl .mc-tab.active,
+#ciao-miniapp-root .mc-shell.mc-theme-uel .mc-tab.active,
+#ciao-miniapp-root .mc-shell.mc-theme-uecl .mc-tab.active,
+#ciao-miniapp-root .mc-shell.mc-theme-coppa .mc-tab.active{
+  border:0!important;
+  outline:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:#fff!important;
+}
+
+/* Tables */
+#ciao-miniapp-root .cwtt2-nav-btn,
+#ciao-miniapp-root .cwtt2-subnav button{
+  position:relative!important;
+  z-index:1!important;
+  border:0!important;
+  outline:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:#9aa6c7!important;
+  text-shadow:none!important;
+}
+#ciao-miniapp-root .cwtt2-nav-btn.active,
+#ciao-miniapp-root .cwtt2-subnav button.active{
+  border:0!important;
+  outline:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:#fff!important;
+}
+
+/* Predictions */
+#ciao-miniapp-root .cwpred-mode button,
+#ciao-miniapp-root .cwpred-rounds .round-chip{
+  position:relative!important;
+  z-index:1!important;
+  border:0!important;
+  outline:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:#9aa6c7!important;
+  text-shadow:none!important;
+}
+#ciao-miniapp-root .cwpred-mode button.active,
+#ciao-miniapp-root .cwpred-rounds .round-chip.active{
+  border:0!important;
+  outline:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:#fff!important;
+}
+
+/* Club profile */
+#ciao-miniapp-root .cw23-scope-strip > button,
+#ciao-miniapp-root .cw16-club-tabs > button,
+#ciao-miniapp-root .cw30-compbar > button,
+#ciao-miniapp-root .cw31-profile-compbar > button{
+  position:relative!important;
+  z-index:1!important;
+  border:0!important;
+  outline:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:#9aa6c7!important;
+  text-shadow:none!important;
+}
+#ciao-miniapp-root .cw23-scope-strip > button.active,
+#ciao-miniapp-root .cw16-club-tabs > button.active,
+#ciao-miniapp-root .cw30-compbar > button.active,
+#ciao-miniapp-root .cw31-profile-compbar > button.active{
+  border:0!important;
+  outline:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:#fff!important;
+}
+
+/* Prevent any legacy button pseudo-element from recreating a ring/highlight.
+   The moving liquid capsule is owned exclusively by the rail ::after. */
+#ciao-miniapp-root .mc-tab::before,
+#ciao-miniapp-root .mc-tab::after,
+#ciao-miniapp-root .cwtt2-nav-btn::before,
+#ciao-miniapp-root .cwtt2-nav-btn::after,
+#ciao-miniapp-root .cwtt2-subnav button::before,
+#ciao-miniapp-root .cwtt2-subnav button::after,
+#ciao-miniapp-root .cwpred-mode button::before,
+#ciao-miniapp-root .cwpred-mode button::after,
+#ciao-miniapp-root .cwpred-rounds .round-chip::before,
+#ciao-miniapp-root .cwpred-rounds .round-chip::after,
+#ciao-miniapp-root .cw23-scope-strip > button::before,
+#ciao-miniapp-root .cw23-scope-strip > button::after,
+#ciao-miniapp-root .cw16-club-tabs > button::before,
+#ciao-miniapp-root .cw16-club-tabs > button::after,
+#ciao-miniapp-root .cw30-compbar > button::before,
+#ciao-miniapp-root .cw30-compbar > button::after,
+#ciao-miniapp-root .cw31-profile-compbar > button::before,
+#ciao-miniapp-root .cw31-profile-compbar > button::after{
+  content:none!important;
+  display:none!important;
+  border:0!important;
+  box-shadow:none!important;
+  background:none!important;
+}
 </style>
 
 <script id="ciao-v36-ios-liquid-lens-js">
