@@ -5937,36 +5937,39 @@ try{
 </style>
 
 
+
 <style id="ciao-v37-mobile-safe-liquid-lens">
-/* ciao-v37-mobile-safe-20260910
-   One iOS-like coloured lens. Geometry is clamped to the current rail.
-   The animation is transform-only; mobile WebViews avoid expensive per-control blur. */
+/* ciao-v37-premium-liquid-glass-20260910
+   One calm dark glass rail + one moving active liquid capsule.
+   No per-button outlines. */
 #ciao-miniapp-root :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar){
   --cw-lens-x:4px;
   --cw-lens-w:0px;
   --cw-lens-opacity:0;
-  --cw-lens-rgb:var(--cw-rail-rgb);
-  --cw-lens-rgb2:var(--cw-rail-rgb);
+  --cw-lens-rgb:101,92,255;
+  --cw-lens-rgb2:58,49,194;
   position:relative!important;
   isolation:isolate!important;
   overflow:hidden!important;
   contain:none!important;
-  border-color:rgba(224,235,255,.13)!important;
+  border:0!important;
+  outline:0!important;
   background:
-    radial-gradient(circle at 22% -95%,rgba(255,255,255,.055),transparent 50%),
-    linear-gradient(180deg,rgba(255,255,255,.046),rgba(255,255,255,.019) 48%,rgba(4,10,27,.32))!important;
+    radial-gradient(120% 100% at 50% -60%,rgba(255,255,255,.055),transparent 48%),
+    linear-gradient(180deg,rgba(18,27,61,.82),rgba(8,14,34,.86))!important;
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.075),
-    inset 0 -1px 0 rgba(0,0,0,.15),
-    0 8px 22px rgba(0,0,0,.14),
-    0 0 16px var(--cw-rail-glow)!important;
-  -webkit-backdrop-filter:blur(10px) saturate(138%)!important;
-  backdrop-filter:blur(10px) saturate(138%)!important;
+    0 14px 32px rgba(0,0,0,.20),
+    inset 0 1px 0 rgba(255,255,255,.035)!important;
+  -webkit-backdrop-filter:blur(18px) saturate(145%)!important;
+  backdrop-filter:blur(18px) saturate(145%)!important;
 }
+
+/* No wrapper shine that reads as a border. */
 #ciao-miniapp-root :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar)::before{
-  opacity:.11!important;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent)!important;
+  content:none!important;
 }
+
+/* The only visible active surface: a premium liquid capsule. */
 #ciao-miniapp-root :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar)::after{
   content:"";
   position:absolute;
@@ -5975,31 +5978,37 @@ try{
   top:4px;
   bottom:4px;
   width:var(--cw-lens-w);
-  border:0;
+  border:0!important;
+  outline:0!important;
   border-radius:999px;
   pointer-events:none;
   opacity:var(--cw-lens-opacity);
   transform:translate3d(var(--cw-lens-x),0,0);
   background:
-    radial-gradient(circle at 42% -42%,rgba(255,255,255,.075),transparent 43%),
-    linear-gradient(135deg,rgba(var(--cw-lens-rgb),.60),rgba(var(--cw-lens-rgb2),.42) 58%,rgba(var(--cw-lens-rgb),.23));
+    radial-gradient(115% 100% at 50% -30%,rgba(255,255,255,.28),transparent 44%),
+    linear-gradient(145deg,#655cff 0%,#5448f0 48%,#3a31c2 100%)!important;
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.09),
-    inset 0 -7px 18px rgba(var(--cw-lens-rgb),.07),
-    0 0 14px rgba(var(--cw-lens-rgb),.30),
-    0 0 24px rgba(var(--cw-lens-rgb2),.14);
+    0 11px 25px rgba(72,61,220,.30),
+    inset 0 1px 0 rgba(255,255,255,.21),
+    inset 0 -12px 26px rgba(34,26,150,.17)!important;
   transition:none;
   will-change:transform;
 }
 #ciao-miniapp-root :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar).cw37-lens-ready::after{
   transition:transform 270ms cubic-bezier(.22,.78,.22,1),opacity 120ms ease;
 }
+
+/* Inactive controls are text only inside the shared rail. */
 #ciao-miniapp-root :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar)>button,
 #ciao-miniapp-root .cwpred-rounds>.round-chip{
+  position:relative!important;
   z-index:1!important;
-  border-color:transparent!important;
+  border:0!important;
+  outline:0!important;
   background:transparent!important;
   box-shadow:none!important;
+  color:#9aa6c7!important;
+  text-shadow:none!important;
   -webkit-backdrop-filter:none!important;
   backdrop-filter:none!important;
   transform:none!important;
@@ -6009,58 +6018,73 @@ try{
 #ciao-miniapp-root .cwpred-rounds>.round-chip.active,
 #ciao-miniapp-root :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar)>button:active{
   color:#fff!important;
-  border-color:transparent!important;
+  border:0!important;
+  outline:0!important;
   background:transparent!important;
   box-shadow:none!important;
   transform:none!important;
 }
-/* Tournament palettes. */
-#ciao-miniapp-root[data-cwpred-screen-theme='serie-a'] :where(.cwpred-mode,.cwpred-rounds),
-#ciao-miniapp-root[data-cwtt2-theme='serie-a'] :where(.cwtt2-nav,.cwtt2-subnav){--cw-lens-rgb:49,80,255;--cw-lens-rgb2:49,80,255}
-#ciao-miniapp-root[data-cwpred-screen-theme='champions'] :where(.cwpred-mode,.cwpred-rounds),
-#ciao-miniapp-root[data-cwtt2-theme='champions'] :where(.cwtt2-nav,.cwtt2-subnav){--cw-lens-rgb:83,103,230;--cw-lens-rgb2:120,78,255}
-#ciao-miniapp-root[data-cwpred-screen-theme='europa'] :where(.cwpred-mode,.cwpred-rounds),
-#ciao-miniapp-root[data-cwtt2-theme='europa'] :where(.cwtt2-nav,.cwtt2-subnav){--cw-lens-rgb:230,106,19;--cw-lens-rgb2:255,130,45}
-#ciao-miniapp-root[data-cwpred-screen-theme='conference'] :where(.cwpred-mode,.cwpred-rounds),
-#ciao-miniapp-root[data-cwtt2-theme='conference'] :where(.cwtt2-nav,.cwtt2-subnav){--cw-lens-rgb:40,169,104;--cw-lens-rgb2:65,218,138}
-#ciao-miniapp-root[data-cwpred-screen-theme='coppa'] :where(.cwpred-mode,.cwpred-rounds),
-#ciao-miniapp-root[data-cwtt2-theme='coppa'] :where(.cwtt2-nav,.cwtt2-subnav){--cw-lens-rgb:21,148,87;--cw-lens-rgb2:180,47,67}
-#ciao-miniapp-root .mc-shell{--cw-lens-rgb:49,80,255;--cw-lens-rgb2:30,56,170}
-#ciao-miniapp-root .mc-shell.mc-theme-ucl{--cw-lens-rgb:83,103,230;--cw-lens-rgb2:119,66,230}
-#ciao-miniapp-root .mc-shell.mc-theme-uel{--cw-lens-rgb:230,106,19;--cw-lens-rgb2:255,130,45}
-#ciao-miniapp-root .mc-shell.mc-theme-uecl{--cw-lens-rgb:40,169,104;--cw-lens-rgb2:65,218,138}
-#ciao-miniapp-root .mc-shell.mc-theme-coppa{--cw-lens-rgb:21,148,87;--cw-lens-rgb2:180,47,67}
-/* Club rails use the club palette. */
-#ciao-miniapp-root .cw23-club-shell :where(.cw23-scope-strip,.cw16-club-tabs)::after{
-  background:linear-gradient(135deg,var(--club-accent-soft),var(--club-accent-2-soft));
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 0 15px var(--club-accent-soft),0 0 24px var(--club-accent-faint)!important;
+
+/* Keep competition identity subtle: hue only, same material. */
+#ciao-miniapp-root[data-cwtt2-theme='serie-a'] :where(.cwtt2-nav,.cwtt2-subnav),
+#ciao-miniapp-root[data-cwpred-screen-theme='serie-a'] :where(.cwpred-mode,.cwpred-rounds){--cw-lens-rgb:101,92,255;--cw-lens-rgb2:58,49,194}
+#ciao-miniapp-root[data-cwtt2-theme='champions'] :where(.cwtt2-nav,.cwtt2-subnav),
+#ciao-miniapp-root[data-cwpred-screen-theme='champions'] :where(.cwpred-mode,.cwpred-rounds){--cw-lens-rgb:104,92,255;--cw-lens-rgb2:75,57,210}
+#ciao-miniapp-root[data-cwtt2-theme='europa'] :where(.cwtt2-nav,.cwtt2-subnav),
+#ciao-miniapp-root[data-cwpred-screen-theme='europa'] :where(.cwpred-mode,.cwpred-rounds){--cw-lens-rgb:220,111,51;--cw-lens-rgb2:173,72,27}
+#ciao-miniapp-root[data-cwtt2-theme='conference'] :where(.cwtt2-nav,.cwtt2-subnav),
+#ciao-miniapp-root[data-cwpred-screen-theme='conference'] :where(.cwpred-mode,.cwpred-rounds){--cw-lens-rgb:49,190,121;--cw-lens-rgb2:21,126,77}
+#ciao-miniapp-root[data-cwtt2-theme='coppa'] :where(.cwtt2-nav,.cwtt2-subnav),
+#ciao-miniapp-root[data-cwpred-screen-theme='coppa'] :where(.cwpred-mode,.cwpred-rounds){--cw-lens-rgb:72,102,211;--cw-lens-rgb2:79,64,198}
+
+/* Match Center uses same geometry/material, with restrained tournament tint. */
+#ciao-miniapp-root .mc-shell{--cw-lens-rgb:101,92,255;--cw-lens-rgb2:58,49,194}
+#ciao-miniapp-root .mc-shell.mc-theme-ucl{--cw-lens-rgb:104,92,255;--cw-lens-rgb2:75,57,210}
+#ciao-miniapp-root .mc-shell.mc-theme-uel{--cw-lens-rgb:220,111,51;--cw-lens-rgb2:173,72,27}
+#ciao-miniapp-root .mc-shell.mc-theme-uecl{--cw-lens-rgb:49,190,121;--cw-lens-rgb2:21,126,77}
+#ciao-miniapp-root .mc-shell.mc-theme-coppa{--cw-lens-rgb:72,102,211;--cw-lens-rgb2:79,64,198}
+
+/* Club/profile rails: remove old red/pink glow and keep the same premium rail. */
+#ciao-miniapp-root .cw23-club-shell :where(.cw23-scope-strip,.cw16-club-tabs){
+  border:0!important;
+  background:
+    radial-gradient(120% 100% at 50% -60%,rgba(255,255,255,.05),transparent 48%),
+    linear-gradient(180deg,rgba(18,27,61,.82),rgba(8,14,34,.86))!important;
+  box-shadow:0 14px 32px rgba(0,0,0,.20),inset 0 1px 0 rgba(255,255,255,.035)!important;
 }
-/* Mobile Telegram/iOS: emulate glass with gradients instead of many live blur layers. */
+#ciao-miniapp-root .cw23-club-shell :where(.cw23-scope-strip,.cw16-club-tabs)::after{
+  background:
+    radial-gradient(115% 100% at 50% -30%,rgba(255,255,255,.27),transparent 44%),
+    linear-gradient(145deg,#655cff 0%,#5448f0 48%,#3a31c2 100%)!important;
+  box-shadow:
+    0 11px 25px rgba(72,61,220,.30),
+    inset 0 1px 0 rgba(255,255,255,.21),
+    inset 0 -12px 26px rgba(34,26,150,.17)!important;
+}
+
+/* Mobile Telegram/WebView keeps the SAME visual language; only blur is cheaper. */
 @media (hover:none), (pointer:coarse), (max-width:600px){
-  #ciao-miniapp-root.cw37-mobile-safe button{
-    -webkit-backdrop-filter:none!important;
-    backdrop-filter:none!important;
-  }
   #ciao-miniapp-root.cw37-mobile-safe :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar){
-    -webkit-backdrop-filter:none!important;
-    backdrop-filter:none!important;
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 6px 18px rgba(0,0,0,.13),0 0 13px var(--cw-rail-glow)!important;
-  }
-  #ciao-miniapp-root.cw37-mobile-safe .nav{
+    border:0!important;
     -webkit-backdrop-filter:blur(7px) saturate(125%)!important;
     backdrop-filter:blur(7px) saturate(125%)!important;
+    background:linear-gradient(180deg,rgba(18,27,61,.93),rgba(8,14,34,.95))!important;
+    box-shadow:0 10px 24px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.03)!important;
   }
-  #ciao-miniapp-root.cw37-mobile-safe .mc-shell :where(.mc-section,.mc-kpi,.mc-form-row,.mc-info-card,.cw14-form-card,.cw14-shot-summary,.cw14-shot-detail,.mc-toolbar,.mc-hero,.mc-pitch-panel),
-  #ciao-miniapp-root.cw37-mobile-safe .cwpred-tournament-card[data-cwpred-theme],
-  #ciao-miniapp-root.cw37-mobile-safe .cw23-club-shell :where(.cw16-club-section,.cw16-info-card,.cw17-player-stat-card,.cw17-transfer-card,.cw16-player-row,.cw17-match-card,.cw23-match-card){
-    -webkit-backdrop-filter:none!important;
-    backdrop-filter:none!important;
+  #ciao-miniapp-root.cw37-mobile-safe :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar)>button,
+  #ciao-miniapp-root.cw37-mobile-safe .cwpred-rounds>.round-chip{
+    border:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
   }
 }
 @media(prefers-reduced-motion:reduce){
-  #ciao-miniapp-root :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar).cw37-lens-ready::after{transition:opacity 70ms linear!important}
+  #ciao-miniapp-root :where(.cwpred-mode,.cwpred-rounds,.mc-tabs,.cwtt2-nav,.cwtt2-subnav,.cw23-scope-strip,.cw16-club-tabs,.cw30-compbar,.cw31-profile-compbar).cw37-lens-ready::after{
+    transition:opacity 70ms linear!important
+  }
 }
 </style>
+
 <script id="ciao-v36-ios-liquid-lens-js">
 (()=>{
   const ROOT=document.getElementById('ciao-miniapp-root');
@@ -6161,366 +6185,6 @@ try{
   __cw37ScheduleScan(false);
 })();
 </script>
-
-
-
-
-
-<style id="ciao-premium-liquid-glass-buttons-v2">
-/* ===== CIAO PREMIUM LIQUID GLASS BUTTONS V2 =====
-   Reference direction:
-   one calm dark glass rail, quiet inactive labels,
-   only the active item becomes a premium liquid capsule.
-   No silver outlines around each button.
-*/
-#ciao-miniapp-root{
-  --cw-v2-rail-bg:
-    linear-gradient(180deg,rgba(16,24,57,.78),rgba(8,13,34,.82));
-  --cw-v2-rail-shadow:
-    0 18px 38px rgba(0,0,0,.22),
-    inset 0 1px 0 rgba(255,255,255,.035);
-  --cw-v2-active-bg:
-    radial-gradient(120% 105% at 50% -25%,rgba(255,255,255,.30),transparent 44%),
-    linear-gradient(145deg,#655cff 0%,#5448f0 48%,#3a31c2 100%);
-  --cw-v2-active-shadow:
-    0 10px 24px rgba(72,61,220,.32),
-    inset 0 1px 0 rgba(255,255,255,.22),
-    inset 0 -12px 26px rgba(34,26,150,.18);
-  --cw-v2-text:#9aa6c7;
-  --cw-v2-text-active:#fff;
-  --cw-v2-blur:22px;
-}
-
-/* ---------- rail containers ---------- */
-#ciao-miniapp-root :is(
-  .cwtt2-nav,
-  .cwtt2-subnav,
-  .cwpred-mode,
-  .mc-tabs,
-  .competition-tabs,
-  .competition-switch,
-  .table-tabs,
-  .mode-tabs
-){
-  border:0!important;
-  outline:0!important;
-  background:var(--cw-v2-rail-bg)!important;
-  box-shadow:var(--cw-v2-rail-shadow)!important;
-  backdrop-filter:blur(var(--cw-v2-blur)) saturate(145%)!important;
-  -webkit-backdrop-filter:blur(var(--cw-v2-blur)) saturate(145%)!important;
-}
-
-/* Remove inherited borders/halo from wrappers */
-#ciao-miniapp-root :is(
-  .cwtt2-nav,
-  .cwtt2-subnav,
-  .cwpred-mode,
-  .mc-tabs-wrap,
-  .competition-tabs,
-  .competition-switch,
-  .table-tabs,
-  .mode-tabs
-)::before,
-#ciao-miniapp-root :is(
-  .cwtt2-nav,
-  .cwtt2-subnav,
-  .cwpred-mode,
-  .mc-tabs-wrap,
-  .competition-tabs,
-  .competition-switch,
-  .table-tabs,
-  .mode-tabs
-)::after{
-  border:0!important;
-  box-shadow:none!important;
-}
-
-/* ---------- inactive items ---------- */
-#ciao-miniapp-root :is(
-  .cwtt2-nav-btn,
-  .cwtt2-subnav button,
-  .cwpred-mode button,
-  .mc-tab,
-  .competition-tabs button,
-  .competition-switch button,
-  .table-tabs button,
-  .mode-tabs button,
-  .cw16-club-tab,
-  .cw18-scope,
-  .cw30-comp,
-  .cw31-profile-comp,
-  .round-chip,
-  [data-cw231-filter]
-){
-  position:relative!important;
-  border:0!important;
-  outline:0!important;
-  background:transparent!important;
-  box-shadow:none!important;
-  color:var(--cw-v2-text)!important;
-  text-shadow:none!important;
-  filter:none!important;
-  backdrop-filter:none!important;
-  -webkit-backdrop-filter:none!important;
-  overflow:hidden!important;
-  transition:
-    transform .15s cubic-bezier(.2,.8,.2,1),
-    color .18s ease,
-    background .2s ease,
-    box-shadow .2s ease!important;
-}
-
-/* remove pseudo borders/glints from inactive items */
-#ciao-miniapp-root :is(
-  .cwtt2-nav-btn,
-  .cwtt2-subnav button,
-  .cwpred-mode button,
-  .mc-tab,
-  .competition-tabs button,
-  .competition-switch button,
-  .table-tabs button,
-  .mode-tabs button,
-  .cw16-club-tab,
-  .cw18-scope,
-  .cw30-comp,
-  .cw31-profile-comp,
-  .round-chip,
-  [data-cw231-filter]
-)::before{
-  content:none!important;
-}
-#ciao-miniapp-root :is(
-  .cwtt2-nav-btn,
-  .cwtt2-subnav button,
-  .cwpred-mode button,
-  .mc-tab,
-  .competition-tabs button,
-  .competition-switch button,
-  .table-tabs button,
-  .mode-tabs button,
-  .cw16-club-tab,
-  .cw18-scope,
-  .cw30-comp,
-  .cw31-profile-comp,
-  .round-chip,
-  [data-cw231-filter]
-)::after{
-  content:none!important;
-}
-
-/* ---------- active item ---------- */
-#ciao-miniapp-root :is(
-  .cwtt2-nav-btn.active,
-  .cwtt2-subnav button.active,
-  .cwpred-mode button.active,
-  .mc-tab.active,
-  .competition-tabs button.active,
-  .competition-switch button.active,
-  .table-tabs button.active,
-  .mode-tabs button.active,
-  .cw16-club-tab.active,
-  .cw18-scope.active,
-  .cw30-comp.active,
-  .cw31-profile-comp.active,
-  .round-chip.active,
-  [data-cw231-filter][aria-selected="true"],
-  [role="tab"][aria-selected="true"]
-){
-  border:0!important;
-  outline:0!important;
-  color:var(--cw-v2-text-active)!important;
-  background:var(--cw-v2-active-bg)!important;
-  box-shadow:var(--cw-v2-active-shadow)!important;
-  text-shadow:0 1px 8px rgba(255,255,255,.10)!important;
-}
-
-/* liquid light inside active capsule, without an outline */
-#ciao-miniapp-root :is(
-  .cwtt2-nav-btn.active,
-  .cwtt2-subnav button.active,
-  .cwpred-mode button.active,
-  .mc-tab.active,
-  .competition-tabs button.active,
-  .competition-switch button.active,
-  .table-tabs button.active,
-  .mode-tabs button.active,
-  .cw16-club-tab.active,
-  .cw18-scope.active,
-  .cw30-comp.active,
-  .cw31-profile-comp.active,
-  .round-chip.active,
-  [data-cw231-filter][aria-selected="true"],
-  [role="tab"][aria-selected="true"]
-)::before{
-  content:""!important;
-  position:absolute!important;
-  inset:0!important;
-  border-radius:inherit!important;
-  pointer-events:none!important;
-  background:
-    radial-gradient(85% 55% at 50% 0%,rgba(255,255,255,.18),transparent 70%),
-    linear-gradient(110deg,rgba(255,255,255,.06),transparent 40%,rgba(255,255,255,.025) 70%,transparent)!important;
-  opacity:.8!important;
-}
-
-/* ---------- profile page: remove red/pink “neon rails” ---------- */
-#ciao-miniapp-root :is(
-  .cw16-club-tab,
-  .cw18-scope,
-  .cw30-comp,
-  .cw31-profile-comp
-){
-  background:transparent!important;
-  box-shadow:none!important;
-}
-#ciao-miniapp-root :is(
-  .cw16-club-tab.active,
-  .cw18-scope.active,
-  .cw30-comp.active,
-  .cw31-profile-comp.active
-){
-  background:var(--cw-v2-active-bg)!important;
-  box-shadow:var(--cw-v2-active-shadow)!important;
-}
-
-/* if any legacy selector paints red active backgrounds, neutralize them */
-#ciao-miniapp-root :is(
-  .cw16-club-tab,
-  .cw18-scope,
-  .cw30-comp,
-  .cw31-profile-comp
-)[style*="background"]{
-  border:0!important;
-}
-
-/* ---------- Match Center tabs ---------- */
-#ciao-miniapp-root .mc-tabs-wrap{
-  background:linear-gradient(180deg,rgba(5,11,36,.98) 0%,rgba(5,11,36,.91) 78%,rgba(5,11,36,0) 100%)!important;
-  backdrop-filter:blur(16px)!important;
-  -webkit-backdrop-filter:blur(16px)!important;
-}
-#ciao-miniapp-root .mc-tabs{
-  gap:5px!important;
-  padding:5px!important;
-  border-radius:18px!important;
-}
-#ciao-miniapp-root .mc-tab{
-  min-height:40px!important;
-  padding:0 15px!important;
-  border-radius:14px!important;
-}
-
-/* Competition theme accents remain only as subtle hue in the active capsule */
-#ciao-miniapp-root .mc-shell.mc-theme-uel .mc-tab.active{
-  background:
-    radial-gradient(120% 105% at 50% -25%,rgba(255,255,255,.27),transparent 44%),
-    linear-gradient(145deg,#ff9550 0%,#e56c27 50%,#b94b18 100%)!important;
-  box-shadow:0 10px 24px rgba(174,77,25,.25),inset 0 1px 0 rgba(255,255,255,.20),inset 0 -12px 26px rgba(117,41,7,.16)!important;
-}
-#ciao-miniapp-root .mc-shell.mc-theme-uecl .mc-tab.active{
-  background:
-    radial-gradient(120% 105% at 50% -25%,rgba(255,255,255,.25),transparent 44%),
-    linear-gradient(145deg,#35d38a 0%,#1eb773 50%,#108553 100%)!important;
-  box-shadow:0 10px 24px rgba(19,120,73,.23),inset 0 1px 0 rgba(255,255,255,.19),inset 0 -12px 26px rgba(4,76,42,.15)!important;
-}
-#ciao-miniapp-root .mc-shell.mc-theme-coppa .mc-tab.active{
-  background:
-    radial-gradient(120% 105% at 50% -25%,rgba(255,255,255,.25),transparent 44%),
-    linear-gradient(145deg,#39a37c 0%,#4666c7 54%,#6752e7 100%)!important;
-  box-shadow:0 10px 24px rgba(53,79,177,.24),inset 0 1px 0 rgba(255,255,255,.19),inset 0 -12px 26px rgba(28,43,122,.15)!important;
-}
-
-/* ---------- bottom nav: no framed tile buttons ---------- */
-#ciao-miniapp-root .nav{
-  border-top:0!important;
-  background:linear-gradient(180deg,rgba(5,10,27,.74),rgba(4,8,21,.94))!important;
-  box-shadow:0 -18px 42px rgba(0,0,0,.20),inset 0 1px 0 rgba(255,255,255,.03)!important;
-  backdrop-filter:blur(28px) saturate(140%)!important;
-  -webkit-backdrop-filter:blur(28px) saturate(140%)!important;
-}
-#ciao-miniapp-root .nav button{
-  border:0!important;
-  background:transparent!important;
-  box-shadow:none!important;
-  color:#8591b2!important;
-}
-#ciao-miniapp-root .nav button.active{
-  border:0!important;
-  background:transparent!important;
-  box-shadow:none!important;
-  color:#fff!important;
-}
-#ciao-miniapp-root .nav button.active::after{
-  display:none!important;
-}
-#ciao-miniapp-root .nav button.active b{
-  filter:drop-shadow(0 0 8px rgba(99,92,255,.28))!important;
-}
-
-/* ---------- tactile ---------- */
-#ciao-miniapp-root :is(
-  .cwtt2-nav-btn,
-  .cwtt2-subnav button,
-  .cwpred-mode button,
-  .mc-tab,
-  .competition-tabs button,
-  .competition-switch button,
-  .table-tabs button,
-  .mode-tabs button,
-  .cw16-club-tab,
-  .cw18-scope,
-  .cw30-comp,
-  .cw31-profile-comp,
-  .round-chip,
-  [data-cw231-filter],
-  .nav button
-):active{
-  transform:scale(.975)!important;
-}
-
-#ciao-miniapp-root :is(
-  .cwtt2-nav-btn,
-  .cwtt2-subnav button,
-  .cwpred-mode button,
-  .mc-tab,
-  .competition-tabs button,
-  .competition-switch button,
-  .table-tabs button,
-  .mode-tabs button,
-  .cw16-club-tab,
-  .cw18-scope,
-  .cw30-comp,
-  .cw31-profile-comp,
-  .round-chip,
-  [data-cw231-filter],
-  .nav button
-):focus-visible{
-  outline:0!important;
-  border:0!important;
-  box-shadow:0 0 0 4px rgba(101,92,255,.12)!important;
-}
-
-@media(prefers-reduced-motion:reduce){
-  #ciao-miniapp-root *{scroll-behavior:auto!important}
-  #ciao-miniapp-root :is(
-    .cwtt2-nav-btn,
-    .cwtt2-subnav button,
-    .cwpred-mode button,
-    .mc-tab,
-    .competition-tabs button,
-    .competition-switch button,
-    .table-tabs button,
-    .mode-tabs button,
-    .cw16-club-tab,
-    .cw18-scope,
-    .cw30-comp,
-    .cw31-profile-comp,
-    .round-chip,
-    [data-cw231-filter],
-    .nav button
-  ){transition:none!important}
-}
-</style>
 
 </body>
 </html>
