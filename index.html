@@ -5459,6 +5459,101 @@ const __cw35RenderBase=render;
 render=function(){__cw35NormalizeState();if(matchData)matchData=__cw35NormalizeMatchData(matchData);const out=__cw35RenderBase();try{if(tab==='calendar'&&!matchViewId&&!clubViewId){__cw2013PatchVisible(S);__cw2014PatchPhaseLabels(S?.round?.matches||[])}if(tab==='predict'&&!matchViewId&&!clubViewId)__cw35PatchHomeLive();if(matchViewId)__cw2014PatchMatchCenterPhase();if(typeof __cwPredPolishStatusBadges==='function')__cwPredPolishStatusBadges()}catch(_e){}return out};
 /* /ciao-v35-live-stability-performance-20260910 */
 
+
+
+/* ciao-v36-match-center-stability-20260910 */
+/* One Match Center refresh controller, stable DOM patching, queued incident alerts. */
+let __cw36MatchBusy=false,__cw36SchedulerTimer=null;
+const __CW36_MATCH_POLL_MS=5000,__CW36_APP_POLL_MS=10000;
+const __cw36IncidentSeen=new Map(),__cw36ToastQueue=[];
+const __cw36ToastQueued=new Set();
+let __cw36ToastShowing=false,__cw36ToastHideTimer=null;
+
+function __cw36MatchActive(d=matchData){return ['live','halftime','extra_time','penalties'].includes(__cw35LiveState(d))}
+function __cw36FreshTimestamp(d=matchData){return d?.fetched_at||d?.updated_at||d?.cache?.fetched_at||d?.cache?.updated_at||d?.match?.updated_at||null}
+function __cw36FreshText(d=matchData){const ts=__cw36FreshTimestamp(d),age=typeof __cw22IsoAge==='function'?__cw22IsoAge(ts):null;return age==null?'Автообновление':`Обновлено ${__cw22AgeText(age)}`}
+function __cw36PatchFreshness(d=matchData){
+  if(!main||!matchViewId)return;const el=main.querySelector('[data-cw36-fresh]');if(!el)return;const text=__cw36FreshText(d);if(el.textContent!==text)el.textContent=text
+}
+function __cw36InjectFreshness(html,d){
+  if(String(html).includes('data-cw36-fresh'))return html;
+  return String(html).replace(/(<div class="mc-kickoff(?:\s+mc-external-meta)?">)([\s\S]*?)(<\/div>)/,(_m,open,body,close)=>`${open}${body}<span class="cw36-fresh" data-cw36-fresh>${esc(__cw36FreshText(d))}</span>${close}`)
+}
+const __cw36MatchCenterHtmlBase=matchCenterHtml;
+matchCenterHtml=function(d){return __cw36InjectFreshness(__cw36MatchCenterHtmlBase(__cw35NormalizeMatchData(d)),d)};
+
+/* Retire the duplicate LIVE strip. Freshness now lives inside the main hero metadata. */
+__cw22PatchLiveHero=function(){main?.querySelector?.('[data-cw22-live-hero]')?.remove?.();__cw36PatchFreshness(matchData)};
+__cw22RefreshFreshness=function(){__cw36PatchFreshness(matchData)};
+
+function __cw36IncidentSignature(e){
+  const type=String(e?.type||'').toLowerCase(),minute=Number(e?.minute)||0,added=Number(e?.added_time)||0,side=e?.is_home===true?'h':e?.is_home===false?'a':'',who=String(e?.player||e?.player_name||e?.team||'').trim().toLowerCase(),card=String(e?.card_type||'').toLowerCase(),score=(e?.home_score!=null&&e?.away_score!=null)?`${Number(e.home_score)}:${Number(e.away_score)}`:'';
+  return [type,minute,added,side,who,card,score].join('|')
+}
+function __cw36ToastNode(){let el=root?.querySelector?.('.cw22-toast');if(!el&&root){el=document.createElement('div');el.className='cw22-toast';root.appendChild(el)}return el}
+function __cw36DrainToastQueue(){
+  if(__cw36ToastShowing||!__cw36ToastQueue.length)return;const item=__cw36ToastQueue.shift();__cw36ToastQueued.delete(item.key);const el=__cw36ToastNode();if(!el)return;__cw36ToastShowing=true;el.className=`cw22-toast ${item.kind||''}`;el.textContent=item.text;requestAnimationFrame(()=>el.classList.add('show'));if(item.haptic)try{__cw22Haptic(item.haptic)}catch(_e){}
+  clearTimeout(__cw36ToastHideTimer);__cw36ToastHideTimer=setTimeout(()=>{el.classList.remove('show');setTimeout(()=>{__cw36ToastShowing=false;__cw36DrainToastQueue()},220)},2300)
+}
+function __cw36QueueToast(text,kind='',key='',haptic=''){
+  const t=String(text||'').trim();if(!t)return;const k=String(key||`manual:${t}:${Date.now()}`);if(__cw36ToastQueued.has(k))return;__cw36ToastQueued.add(k);__cw36ToastQueue.push({text:t,kind,key:k,haptic});if(__cw36ToastQueue.length>5){const dropped=__cw36ToastQueue.shift();if(dropped)__cw36ToastQueued.delete(dropped.key)}__cw36DrainToastQueue()
+}
+__cw22Toast=function(text,kind=''){__cw36QueueToast(text,kind)};
+__cw22DetectIncidents=function(d){
+  const id=Number(d?.match?.id||d?.id||matchViewId)||0,arr=Array.isArray(d?.incidents?.incidents)?d.incidents.incidents:[];if(!id)return;
+  let seen=__cw36IncidentSeen.get(id);if(!seen){seen=new Set(arr.map(__cw36IncidentSignature));__cw36IncidentSeen.set(id,seen);return}
+  const fresh=[];for(const e of arr){const sig=__cw36IncidentSignature(e);if(seen.has(sig))continue;seen.add(sig);fresh.push([sig,e])}
+  if(seen.size>180){const keep=[...seen].slice(-120);seen=new Set(keep);__cw36IncidentSeen.set(id,seen)}
+  fresh.sort((a,b)=>(Number(a[1]?.minute)||0)-(Number(b[1]?.minute)||0)||(Number(a[1]?.added_time)||0)-(Number(b[1]?.added_time)||0));
+  for(const [sig,e] of fresh){const text=__cw22IncidentText(e);if(!text)continue;const type=String(e?.type||'').toLowerCase(),kind=type==='goal'?'goal':type==='card'?'card':'',haptic=type==='goal'?'success':type==='card'?'warning':'selection';__cw36QueueToast(text,kind,`${id}:${sig}`,haptic)}
+};
+
+function __cw36SelectedLineupSide(){return String(main?.querySelector?.('[data-lineup-team].active')?.dataset?.lineupTeam||'home')}
+function __cw36JsonChanged(a,b){try{return JSON.stringify(a??null)!==JSON.stringify(b??null)}catch(_e){return true}}
+function __cw36PatchHero(prev,next){
+  if(!main)return;const state=__cw35LiveState(next),active=['live','halftime','extra_time','penalties'].includes(state),status=main.querySelector('[data-mc="status"]'),score=main.querySelector('[data-mc="score"]'),minute=main.querySelector('[data-mc="minute"]');
+  if(status){const label=__cw35LiveLabel(next);if(status.textContent!==label)status.textContent=label;status.classList.toggle('live',active)}
+  if(score){const value=matchCenterScore(next);if(score.textContent!==value){score.textContent=value;score.classList.remove('flash');void score.offsetWidth;score.classList.add('flash');setTimeout(()=>score.classList.remove('flash'),420)}}
+  if(minute){const caption=active?'':state==='finished'?'финальный счёт':'ожидаем начало';if(minute.textContent!==caption)minute.textContent=caption}
+  __cw36PatchFreshness(next);if(__cw36JsonChanged(prev?.incidents,next?.incidents)&&typeof __cw2015PatchScorers==='function')__cw2015PatchScorers(next)
+}
+function __cw36PatchLineups(prev,next){
+  if(!__cw36JsonChanged(prev?.lineups,next?.lineups))return;const selected=__cw36SelectedLineupSide();const cur=main?.querySelector?.('[data-mc="lineups"]');if(!cur)return;const src=__cw2015Temp(__cw20LineupsHtml(next)).querySelector('[data-mc="lineups"]');if(src&&cur.innerHTML!==src.innerHTML){cur.innerHTML=src.innerHTML;requestAnimationFrame(()=>__cw9SetLineupTeam(selected))}
+}
+function __cw36PatchActiveTab(prev,next,key){
+  if(!main||main.querySelector('[data-mc-tab-content]')?.dataset?.mcTabContent!==key)return;
+  if(key==='overview'){
+    const changed=__cw36JsonChanged(prev?.detail,next?.detail)||__cw36JsonChanged(prev?.stats,next?.stats)||__cw36JsonChanged(prev?.incidents,next?.incidents);if(changed&&typeof __cw2015PatchOverview==='function')__cw2015PatchOverview(next);return
+  }
+  if(key==='stats'&&__cw36JsonChanged(prev?.stats,next?.stats)){__cw2015PatchStats(next);return}
+  if(key==='events'&&__cw36JsonChanged(prev?.incidents,next?.incidents)){__cw2015PatchEvents(next);return}
+  if(key==='players'&&__cw36JsonChanged(prev?.player_stats,next?.player_stats)){__cw2015PatchPlayers(next);return}
+  if(key==='lineups'){__cw36PatchLineups(prev,next)}
+}
+function __cw36SectionsForTab(key){const out=new Set(['detail','incidents']);for(const s of (__cw9SectionsForTab(key)||[]))out.add(s);return [...out]}
+async function __cw36RefreshMatchCenterCycle(){
+  if(!matchViewId||matchLoading||document.hidden||__cw36MatchBusy)return false;const state=__cw35LiveState(matchData);if(state==='finished')return false;__cw36MatchBusy=true;const activeTab=String(matchCenterTab||'overview'),prev=matchData;
+  try{
+    const fresh=await __cw9FastMatchApi(matchViewId,__cw36SectionsForTab(activeTab),matchViewSource),next=__cw35NormalizeMatchData(__cw9MergeMatch(prev,fresh));
+    __cw22DetectIncidents(next);__cw36PatchHero(prev,next);__cw36PatchActiveTab(prev,next,activeTab);matchData=next;matchCenterTab=activeTab;return true
+  }catch(_e){return false}finally{__cw36MatchBusy=false}
+}
+refreshMatchCenter=__cw36RefreshMatchCenterCycle;
+const __cw36RefreshLiveBase=refreshLive;
+refreshLive=async function(){if(matchViewId)return await __cw36RefreshMatchCenterCycle();return await __cw36RefreshLiveBase()};
+
+/* Replace the fixed 10s interval with one adaptive scheduler: 5s only inside Match Center. */
+function __cw36ScheduleNext(delay){if(__cw36SchedulerTimer)clearTimeout(__cw36SchedulerTimer);if(document.hidden)return;__cw36SchedulerTimer=setTimeout(async()=>{try{await __cwPerfTick()}finally{__cw36ScheduleNext(matchViewId?__CW36_MATCH_POLL_MS:__CW36_APP_POLL_MS)}},Math.max(1200,Number(delay)||__CW36_APP_POLL_MS))}
+function __cw36StartAdaptiveScheduler(){try{if(__cwPerfTimer){clearInterval(__cwPerfTimer);clearTimeout(__cwPerfTimer);__cwPerfTimer=null}}catch(_e){};__cw36ScheduleNext(matchViewId?1200:__CW36_APP_POLL_MS)}
+__cwPerfStartScheduler=__cw36StartAdaptiveScheduler;
+__cw36StartAdaptiveScheduler();
+document.addEventListener('visibilitychange',()=>{if(document.hidden){if(__cw36SchedulerTimer)clearTimeout(__cw36SchedulerTimer);__cw36SchedulerTimer=null}else __cw36ScheduleNext(300)},{passive:true});
+
+/* Ensure no stale duplicate strip survives navigation/restores. */
+const __cw36RenderBase=render;
+render=function(){const out=__cw36RenderBase();if(matchViewId){main?.querySelector?.('[data-cw22-live-hero]')?.remove?.();__cw36PatchFreshness(matchData)}return out};
+/* /ciao-v36-match-center-stability-20260910 */
+
 /* ===== /Ciao, Web! v22.5 product polish layer ===== */
 
 })();
@@ -5708,6 +5803,155 @@ render=function(){__cw35NormalizeState();if(matchData)matchData=__cw35NormalizeM
 }
 </style>
 <!-- /cw35-tables-segmented-live-polish -->
+
+
+
+<!-- cw36-premium-match-center-style -->
+<style id="cw36-premium-match-center-style">
+/* Match Center: only the rounded segmented control remains; no sharp sticky backing plate. */
+#ciao-miniapp-root.match-center-open .mc-tabs-wrap{
+  background:transparent!important;
+  background-image:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  padding:0!important;
+  margin:0 0 12px!important;
+}
+#ciao-miniapp-root.match-center-open .mc-tabs{
+  background:#07112a!important;
+  border:1px solid rgba(145,160,214,.30)!important;
+  border-radius:18px!important;
+  box-shadow:0 9px 24px rgba(0,0,0,.16)!important;
+}
+
+/* Freshness is metadata, not a second LIVE card, so it cannot move the layout on refresh. */
+#ciao-miniapp-root .cw22-live-hero{display:none!important}
+#ciao-miniapp-root .cw36-fresh{
+  display:block!important;
+  width:100%!important;
+  min-height:12px!important;
+  margin-top:5px!important;
+  color:#6176ad!important;
+  font-size:7.5px!important;
+  font-weight:750!important;
+  line-height:1!important;
+  text-align:center!important;
+  font-variant-numeric:tabular-nums!important;
+  letter-spacing:.01em!important;
+}
+#ciao-miniapp-root .mc-external-meta .cw36-fresh{font-size:7.5px!important;color:#6579ae!important;margin-top:1px!important}
+
+/* Keep the sticky title above notifications; alerts never replace or cover it. */
+#ciao-miniapp-root.match-center-open .mc-toolbar{z-index:130!important;transform:translateZ(0)}
+#ciao-miniapp-root.match-center-open .mc-tabs-wrap{z-index:115!important}
+#ciao-miniapp-root .cw22-toast{
+  top:calc(76px + env(safe-area-inset-top))!important;
+  z-index:120!important;
+  max-width:min(calc(100vw - 28px),420px)!important;
+  min-height:38px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  text-align:center!important;
+  transform:translate(-50%,-10px)!important;
+  transition:opacity .18s ease,transform .18s ease!important;
+  contain:layout paint!important;
+}
+#ciao-miniapp-root .cw22-toast.show{transform:translate(-50%,0)!important}
+
+/* Lineup team selector = same tournament-aware segmented system as the main tabs. */
+#ciao-miniapp-root .mc-lineup-switch{
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  gap:2px!important;
+  padding:3px!important;
+  border:1px solid rgba(145,160,214,.30)!important;
+  border-radius:18px!important;
+  background:#07112a!important;
+  box-shadow:0 9px 24px rgba(0,0,0,.14)!important;
+}
+#ciao-miniapp-root .mc-lineup-switch button{
+  min-height:44px!important;
+  padding:7px 10px!important;
+  border:0!important;
+  border-radius:13px!important;
+  background:transparent!important;
+  color:#8d9abb!important;
+  box-shadow:none!important;
+  font-size:10px!important;
+  font-weight:900!important;
+  transition:background .16s ease,color .16s ease,transform .14s ease!important;
+}
+#ciao-miniapp-root .mc-lineup-switch button::before,#ciao-miniapp-root .mc-lineup-switch button::after{display:none!important;content:none!important}
+#ciao-miniapp-root .mc-lineup-switch button.active{
+  color:#fff!important;
+  background:linear-gradient(135deg,var(--cw34-match-a,var(--cwmt-a,#3150ff)),var(--cw34-match-b,var(--cwmt-b,#183a86)))!important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)!important;
+}
+#ciao-miniapp-root .mc-lineup-switch button.active small{color:rgba(255,255,255,.76)!important}
+#ciao-miniapp-root .mc-lineup-switch button:active{transform:scale(.98)!important}
+
+/* Premium pitch: deeper grass, precise field markings and tournament-aware player markers. */
+#ciao-miniapp-root .mc-pitch{
+  position:relative!important;
+  width:min(100%,390px)!important;
+  aspect-ratio:68/105!important;
+  max-height:520px!important;
+  margin:2px auto 0!important;
+  border-radius:24px!important;
+  overflow:hidden!important;
+  border:1px solid rgba(149,227,197,.28)!important;
+  background:
+    radial-gradient(circle at 50% 48%,rgba(92,184,148,.10),transparent 36%),
+    linear-gradient(180deg,rgba(1,18,21,.08),rgba(0,8,13,.24)),
+    repeating-linear-gradient(0deg,#174c43 0 9.5%,#1d5a4d 9.5% 19%)!important;
+  box-shadow:0 22px 55px rgba(0,0,0,.31),inset 0 0 70px rgba(0,8,13,.30),inset 0 1px 0 rgba(255,255,255,.06)!important;
+}
+#ciao-miniapp-root .mc-pitch::before{
+  content:''!important;position:absolute!important;inset:0!important;width:auto!important;height:auto!important;left:0!important;top:0!important;bottom:0!important;
+  border-radius:inherit!important;background:radial-gradient(ellipse at center,transparent 48%,rgba(0,10,15,.24) 100%)!important;pointer-events:none!important;z-index:1!important
+}
+#ciao-miniapp-root .mc-pitch::after{
+  content:''!important;position:absolute!important;left:0!important;right:0!important;top:0!important;width:auto!important;height:22%!important;border:0!important;border-radius:0!important;transform:none!important;
+  background:linear-gradient(180deg,rgba(255,255,255,.035),transparent)!important;pointer-events:none!important;z-index:1!important
+}
+#ciao-miniapp-root .mc-pitch-lines{inset:11px!important;border:1px solid rgba(224,255,244,.50)!important;border-radius:4px!important;z-index:2!important}
+#ciao-miniapp-root .mc-pitch-lines::before{border-top-color:rgba(224,255,244,.50)!important}
+#ciao-miniapp-root .mc-pitch-lines::after{width:76px!important;height:76px!important;border-color:rgba(224,255,244,.50)!important;background:radial-gradient(circle at center,rgba(224,255,244,.55) 0 1.5px,transparent 2px)!important}
+#ciao-miniapp-root .mc-pitch-box{left:22%!important;right:22%!important;height:16.5%!important;border-color:rgba(224,255,244,.48)!important;z-index:2!important}
+#ciao-miniapp-root .mc-pitch-box::before{content:'';position:absolute;left:18%;right:18%;height:44%;border:1px solid rgba(224,255,244,.43)}
+#ciao-miniapp-root .mc-pitch-box.top::before{top:-1px;border-top:0}
+#ciao-miniapp-root .mc-pitch-box.bottom::before{bottom:-1px;border-bottom:0}
+#ciao-miniapp-root .mc-pitch-box::after{content:'';position:absolute;left:50%;width:4px;height:4px;border-radius:50%;background:rgba(224,255,244,.58);transform:translateX(-50%)}
+#ciao-miniapp-root .mc-pitch-box.top::after{bottom:16%}
+#ciao-miniapp-root .mc-pitch-box.bottom::after{top:16%}
+#ciao-miniapp-root .mc-pitch-players{inset:24px 13px!important;z-index:4!important;gap:4px!important}
+#ciao-miniapp-root .mc-pitch-line{min-height:49px!important;align-items:flex-start!important}
+#ciao-miniapp-root .mc-pitch-player{width:66px!important;text-shadow:0 2px 8px rgba(0,0,0,.82)!important}
+#ciao-miniapp-root .mc-pitch-number{
+  width:34px!important;height:34px!important;margin-bottom:5px!important;
+  background:linear-gradient(145deg,var(--cw34-match-a,var(--cwmt-a,#3150ff)),var(--cw34-match-b,var(--cwmt-b,#183a86)))!important;
+  border:1px solid rgba(255,255,255,.46)!important;
+  box-shadow:0 7px 18px rgba(0,0,0,.40),inset 0 1px 0 rgba(255,255,255,.23),0 0 0 2px rgba(255,255,255,.035)!important;
+  font-size:10px!important;font-weight:950!important
+}
+#ciao-miniapp-root .mc-pitch-name{font-size:8px!important;line-height:1.15!important;font-weight:900!important;text-shadow:0 2px 8px rgba(0,0,0,.92)!important}
+#ciao-miniapp-root .mc-lineup-status{margin:0!important;min-height:13px!important;color:#6f83b5!important;font-size:8px!important;letter-spacing:.02em!important}
+#ciao-miniapp-root .mc-lineups-wrap{gap:10px!important;overflow-anchor:none!important}
+#ciao-miniapp-root .mc-tab-content{overflow-anchor:none!important}
+#ciao-miniapp-root .mc-hero{overflow-anchor:none!important;contain:layout style!important}
+
+@media(max-width:390px){
+  #ciao-miniapp-root .mc-pitch{max-height:485px!important;border-radius:21px!important}
+  #ciao-miniapp-root .mc-pitch-player{width:57px!important}
+  #ciao-miniapp-root .mc-pitch-number{width:31px!important;height:31px!important}
+  #ciao-miniapp-root .mc-lineup-switch{border-radius:16px!important}
+  #ciao-miniapp-root .mc-lineup-switch button{min-height:41px!important;border-radius:12px!important;font-size:9.5px!important}
+}
+</style>
+<!-- /cw36-premium-match-center-style -->
 
 </body>
 </html>
