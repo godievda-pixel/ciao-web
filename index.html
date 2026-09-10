@@ -5326,6 +5326,124 @@ try{const st=document.createElement('style');st.id='ciao-v12-performance-style';
 `;document.getElementById(st.id)?.remove();document.head.appendChild(st)}catch(_e){}
 /* /ciao-v12-performance-stability-20260910 */
 
+
+/* ciao-v35-live-stability-performance-20260910 */
+/* Final live-state normalization + no-flicker background patching. */
+function __cw35RawStatus(x){
+  const m=x?.match??x?.raw??null;
+  return [x?.live_phase,x?.status,x?.live_status,x?.phase,m?.live_phase,m?.status,m?.live_status,m?.phase].map(v=>String(v??'').trim().toLowerCase()).filter(Boolean)
+}
+function __cw35LiveState(x){
+  const m=x?.match??x?.raw??x??{},s=__cw35RawStatus(x),has=values=>s.some(v=>values.includes(v));
+  if(x?.is_finished===true||m?.is_finished===true)return 'finished';
+  if(has(['cancelled','canceled','abandoned']))return 'cancelled';
+  if(has(['postponed','delayed']))return 'postponed';
+  if(has(['finished','ft','full_time','fulltime','ended','after_extra_time']))return 'finished';
+  if(has(['halftime','half_time','half-time','ht','break','interval','extra_time_halftime']))return 'halftime';
+  if(has(['penalties','penalty','penalty_shootout','penalty-shootout','shootout','pens']))return 'penalties';
+  if(has(['extra_time','extra-time','et','extra_time_first_half','extra_time_second_half']))return 'extra_time';
+  if(has(['live','in_play','in-play','inplay','playing','first_half','second_half','1h','2h']))return 'live';
+  if(x?.is_live===true||m?.is_live===true)return 'live';
+  const minute=__cw35LiveMinute(x);if(minute!=null&&minute>0)return 'live';
+  return 'scheduled'
+}
+function __cw35LiveMinute(x){
+  const m=x?.match??x?.raw??x??{},values=[x?.detail?.current_minute,x?.current_minute,x?.minute,x?.live_elapsed,m?.current_minute,m?.minute,m?.live_elapsed];
+  for(const value of values){const n=Number(value);if(Number.isFinite(n)&&n>0)return n}
+  return null
+}
+function __cw35LiveLabel(x){
+  const state=__cw35LiveState(x),minute=__cw35LiveMinute(x);
+  if(state==='halftime')return 'ПЕРЕРЫВ';
+  if(state==='penalties')return 'ПЕНАЛЬТИ';
+  if(state==='extra_time')return 'ДОП. ВРЕМЯ'+(minute!=null?' · '+minute+'′':'');
+  if(state==='live')return 'LIVE'+(minute!=null?' · '+minute+'′':'');
+  if(state==='finished')return 'Матч завершён';
+  if(state==='postponed')return 'Перенесён';
+  if(state==='cancelled')return 'Отменён';
+  return 'Матч не начался'
+}
+function __cw35NormalizeLegacyMatch(m){
+  if(!m||typeof m!=='object')return m;const state=__cw35LiveState(m),active=['live','halftime','extra_time','penalties'].includes(state),minute=__cw35LiveMinute(m);
+  if(active){const phase=state==='halftime'?'halftime':state==='extra_time'?'extra_time':state==='penalties'?'penalties':(String(m.live_phase||'').trim()||'live');if(String(m.live_status||'').toLowerCase()==='live'&&String(m.live_phase||'').toLowerCase()===phase&&((minute==null&&m.live_elapsed==null)||Number(m.live_elapsed)===minute))return m;return {...m,live_status:'live',live_phase:phase,live_elapsed:minute}}
+  if(state==='finished'&&(!m.is_finished||String(m.live_status||'').toLowerCase()==='live'))return {...m,is_finished:true,live_status:'finished'};
+  return m
+}
+function __cw35NormalizeMatchData(d){
+  if(!d||typeof d!=='object')return d;const state=__cw35LiveState(d),active=['live','halftime','extra_time','penalties'].includes(state),m=__cw35NormalizeLegacyMatch(d.match||{}),status=active?'live':state;
+  return {...d,status,match:m}
+}
+function __cw35NormalizeState(){
+  if(!S?.round||!Array.isArray(S.round.matches))return;let changed=false;const matches=S.round.matches.map(m=>{const n=__cw35NormalizeLegacyMatch(m);if(n!==m)changed=true;return n});if(changed)S={...S,round:{...S.round,matches},has_live:matches.some(m=>['live','halftime','extra_time','penalties'].includes(__cw35LiveState(m)))}
+}
+
+/* Match Center: stale scheduled status can no longer beat actual live fields. */
+matchStatusText=function(d){return __cw35LiveLabel(d)};
+const __cw35MatchHtmlBase=matchCenterHtml;
+matchCenterHtml=function(d){
+  const next=__cw35NormalizeMatchData(d),state=__cw35LiveState(next),active=['live','halftime','extra_time','penalties'].includes(state);let html=__cw35MatchHtmlBase(next);
+  if(active)html=html.replace(/(<div class="mc-minute" data-mc="minute">)[\s\S]*?(<\/div>)/,'$1$2');
+  return html
+};
+const __cw35PatchMatchBase=patchMatchCenter;
+patchMatchCenter=function(next){
+  const normalized=__cw35NormalizeMatchData(next),out=__cw35PatchMatchBase(normalized),state=__cw35LiveState(normalized),status=main?.querySelector?.('[data-mc="status"]'),minute=main?.querySelector?.('[data-mc="minute"]');
+  if(status){status.textContent=__cw35LiveLabel(normalized);status.classList.toggle('live',['live','halftime','extra_time','penalties'].includes(state))}
+  if(minute)minute.textContent=['live','halftime','extra_time','penalties'].includes(state)?'':state==='finished'?'финальный счёт':'ожидаем начало';
+  return out
+};
+const __cw35SnapshotBase=__cw2014Snapshot;
+__cw2014Snapshot=async function(){const out=await __cw35SnapshotBase();return {...out,matches:(Array.isArray(out?.matches)?out.matches:[]).map(__cw35NormalizeLegacyMatch)}};
+__cw2014IsBreak=function(m){return __cw35LiveState(m)==='halftime'};
+__cw2014LiveLabel=function(m){return __cw35LiveLabel(m)};
+__cw2014LiveTag=function(m){return `<span class="live-pill"><i class="live-dot"></i>${esc(__cw35LiveLabel(m))}</span>`};
+__cw2014PatchMatchCenterPhase=function(){if(!matchViewId||!matchData)return;matchData=__cw35NormalizeMatchData(matchData);const state=__cw35LiveState(matchData),status=main?.querySelector?.('[data-mc="status"]'),minute=main?.querySelector?.('[data-mc="minute"]');if(status){status.textContent=__cw35LiveLabel(matchData);status.classList.toggle('live',['live','halftime','extra_time','penalties'].includes(state))}if(minute&&['live','halftime','extra_time','penalties'].includes(state))minute.textContent=''};
+
+/* Club profile match rows use the same phase logic, including halftime without 0'. */
+__cw17MatchStatus=function(m){const state=__cw35LiveState(m),minute=__cw35LiveMinute(m);if(['live','halftime','extra_time','penalties'].includes(state))return `<span class="cw17-match-state live">${esc(__cw35LiveLabel(m))}</span>`;if(state==='finished')return '<span class="cw17-match-state finished">Завершён</span>';if(state==='postponed')return '<span class="cw17-match-state upcoming">Перенесён</span>';if(state==='cancelled')return '<span class="cw17-match-state upcoming">Отменён</span>';return '<span class="cw17-match-state upcoming">Предстоящий</span>'};
+const __cw35ClubKeepRenderBase=__cw16KeepScrollRender;
+__cw16KeepScrollRender=function(){if(clubViewId&&clubViewTab==='matches'){const host=main?.querySelector?.('[data-club-content]');if(host){host.innerHTML=__cw16ClubTabContent(clubViewData||{});return}}return __cw35ClubKeepRenderBase()};
+
+/* Home: score and live phase are separate, so LIVE always has the current score beside it. */
+__cwHomeStatus=function(match){return __cw35LiveState(match?.__legacy?(match.raw||match):match)};
+__cwHomeMatchLabel=function(match){if(!match)return 'Матч не найден';const state=__cwHomeStatus(match);if(['live','halftime','extra_time','penalties'].includes(state))return __cw35LiveLabel(match?.__legacy?(match.raw||match):match);if(state==='finished'){const score=__cwHomeMatchScore(match);return score&&score!=='→'?'ИТОГ · '+score:'ИТОГ'}if(state==='postponed')return 'ПЕРЕНЕСЁН';if(state==='cancelled')return 'ОТМЕНЁН';const iso=match?.__legacy?match?.raw?.kickoff_at:match?.kickoffAt;try{return iso?new Intl.DateTimeFormat('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}).format(new Date(iso)):'Время уточняется'}catch(_e){return 'Время уточняется'}};
+__cwHomeMatchScore=function(match){const state=__cwHomeStatus(match);if(!['live','halftime','extra_time','penalties','finished'].includes(state))return '→';if(match?.__legacy){const raw=match.raw||match;return raw?.home_score!=null&&raw?.away_score!=null?String(raw.home_score)+':'+String(raw.away_score):'—'}return match?.homeScore!=null&&match?.awayScore!=null?String(match.homeScore)+':'+String(match.awayScore):'—'};
+__cwHomeTodayStatus=function(match){const state=__cwHomeStatus(match);if(['live','halftime','extra_time','penalties'].includes(state))return __cw35LiveLabel(match?.__legacy?(match.raw||match):match);if(state==='finished')return 'ИТОГ';if(state==='postponed')return 'ПЕРЕНЕСЁН';if(state==='cancelled')return 'ОТМЕНЁН';const iso=match?.__legacy?match?.raw?.kickoff_at:match?.kickoffAt;try{return iso?new Intl.DateTimeFormat('ru-RU',{hour:'2-digit',minute:'2-digit'}).format(new Date(iso)):'Время уточняется'}catch(_e){return 'Время уточняется'}};
+__cwHomeTodayCard=function(match){const legacy=!!match?.__legacy,home=match?.homeTeam||{},away=match?.awayTeam||{},state=__cwHomeStatus(match),active=['live','halftime','extra_time','penalties'].includes(state),attrs=legacy?' data-cw211-match="'+__cwHomeEsc(match.matchId)+'"':' data-cw-home-match="'+__cwHomeEsc(match.matchId)+'" data-cw-home-competition="'+__cwHomeEsc(match.competition)+'"',score=__cwHomeMatchScore(match),center=active?'<strong class="cw-home-today-score">'+__cwHomeEsc(score)+'</strong><span class="cw-home-today-state">'+__cwHomeEsc(__cwHomeTodayStatus(match))+'</span>':state==='finished'?'<strong class="cw-home-today-score">'+__cwHomeEsc(score)+'</strong><span class="cw-home-today-state">ИТОГ</span>':'<strong class="cw-home-today-time">'+__cwHomeEsc(__cwHomeTodayStatus(match))+'</strong>';return '<button type="button" class="cw211-today-match cw-home-today-card '+(active?'live':'')+'"'+attrs+'><span class="cw-home-today-team">'+__cwHomeTeamCrest(home,legacy)+'<b>'+__cwHomeEsc(home?.name||'—')+'</b></span><span class="cw-home-today-center"><small>'+__cwHomeEsc(__cwHomeCompetitionLabel(match.competition))+'</small>'+center+'</span><span class="cw-home-today-team cw-home-today-team--away">'+__cwHomeTeamCrest(away,legacy)+'<b>'+__cwHomeEsc(away?.name||'—')+'</b></span></button>'};
+function __cw35PatchHomeLive(){
+  if(tab!=='predict'||matchViewId||clubViewId||__cwHomeExternalCenter||!main)return false;
+  try{__cw23PolishFavorite(main);__cw23PolishToday(main);__cwHomeBindPolish();return true}catch(_e){return false}
+}
+
+/* Root-cause fix for the 10s blink: live refresh no longer calls render() on Home. */
+__cw20PatchFavoriteHome=function(){
+  return __cw35PatchHomeLive()
+};
+
+/* External home payload refresh is also patched in-place. */
+__cwHomeLoadExternal=async function(){
+  if(__cwHomeExternalLoading)return false;const now=Date.now();if(__cwHomeExternalByCompetition.size&&now-__cwHomeExternalLoadedAt<__CW_PERF_HOME_EXT_TTL)return true;__cwHomeExternalLoading=true;
+  try{const results=await Promise.allSettled(__CW_HOME_EXT_COMPETITIONS.map(async key=>({key,payload:await __cwPerfExternalState(key)})));let changed=false;for(const result of results)if(result.status==='fulfilled'){__cwHomeExternalByCompetition.set(result.value.key,Array.isArray(result.value.payload?.matches)?result.value.payload.matches:[]);changed=true}__cwHomeExternalLoadedAt=Date.now();if(changed&&tab==='predict'&&!__cwHomeExternalCenter&&!__cw26HomeEntryBusy)__cw35PatchHomeLive();return changed}finally{__cwHomeExternalLoading=false}
+};
+
+/* Keep minute/score polling DOM-only; only prediction-lock transitions may re-render cards. */
+__cwPerfExternalLive=async function(competition){
+  const ids=__cwPerfExternalVisibleIds();if(!ids.length)return false;
+  try{const j=await __cwPerfRequest('ext-live:'+String(competition||'all')+':'+ids.join(','),()=>__cwPerfJsonPost(__CWPRED_EXTERNAL_API,{action:'live_updates',competition:competition||'all',match_ids:ids}),8000,{force:false}),patches=Array.isArray(j?.data?.matches)?j.data.matches:[];let structural=false;if(__cwPredExternalPayload&&(competition==='all'||String(__cwPredExternalPayload.competition)===String(competition)))structural=__cwPerfMergeExternal(__cwPredExternalPayload,patches)||structural;if(__cwMtPayload&&(competition==='all'||String(__cwMtPayload.competition)===String(competition)))structural=__cwPerfMergeExternal(__cwMtPayload,patches)||structural;for(const [key,list] of __cwHomeExternalByCompetition||[]){if(competition!=='all'&&key!==competition)continue;structural=__cwPerfMergeExternal({matches:list},patches)||structural}const homeMode=tab==='predict'&&typeof __cwPredCompetition==='string'&&!__cwPredCompetition&&!__cwHomeExternalCenter;if(homeMode)__cw35PatchHomeLive();if(__cwPredExternalPayload)__cwPerfPatchExternalDom(__cwPredExternalPayload);if(__cwMtPayload)__cwPerfPatchExternalDom(__cwMtPayload);if(structural&&!homeMode&&(tab==='predict'||tab==='mine')&&__cwPredCompetition){const snap=typeof __cwPredPolishCaptureViewport==='function'?__cwPredPolishCaptureViewport():null;render();if(snap&&typeof __cwPredPolishRestoreViewport==='function')requestAnimationFrame(()=>__cwPredPolishRestoreViewport(snap))}return true}catch(_e){return false}
+};
+
+/* Tables: stale-while-revalidate swaps only the data body, not the navigation/header. */
+function __cw35BindTableBody(host){if(!host)return;host.querySelectorAll?.('[data-cwtt-club]').forEach(btn=>btn.onclick=e=>{e.preventDefault();e.stopPropagation();const id=Number(btn.dataset.cwttClub);if(id>0)openClubProfile(id)})}
+__cwPerfTableFetch=function(c,v,{force=false}={}){
+  const k=__cwTt2Key(c,v),keepVisible=__cwTt2Cache.has(k);if(v==='table'&&c==='serie_a')return Promise.resolve(true);if(!keepVisible){__cwTt2Loading=true;render()}const action=v==='table'?(c==='coppa_italia'?'bracket':'standings'):'leaders',dataKey='tt:'+c+':'+action,ttl=action==='leaders'?1800000:__CW_PERF_TABLE_TTL,dataP=__cwPerfRequest(dataKey,()=>__cwPerfJsonPost(__CWTT_API,{action,competition:c}),ttl,{force}),assetsP=v==='table'&&c!=='serie_a'&&c!=='coppa_italia'?__cwPerfRequest('tt-assets:'+c,()=>__cwPerfJsonPost(__CWTT_API,{action:'assets',competition:c}).catch(()=>({rows:[]})),__CW_PERF_ASSETS_TTL,{force:false}):Promise.resolve({rows:[]});return Promise.all([dataP,assetsP]).then(([d,a])=>{const p=v==='table'&&c!=='serie_a'&&c!=='coppa_italia'?__cwTt2MergeAssets(d,a):d;__cwTt2Cache.set(k,p);__cwTt2Error='';return true}).catch(e=>{__cwTt2Error=String(e?.message||'Ошибка');if(!keepVisible)throw e;return false}).finally(()=>{__cwTt2Loading=false;if(c===__cwTt2Comp&&v===__cwTt2View){const y=Number(main?.scrollTop||0),body=main?.querySelector?.('.cwtt2-body');if(body){body.innerHTML=__cwTt2Body();__cw35BindTableBody(body);if(main)main.scrollTop=y}else render()}})
+};
+__cwTt2Fetch=async function(c,v,options={}){try{return await __cwPerfTableFetch(c,v,options)}catch(_e){return false}};
+
+/* Every ordinary render starts from normalized state and finishes with synchronous live DOM patches. */
+const __cw35RenderBase=render;
+render=function(){__cw35NormalizeState();if(matchData)matchData=__cw35NormalizeMatchData(matchData);const out=__cw35RenderBase();try{if(tab==='calendar'&&!matchViewId&&!clubViewId){__cw2013PatchVisible(S);__cw2014PatchPhaseLabels(S?.round?.matches||[])}if(tab==='predict'&&!matchViewId&&!clubViewId)__cw35PatchHomeLive();if(matchViewId)__cw2014PatchMatchCenterPhase();if(typeof __cwPredPolishStatusBadges==='function')__cwPredPolishStatusBadges()}catch(_e){}return out};
+/* /ciao-v35-live-stability-performance-20260910 */
+
 /* ===== /Ciao, Web! v22.5 product polish layer ===== */
 
 })();
@@ -5488,6 +5606,93 @@ try{const st=document.createElement('style');st.id='ciao-v12-performance-style';
 }
 </style>
 <!-- /cw34-contextual-segmented-nav -->
+
+
+<!-- cw35-tables-segmented-live-polish -->
+<style id="cw35-tables-segmented-live-polish">
+/* Tables use the same reference-style segmented control as Match Center / Club Profile. */
+#ciao-miniapp-root .cwtt2-nav,
+#ciao-miniapp-root .cwtt2-subnav{
+  display:flex!important;
+  align-items:stretch!important;
+  gap:2px!important;
+  padding:3px!important;
+  border:1px solid rgba(145,160,214,.30)!important;
+  border-radius:18px!important;
+  background:rgba(6,12,31,.92)!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  overflow-x:auto!important;
+  scrollbar-width:none!important;
+}
+#ciao-miniapp-root .cwtt2-nav{margin:0 0 8px!important}
+#ciao-miniapp-root .cwtt2-subnav{margin:0 0 10px!important}
+#ciao-miniapp-root .cwtt2-nav::-webkit-scrollbar,
+#ciao-miniapp-root .cwtt2-subnav::-webkit-scrollbar{display:none!important}
+#ciao-miniapp-root .cwtt2-nav-btn,
+#ciao-miniapp-root .cwtt2-sub-btn{
+  position:relative!important;
+  flex:1 0 auto!important;
+  min-height:38px!important;
+  padding:0 11px!important;
+  border:0!important;
+  border-radius:13px!important;
+  background:transparent!important;
+  color:#8996b8!important;
+  box-shadow:none!important;
+  font:850 9.5px/1 Manrope,sans-serif!important;
+  white-space:nowrap!important;
+  transition:background .16s ease,color .16s ease,transform .14s ease!important;
+}
+#ciao-miniapp-root .cwtt2-nav-btn::before,
+#ciao-miniapp-root .cwtt2-nav-btn::after,
+#ciao-miniapp-root .cwtt2-sub-btn::before,
+#ciao-miniapp-root .cwtt2-sub-btn::after{display:none!important;content:none!important}
+#ciao-miniapp-root .cwtt2-nav-btn.active,
+#ciao-miniapp-root .cwtt2-sub-btn.active{
+  color:#fff!important;
+  background:linear-gradient(135deg,var(--cwtt2-a),var(--cwtt2-b))!important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)!important;
+  text-shadow:0 1px 8px rgba(0,0,0,.22)!important;
+}
+#ciao-miniapp-root .cwtt2-nav-btn:active,
+#ciao-miniapp-root .cwtt2-sub-btn:active{transform:scale(.975)!important}
+
+/* Home live cards: current score first, live phase directly below it. */
+#ciao-miniapp-root .cw-home-today-center .cw-home-today-score{
+  display:block!important;
+  margin-top:3px!important;
+  color:#fff!important;
+  font-family:"Unbounded","Manrope",sans-serif!important;
+  font-size:12px!important;
+  line-height:1.05!important;
+  font-weight:900!important;
+}
+#ciao-miniapp-root .cw-home-today-center .cw-home-today-state{
+  display:block!important;
+  margin-top:3px!important;
+  color:#ff7189!important;
+  font-size:6.4px!important;
+  line-height:1.1!important;
+  font-weight:900!important;
+  white-space:nowrap!important;
+}
+#ciao-miniapp-root .cw-home-today-center .cw-home-today-time{
+  display:block!important;
+  margin-top:4px!important;
+  color:#fff!important;
+  font-size:7.4px!important;
+  line-height:1.1!important;
+  white-space:nowrap!important;
+}
+#ciao-miniapp-root .cw211-favorite-panel,#ciao-miniapp-root .cwtt2-screen{overflow-anchor:none}
+@media(max-width:390px){
+  #ciao-miniapp-root .cwtt2-nav,#ciao-miniapp-root .cwtt2-subnav{border-radius:16px!important}
+  #ciao-miniapp-root .cwtt2-nav-btn,#ciao-miniapp-root .cwtt2-sub-btn{min-height:36px!important;padding:0 9px!important;border-radius:12px!important;font-size:9px!important}
+}
+</style>
+<!-- /cw35-tables-segmented-live-polish -->
 
 </body>
 </html>
