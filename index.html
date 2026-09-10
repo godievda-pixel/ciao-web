@@ -3723,7 +3723,22 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
   try{__cw18FavoriteHome=__cw225FavoriteHome}catch(_e){}
 
   let __cw225HasRendered=false;
-  function __cw225ReleaseStartCover(){if(!__cw225HasRendered)return;try{if(tab==='predict'&&!__cwHomeExternalCenter&&typeof __cwHomeExternalLoadedAt!=='undefined'&&!Number(__cwHomeExternalLoadedAt))return;document.documentElement.classList.remove('cw225-booting');document.getElementById('cw225-start-cover')?.remove()}catch(_e){}}
+  function __cw225BootReady(){
+    try{
+      if(typeof S!=='undefined'&&S)return true;
+      if(!main)return false;
+      if(main.querySelector?.('.loader,[data-cw22-skeleton]'))return false;
+      return !!String(main.textContent||'').trim();
+    }catch(_e){return false}
+  }
+  function __cw225ReleaseStartCover(){
+    if(!__cw225HasRendered&&!__cw225BootReady())return;
+    if(!__cw225BootReady())return;
+    try{
+      document.documentElement.classList.remove('cw225-booting');
+      document.getElementById('cw225-start-cover')?.remove();
+    }catch(_e){}
+  }
 
   try{
     const __cw225TableBase=table;
@@ -3775,7 +3790,7 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
     try{
       if(typeof render==='function'&&typeof S!=='undefined'&&S){render();return}
     }catch(_e){}
-    if(main&&main.childElementCount){__cw225HasRendered=true;requestAnimationFrame(__cw22AfterRender);return}
+    if(__cw225BootReady()){__cw225HasRendered=true;requestAnimationFrame(__cw22AfterRender);return}
     setTimeout(__cw225BootFinalize,50);
   }
 
