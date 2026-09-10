@@ -5552,6 +5552,220 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden){if(__cw36S
 /* Ensure no stale duplicate strip survives navigation/restores. */
 const __cw36RenderBase=render;
 render=function(){const out=__cw36RenderBase();if(matchViewId){main?.querySelector?.('[data-cw22-live-hero]')?.remove?.();__cw36PatchFreshness(matchData)}return out};
+/* ciao-v37-state-live-premium-20260910 */
+const __CW37_UI_KEY='ciao:cw37:ui:v1';
+const __CW37_ACTIVE_MS=4500,__CW37_EXTRA_MS=3500,__CW37_HALF_MS=12000,__CW37_GLOBAL_LIVE_MS=7000,__CW37_IDLE_MS=60000,__CW37_FINISHED_MS=120000;
+let __cw37Timer=null,__cw37Busy=false,__cw37PrefetchStarted=false,__cw37FirstRenderSeen=false;
+let __cw37UiState={matchTabs:{},lineupSide:{},clubTabs:{},clubScope:{},tableComp:'serie_a',tableView:'table',lastTab:'predict'};
+
+function __cw37NormalizeMatch(x){
+  const src=x||{},m=src?.match??src?.raw??src??{},detail=src?.detail??{};
+  const statuses=[src?.live_phase,src?.status,src?.live_status,src?.phase,m?.live_phase,m?.status,m?.live_status,m?.phase].map(v=>String(v??'').trim().toLowerCase()).filter(Boolean);
+  const has=a=>statuses.some(v=>a.includes(v));
+  let status='scheduled';
+  if(src?.is_finished===true||m?.is_finished===true||has(['finished','ft','full_time','fulltime','ended','after_extra_time']))status='finished';
+  else if(has(['cancelled','canceled','abandoned']))status='cancelled';
+  else if(has(['postponed','delayed']))status='postponed';
+  else if(has(['halftime','half_time','half-time','ht','break','interval','extra_time_halftime']))status='halftime';
+  else if(has(['penalties','penalty','penalty_shootout','penalty-shootout','shootout','pens']))status='penalties';
+  else if(has(['extra_time','extra-time','et','extra_time_first_half','extra_time_second_half']))status='extra_time';
+  else if(has(['live','in_play','in-play','inplay','playing','first_half','second_half','1h','2h'])||src?.is_live===true||m?.is_live===true)status='live';
+  let minute=null;for(const value of [detail?.current_minute,src?.current_minute,src?.minute,src?.live_elapsed,m?.current_minute,m?.minute,m?.live_elapsed]){const n=Number(value);if(Number.isFinite(n)&&n>0){minute=n;break}}
+  if(status==='scheduled'&&minute!=null)status='live';
+  const homeScore=detail?.home_score??src?.home_score??src?.homeScore??m?.home_score??m?.homeScore??null;
+  const awayScore=detail?.away_score??src?.away_score??src?.awayScore??m?.away_score??m?.awayScore??null;
+  const active=['live','halftime','extra_time','penalties'].includes(status);
+  const label=status==='halftime'?'ПЕРЕРЫВ':status==='penalties'?'ПЕНАЛЬТИ':status==='extra_time'?`ДОП. ВРЕМЯ${minute!=null?' · '+minute+'′':''}`:status==='live'?`LIVE${minute!=null?' · '+minute+'′':''}`:status==='finished'?'Матч завершён':status==='postponed'?'Перенесён':status==='cancelled'?'Отменён':'Матч не начался';
+  return {status,active,minute,period:status,homeScore,awayScore,scoreText:homeScore!=null&&awayScore!=null?`${homeScore}:${awayScore}`:'— : —',label,updatedAt:src?.fetched_at||src?.updated_at||src?.cache?.fetched_at||src?.cache?.updated_at||m?.updated_at||null,raw:src};
+}
+function __cw37LoadUiState(){
+  try{const v=JSON.parse(sessionStorage.getItem(__CW37_UI_KEY)||'null');if(v&&typeof v==='object')__cw37UiState={...__cw37UiState,...v,matchTabs:{...__cw37UiState.matchTabs,...(v.matchTabs||{})},lineupSide:{...__cw37UiState.lineupSide,...(v.lineupSide||{})},clubTabs:{...__cw37UiState.clubTabs,...(v.clubTabs||{})},clubScope:{...__cw37UiState.clubScope,...(v.clubScope||{})}}}catch(_e){}
+  return __cw37UiState;
+}
+function __cw37SaveUiState(){
+  try{__cw37UiState.lastTab=String(tab||__cw37UiState.lastTab||'predict');if(typeof __cwTt2Comp==='string')__cw37UiState.tableComp=__cwTt2Comp;if(typeof __cwTt2View==='string')__cw37UiState.tableView=__cwTt2View;if(clubViewId){__cw37UiState.clubTabs[String(clubViewId)]=String(clubViewTab||'overview');__cw37UiState.clubScope[String(clubViewId)]=String(clubViewScope||'overall')}if(matchViewId){__cw37UiState.matchTabs[String(matchViewId)]=String(matchCenterTab||'overview');__cw37UiState.lineupSide[String(matchViewId)]=__cw37SelectedLineupSide()}sessionStorage.setItem(__CW37_UI_KEY,JSON.stringify(__cw37UiState))}catch(_e){}
+}
+function __cw37SelectedLineupSide(){return String(main?.querySelector?.('[data-lineup-team].active')?.dataset?.lineupTeam||(__cw37UiState.lineupSide?.[String(matchViewId)]||'home'))}
+function __cw37RestoreLocalChoices(){
+  try{if(typeof __cwTt2Comp==='string'&&__cw37UiState.tableComp)__cwTt2Comp=__cw37UiState.tableComp;if(typeof __cwTt2View==='string'&&__cw37UiState.tableView)__cwTt2View=__cw37UiState.tableView}catch(_e){}
+}
+__cw37LoadUiState();__cw37RestoreLocalChoices();
+
+/* One canonical match interpretation everywhere. */
+__cw35LiveState=function(x){return __cw37NormalizeMatch(x).status};
+__cw35LiveMinute=function(x){return __cw37NormalizeMatch(x).minute};
+__cw35LiveLabel=function(x){return __cw37NormalizeMatch(x).label};
+matchStatusText=function(x){return __cw37NormalizeMatch(x).label};
+__cwHomeStatus=function(match){return __cw37NormalizeMatch(match?.__legacy?(match.raw||match):match).status};
+__cw2014IsBreak=function(m){return __cw37NormalizeMatch(m).status==='halftime'};
+__cw2014LiveLabel=function(m){return __cw37NormalizeMatch(m).label};
+__cw2014LiveTag=function(m){const c=__cw37NormalizeMatch(m);return `<span class="live-pill"><i class="live-dot"></i>${esc(c.label)}</span>`};
+
+function __cw37SetText(el,text,kind=''){
+  if(!el)return false;const next=String(text??'');if(el.textContent===next)return false;el.textContent=next;el.classList.remove('cw37-value-change','cw37-score-change');void el.offsetWidth;el.classList.add(kind==='score'?'cw37-score-change':'cw37-value-change');setTimeout(()=>el?.classList?.remove?.('cw37-value-change','cw37-score-change'),520);return true
+}
+function __cw37FreshText(d){try{if(typeof __cw36FreshText==='function')return __cw36FreshText(d)}catch(_e){}return 'Автообновление'}
+function __cw37IncidentRows(d){return Array.isArray(d?.incidents?.incidents)?d.incidents.incidents:[]}
+function __cw37IncidentMinute(e){const n=Number(e?.minute??e?.time);return Number.isFinite(n)&&n>=0?n:null}
+function __cw37IncidentKind(e){const t=String(e?.type||'').toLowerCase();if(t.includes('goal'))return 'goal';if(t.includes('card'))return (String(e?.color||'').toLowerCase()==='red'||t.includes('red'))?'red':'card';if(t.includes('sub'))return 'sub';if(t.includes('var'))return 'var';return 'event'}
+function __cw37IncidentHome(e){if(typeof e?.is_home==='boolean')return e.is_home;const side=String(e?.side||e?.team_side||'').toLowerCase();if(side==='home')return true;if(side==='away')return false;return null}
+function __cw37TimelineHtml(d){
+  const rows=__cw37IncidentRows(d).filter(e=>__cw37IncidentMinute(e)!=null&&['goal','card','red','sub','var'].includes(__cw37IncidentKind(e))).slice(-24),c=__cw37NormalizeMatch(d),max=Math.max(90,c.minute||0,...rows.map(e=>__cw37IncidentMinute(e)||0));
+  const marks=rows.map((e,i)=>{const min=__cw37IncidentMinute(e)||0,p=Math.max(1,Math.min(99,min/Math.max(90,max)*100)),kind=__cw37IncidentKind(e),home=__cw37IncidentHome(e),title=typeof eventText==='function'?eventText(e):kind;return `<i class="cw37-timeline-mark ${kind} ${home===true?'home':home===false?'away':'neutral'}" style="left:${p.toFixed(2)}%" title="${esc(`${min}′ · ${title}`)}"><span>${kind==='goal'?'⚽':kind==='red'?'':kind==='card'?'':kind==='sub'?'↕':kind==='var'?'V':'•'}</span></i>`}).join('');
+  return `<div class="cw37-live-timeline" data-cw37-timeline><div class="cw37-live-timeline-head"><span>Ход матча</span><b>${esc(c.label)}</b></div><div class="cw37-live-track"><span class="cw37-live-progress" style="width:${c.status==='finished'?100:Math.max(0,Math.min(100,(c.minute||0)/Math.max(90,max)*100)).toFixed(1)}%"></span>${marks}</div><div class="cw37-live-scale"><span>0′</span><span>45′</span><span>${max>90?'120′':'90′'}</span></div></div>`
+}
+function __cw37PatchTimeline(d){const cur=main?.querySelector?.('[data-cw37-timeline]');if(!cur)return;const box=document.createElement('div');box.innerHTML=__cw37TimelineHtml(d);const next=box.firstElementChild;if(next&&cur.innerHTML!==next.innerHTML)cur.innerHTML=next.innerHTML}
+
+const __cw37MatchCenterHtmlBase=matchCenterHtml;
+matchCenterHtml=function(d){
+  const normalized=__cw35NormalizeMatchData?__cw35NormalizeMatchData(d):d;let html=__cw37MatchCenterHtmlBase(normalized);if(!/data-cw37-timeline/.test(html))html=html.replace(/(<\/section>)/,`$1${__cw37TimelineHtml(normalized)}`);return html
+};
+
+function __cw37PatchMatchCenter(prev,next){
+  if(!main||!matchViewId||!next)return false;const a=__cw37NormalizeMatch(prev),b=__cw37NormalizeMatch(next),status=main.querySelector('[data-mc="status"]'),score=main.querySelector('[data-mc="score"]'),minute=main.querySelector('[data-mc="minute"]');
+  if(status){__cw37SetText(status,b.label);status.classList.toggle('live',b.active)}
+  if(score)__cw37SetText(score,b.scoreText,'score');
+  if(minute)__cw37SetText(minute,b.active?'':b.status==='finished'?'финальный счёт':'ожидаем начало');
+  __cw36PatchFreshness?.(next);__cw37PatchTimeline(next);
+  try{if(typeof __cw2015PatchScorers==='function'&&JSON.stringify(prev?.incidents??null)!==JSON.stringify(next?.incidents??null))__cw2015PatchScorers(next)}catch(_e){}
+  const key=String(matchCenterTab||'overview');
+  try{
+    if(key==='overview'){if(JSON.stringify(prev?.stats??null)!==JSON.stringify(next?.stats??null)||JSON.stringify(prev?.detail??null)!==JSON.stringify(next?.detail??null))__cw2015PatchOverview?.(next)}
+    else if(key==='stats'&&JSON.stringify(prev?.stats??null)!==JSON.stringify(next?.stats??null))__cw2015PatchStats?.(next);
+    else if(key==='events'&&JSON.stringify(prev?.incidents??null)!==JSON.stringify(next?.incidents??null))__cw2015PatchEvents?.(next);
+    else if(key==='players'&&JSON.stringify(prev?.player_stats??null)!==JSON.stringify(next?.player_stats??null))__cw2015PatchPlayers?.(next);
+    else if(key==='lineups'&&JSON.stringify(prev?.lineups??null)!==JSON.stringify(next?.lineups??null)){const side=__cw37SelectedLineupSide();__cw36PatchLineups?.(prev,next);requestAnimationFrame(()=>{__cw9SetLineupTeam?.(side);__cw37EnhanceLineups(main,next)})}
+  }catch(_e){}
+  __cw37DecorateSegmented();return a.status!==b.status||a.scoreText!==b.scoreText||a.minute!==b.minute
+}
+
+function __cw37SectionsForTab(key){const out=new Set(['detail','incidents']);try{for(const s of (__cw9SectionsForTab(key)||[]))out.add(s)}catch(_e){}return [...out]}
+async function __cw37RefreshMatchCenter(){
+  if(!matchViewId||matchLoading||document.hidden||__cw37Busy)return false;const before=matchData,__cwId=Number(matchViewId),tabKey=String(matchCenterTab||'overview');__cw37Busy=true;
+  try{const fresh=await __cw9FastMatchApi(__cwId,__cw37SectionsForTab(tabKey),matchViewSource),next=__cw35NormalizeMatchData(__cw9MergeMatch(before,fresh));__cw22DetectIncidents?.(next);__cw37PatchMatchCenter(before,next);matchData=next;matchCenterTab=tabKey;__cw37SaveUiState();return true}catch(_e){return false}finally{__cw37Busy=false}
+}
+refreshMatchCenter=__cw37RefreshMatchCenter;
+
+/* External live patches never rebuild a full page on a status transition. */
+__cwPerfExternalLive=async function(competition){
+  const ids=__cwPerfExternalVisibleIds();if(!ids.length)return false;
+  try{const j=await __cwPerfRequest('ext-live:'+String(competition||'all')+':'+ids.join(','),()=>__cwPerfJsonPost(__CWPRED_EXTERNAL_API,{action:'live_updates',competition:competition||'all',match_ids:ids}),6000,{force:false}),patches=Array.isArray(j?.data?.matches)?j.data.matches:[];
+    if(__cwPredExternalPayload&&(competition==='all'||String(__cwPredExternalPayload.competition)===String(competition)))__cwPerfMergeExternal(__cwPredExternalPayload,patches);
+    if(__cwMtPayload&&(competition==='all'||String(__cwMtPayload.competition)===String(competition)))__cwPerfMergeExternal(__cwMtPayload,patches);
+    for(const [key,list] of __cwHomeExternalByCompetition||[]){if(competition!=='all'&&key!==competition)continue;__cwPerfMergeExternal({matches:list},patches)}
+    if(__cwPredExternalPayload)__cwPerfPatchExternalDom(__cwPredExternalPayload);if(__cwMtPayload)__cwPerfPatchExternalDom(__cwMtPayload);if(tab==='predict'&&!__cwHomeExternalCenter)__cw37PatchHome();return true
+  }catch(_e){return false}
+};
+
+async function __cw37RefreshClubMatches(){
+  if(!clubViewId||clubViewTab!=='matches'||document.hidden)return false;try{const snap=await __cw2014Snapshot(),rows=Array.isArray(snap?.matches)?snap.matches:[];__cw2014LastRows=new Map(rows.map(x=>[Number(x.id),x]));__cw2013SyncClub(rows);__cw2014PatchPhaseLabels?.(rows);return true}catch(_e){return false}
+}
+async function __cw37RefreshVisible(){
+  if(document.hidden)return false;if(matchViewId)return __cw37RefreshMatchCenter();if(clubViewId)return __cw37RefreshClubMatches();if(!S)return false;
+  try{if(tab==='calendar'&&typeof __cwMtCompetition==='string'&&__cwMtCompetition&&__cwMtCompetition!=='serie_a')return __cwPerfExternalLive(__cwMtCompetition);if((tab==='predict'||tab==='mine')&&typeof __cwPredCompetition==='string'&&__cwPredCompetition&&__cwPredCompetition!=='serie_a')return __cwPerfExternalLive(__cwPredCompetition);if(tab==='predict'&&typeof __cwPredCompetition==='string'&&!__cwPredCompetition){await Promise.allSettled([__cw36RefreshLiveBase?.(),__cwPerfExternalLive('all')]);__cw37PatchHome();return true}return await __cw36RefreshLiveBase?.()}catch(_e){return false}
+}
+refreshLive=__cw37RefreshVisible;
+
+function __cw37PollDelay(){
+  if(matchViewId){const s=__cw37NormalizeMatch(matchData).status;if(s==='extra_time'||s==='penalties')return __CW37_EXTRA_MS;if(s==='live')return __CW37_ACTIVE_MS;if(s==='halftime')return __CW37_HALF_MS;if(s==='finished'||s==='cancelled')return 0;return 30000}
+  if(clubViewId&&clubViewTab==='matches')return S?.has_live?__CW37_GLOBAL_LIVE_MS:__CW37_IDLE_MS;if(S?.has_live)return __CW37_GLOBAL_LIVE_MS;return __CW37_IDLE_MS
+}
+function __cw37ScheduleNext(delay){if(__cw37Timer)clearTimeout(__cw37Timer);if(document.hidden)return;const resolved=delay==null?__cw37PollDelay():Number(delay);if(resolved<=0)return;__cw37Timer=setTimeout(async()=>{try{await __cw37RefreshVisible()}finally{__cw37ScheduleNext(__cw37PollDelay())}},Math.max(1200,resolved))}
+function __cw37StartScheduler(){
+  try{if(__cw36SchedulerTimer)clearTimeout(__cw36SchedulerTimer);__cw36SchedulerTimer=null;if(__cwPerfTimer){clearInterval(__cwPerfTimer);clearTimeout(__cwPerfTimer);__cwPerfTimer=null}}catch(_e){};__cwPerfDisableLegacySchedulers?.();__cw37ScheduleNext(900)
+}
+__cw36ScheduleNext=function(){return 0};__cw36StartAdaptiveScheduler=__cw37StartScheduler;__cwPerfStartScheduler=__cw37StartScheduler;__cwRefreshVisibleNow=__cw37RefreshVisible;
+
+/* Unified segmented controls, contextual colors come from existing tournament/club variables. */
+function __cw37DecorateSegmented(scope=root){
+  try{scope?.querySelectorAll?.('.mc-tabs,.mc-lineup-switch,.cw23-scope-strip,.cw23-club-tabs,.cwtt2-nav,.cwtt2-subnav').forEach(el=>el.classList.add('cw37-segmented'));scope?.querySelectorAll?.('.mc-tab,.mc-lineup-switch button,.cw23-scope-strip button,.cw23-club-tabs button,.cwtt2-nav-btn,.cwtt2-sub-btn').forEach(el=>el.classList.add('cw37-segment'))}catch(_e){}
+}
+
+function __cw37PlayerIdentity(p){const id=Number(p?.player_id??p?.id??p?.player?.id)||0,name=String(p?.short_name||p?.name||p?.player_name||p?.player?.name||'Игрок').trim();return {id,name}}
+function __cw37PlayerMarks(p,d=matchData){
+  const ident=__cw37PlayerIdentity(p),rows=__cw37IncidentRows(d);let goals=0,card='',sub=false;
+  const same=(obj)=>{const id=Number(obj?.player_id??obj?.id??obj?.player?.id)||0,n=String(typeof obj==='string'?obj:(typeof obj?.player==='string'?obj.player:(obj?.player?.name??obj?.player_name??obj?.name??''))).trim();return (ident.id&&id===ident.id)||(!ident.id&&n&&ident.name&&n.toLowerCase()===ident.name.toLowerCase())};
+  for(const e of rows){const kind=__cw37IncidentKind(e);if(kind==='goal'&&same(e))goals++;if((kind==='card'||kind==='red')&&same(e))card=kind;if(kind==='sub'&&(same(e?.player_out||e)||same(e?.player_in||{})))sub=true}
+  return {goals,card,sub,captain:!!p?.captain}
+}
+const __cw37PlayerTokenBase=__cw9PlayerToken;
+__cw9PlayerToken=function(p){const id=__cw37PlayerIdentity(p),marks=__cw37PlayerMarks(p),badges=[marks.captain?'<i class="cw37-player-mark captain">C</i>':'',marks.goals?`<i class="cw37-player-mark goal">⚽${marks.goals>1?marks.goals:''}</i>`:'',marks.card?`<i class="cw37-player-mark ${marks.card}"></i>`:'',marks.sub?'<i class="cw37-player-mark sub">↕</i>':''].join('');return `<div class="mc-pitch-player cw37-pitch-player" data-player-id="${id.id||''}" title="${esc(p?.name||id.name)}"><span class="mc-pitch-number">${p?.jersey_number??p?.shirt_number??p?.number??'—'}</span>${badges?`<span class="cw37-player-marks">${badges}</span>`:''}<span class="mc-pitch-name">${esc(id.name)}</span></div>`};
+const __cw37BenchBase=__cw9BenchHtml;
+__cw9BenchHtml=function(title,rows){const a=Array.isArray(rows)?rows:[];if(!a.length)return '';return `<div class="mc-lineup-list cw37-bench"><h4>${esc(title)}</h4><div class="cw37-bench-strip">${a.map(p=>{const id=__cw37PlayerIdentity(p),mk=__cw37PlayerMarks(p),tags=[mk.goals?'⚽'+(mk.goals>1?mk.goals:''):'',mk.card==='red'?'🟥':mk.card==='card'?'🟨':'',mk.sub?'↕':''].filter(Boolean).join(' ');return `<span class="cw37-bench-player">${p?.jersey_number!=null?`<b>${p.jersey_number}</b>`:''}<em>${esc(id.name)}</em>${tags?`<small>${tags}</small>`:''}</span>`}).join('')}</div></div>`};
+function __cw37EnhanceLineups(scope=main,d=matchData){try{const host=scope?.querySelector?.('[data-mc="lineups"]')||scope;host?.querySelectorAll?.('.mc-pitch').forEach(p=>p.classList.add('cw37-premium-pitch'));__cw37DecorateSegmented(scope);const side=__cw37UiState.lineupSide?.[String(matchViewId)]||'home';__cw9SetLineupTeam?.(side)}catch(_e){}}
+
+
+function __cw37FindPlayer(playerId){
+  const id=Number(playerId)||0;if(!id)return null;for(const side of ['home','away']){const team=matchData?.lineups?.lineups?.[side];for(const p of [...(team?.players||[]),...(team?.substitutes||[])]){if(Number(p?.player_id??p?.id??p?.player?.id)===id)return {...p,__side:side}}}return null
+}
+function __cw37PlayerCardHtml(playerId){
+  const p=__cw37FindPlayer(playerId);if(!p)return '';const id=Number(playerId),stat=(matchData?.player_stats?.player_stats||[]).find(x=>Number(x?.player_id)===id)||{},marks=__cw37PlayerMarks(p),team=p.__side==='home'?matchData?.match?.home:matchData?.match?.away,name=__cw37PlayerIdentity(p).name;
+  const metrics=[['Рейтинг',stat?.rating!=null?Number(stat.rating).toFixed(1):'—'],['Минуты',stat?.minutes_played??'—'],['Голы',stat?.goals??marks.goals??0],['Ассисты',stat?.goal_assist??stat?.assists??0],['xG',stat?.expected_goals!=null?Number(stat.expected_goals).toFixed(2):'—'],['xA',stat?.expected_assists!=null?Number(stat.expected_assists).toFixed(2):'—']];
+  return `<div class="cw37-player-sheet" data-cw37-player-sheet><button type="button" class="cw37-player-sheet-backdrop" data-cw37-player-close aria-label="Закрыть"></button><section><button type="button" class="cw37-player-sheet-close" data-cw37-player-close>×</button><div class="cw37-player-sheet-head"><span class="cw37-player-shirt">${esc(p?.jersey_number??p?.shirt_number??p?.number??'—')}</span><div><small>${esc(team?.name||'Команда')}</small><h3>${esc(name)}</h3><em>${marks.captain?'Капитан · ':''}${esc(p?.position||'')}</em></div></div><div class="cw37-player-sheet-grid">${metrics.map(([k,v])=>`<div><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join('')}</div></section></div>`
+}
+function __cw37OpenPlayerCard(playerId){const html=__cw37PlayerCardHtml(playerId);if(!html)return;root.querySelector?.('[data-cw37-player-sheet]')?.remove?.();root.insertAdjacentHTML('beforeend',html)}
+function __cw37ClosePlayerCard(){root.querySelector?.('[data-cw37-player-sheet]')?.remove?.()}
+
+function __cw37TablePositions(){const out=new Map();try{main?.querySelectorAll?.('.cwtt2-standing').forEach(row=>{const key=String(row.querySelector?.('.cwtt2-team b')?.textContent||'').trim();if(key)out.set(key,row.getBoundingClientRect().top)})}catch(_e){}return out}
+function __cw37AnimateTableMoves(before){if(!before?.size)return;requestAnimationFrame(()=>{try{main?.querySelectorAll?.('.cwtt2-standing').forEach(row=>{const key=String(row.querySelector?.('.cwtt2-team b')?.textContent||'').trim(),old=before.get(key);if(old==null)return;const now=row.getBoundingClientRect().top,dy=old-now;if(Math.abs(dy)<1)return;row.animate([{transform:`translateY(${dy}px)`},{transform:'translateY(0)'}],{duration:360,easing:'cubic-bezier(.2,.75,.25,1)'})})}catch(_e){}})}
+const __cw37TableFetchBase=__cwTt2Fetch;
+__cwTt2Fetch=async function(...args){const before=__cw37TablePositions(),out=await __cw37TableFetchBase(...args);__cw37AnimateTableMoves(before);return out};
+
+/* Personal Home dashboard + targeted background updates. */
+function __cw37HomeActionHtml(){
+  const games=Array.isArray(S?.round?.matches)?S.round.matches:[],open=games.filter(m=>m?.open&&!m?.is_finished),missing=open.filter(m=>!m?.prediction||isPredictionDirty?.(m));if(!missing.length)return '';
+  return `<button type="button" class="cw37-home-action" data-cw37-go-predict><span><small>Следующее действие</small><b>${missing.length===1?'Заполнить прогноз':'Заполнить '+missing.length+' прогнозов'}</b><em>${esc(S?.selected_round?`${S.selected_round}-й тур`:'Открытые матчи')}</em></span><i>→</i></button>`
+}
+function __cw37HomeRankHtml(){
+  const rank=Number(S?.stats?.rank)||0,points=Number(S?.stats?.points)||0,rows=Array.isArray(S?.standings)?S.standings:[];let hint='Продолжай набирать очки';const me=rows.findIndex(r=>Number(r?.id)===Number(S?.user?.id));if(me>0){const above=rows[me-1],gap=Math.max(0,Number(above?.points||0)-points);hint=gap?`До #${me} · ${gap} ${gap===1?'очко':'очков'}`:`Рядом с #${me}`}
+  return `<div class="cw37-home-rank"><span><small>Рейтинг</small><b>${rank?'#'+rank:'—'}</b></span><strong>${points} очков</strong><em>${esc(hint)}</em></div>`
+}
+function __cw37EnsureHomePriority(){if(tab!=='predict'||matchViewId||clubViewId||__cwHomeExternalCenter||!main)return;let host=main.querySelector('[data-cw37-home-priority]');if(!host){host=document.createElement('section');host.className='cw37-home-priority';host.setAttribute('data-cw37-home-priority','');const today=main.querySelector('.cw211-today');(today?.parentNode||main).insertBefore(host,today?.nextSibling||null)}const html=__cw37HomeActionHtml()+__cw37HomeRankHtml();if(host.innerHTML!==html)host.innerHTML=html}
+function __cw37PatchToday(){
+  const section=main?.querySelector?.('.cw211-today');if(!section)return;const games=__cwHomeCalcioTodayMatches?.()||[],cards=[...section.querySelectorAll('.cw-home-today-card')];const ids=cards.map(c=>String(c.getAttribute('data-cw211-match')||c.getAttribute('data-cw-home-match')||'')),nextIds=games.slice(0,10).map(m=>String(m.matchId||''));if(ids.join('|')!==nextIds.join('|')){__cw23PolishToday?.(main);return}
+  for(let i=0;i<cards.length;i++){const card=cards[i],m=games[i];if(!m)continue;const c=__cw37NormalizeMatch(m?.__legacy?(m.raw||m):m),center=card.querySelector('.cw-home-today-center');if(!center)continue;card.classList.toggle('live',c.active);let score=center.querySelector('.cw-home-today-score'),state=center.querySelector('.cw-home-today-state'),time=center.querySelector('.cw-home-today-time');if(c.active||c.status==='finished'){if(!score){score=document.createElement('strong');score.className='cw-home-today-score';center.appendChild(score)}__cw37SetText(score,__cwHomeMatchScore(m),'score');if(!state){state=document.createElement('span');state.className='cw-home-today-state';center.appendChild(state)}__cw37SetText(state,c.status==='finished'?'ИТОГ':c.label);time?.remove()}else{score?.remove();state?.remove();if(!time){time=document.createElement('strong');time.className='cw-home-today-time';center.appendChild(time)}__cw37SetText(time,__cwHomeTodayStatus(m))}}
+}
+function __cw37PatchHome(){if(tab!=='predict'||matchViewId||clubViewId||__cwHomeExternalCenter||!main)return false;try{__cw37PatchToday();__cw23PolishFavorite?.(main);__cw37EnsureHomePriority();__cwHomeBindPolish?.();return true}catch(_e){return false}}
+
+/* External Home data never blocks or triggers a full Home render. */
+__cwHomeLoadExternal=async function(){
+  if(__cwHomeExternalLoading)return false;const now=Date.now();if(__cwHomeExternalByCompetition.size&&now-__cwHomeExternalLoadedAt<15000)return true;__cwHomeExternalLoading=true;
+  try{const results=await Promise.allSettled(__CW_HOME_EXT_COMPETITIONS.map(async key=>({key,payload:await __cwPerfExternalState(key)})));let changed=false;for(const r of results)if(r.status==='fulfilled'){__cwHomeExternalByCompetition.set(r.value.key,Array.isArray(r.value.payload?.matches)?r.value.payload.matches:[]);changed=true}__cwHomeExternalLoadedAt=Date.now();if(changed)__cw37PatchHome();return changed}finally{__cwHomeExternalLoading=false}
+};
+__cw26EnterHomeFresh=async function(){
+  if(__cw26HomeEntryBusy)return false;__cw26HomeEntryBusy=true;matchViewId=null;matchData=null;root.classList.remove('match-center-open');tab='predict';const keptDraft=new Map(draft);try{render();Promise.resolve().then(()=>__cwHomeLoadExternal()).catch(()=>{});const next=await api({action:'state',round:S?.selected_round});S=next;selectedRound=next?.selected_round;draft.clear();for(const [k,v] of keptDraft)draft.set(k,v);__cwPerfWriteWarmState?.(next);render();__cw37PatchHome();return true}catch(_e){for(const [k,v] of keptDraft)draft.set(k,v);toast?.('Не удалось обновить Главную');return false}finally{__cw26HomeEntryBusy=false}
+};
+
+function __cw37Prefetch(){
+  if(__cw37PrefetchStarted)return;__cw37PrefetchStarted=true;const work=()=>{try{const fav=Number(S?.user?.favorite_team?.id)||0;if(fav&&typeof __cwOptClubRequest==='function')Promise.resolve(__cwOptClubRequest(fav,['overview'],'overall')).catch(()=>{});Promise.resolve(__cwHomeLoadExternal()).catch(()=>{});if(typeof __cwPerfTableFetch==='function'){Promise.resolve(__cwPerfTableFetch('ucl','table',{force:false})).catch(()=>{});Promise.resolve(__cwPerfTableFetch('coppa_italia','table',{force:false})).catch(()=>{})}}catch(_e){}};if(typeof requestIdleCallback==='function')requestIdleCallback(work,{timeout:3500});else setTimeout(work,1800)
+}
+
+/* Restore per-match tab on reopening and persist choices from delegated clicks. */
+const __cw37OpenMatchBase=openMatchCenter;
+openMatchCenter=async function(...args){const id=Number(args[0]);const out=await __cw37OpenMatchBase(...args);const saved=__cw37UiState.matchTabs?.[String(id)];if(saved&&saved!==matchCenterTab&&matchTabs.some(([k])=>k===saved)){const btn=main?.querySelector?.(`[data-mc-tab="${saved}"]`);btn?.click?.()}requestAnimationFrame(()=>{__cw37DecorateSegmented();__cw37EnhanceLineups();__cw37ScheduleNext(800)});return out};
+const __cw37OpenClubBase=openClubProfile;
+openClubProfile=async function(...args){const id=Number(args[0]),out=await __cw37OpenClubBase(...args),saved=__cw37UiState.clubTabs?.[String(id)],scope=__cw37UiState.clubScope?.[String(id)];if(scope&&scope!==clubViewScope){const b=main?.querySelector?.(`[data-club-scope="${scope}"]`);b?.click?.()}if(saved&&saved!==clubViewTab){const b=main?.querySelector?.(`[data-club-tab="${saved}"]`);b?.click?.()}requestAnimationFrame(__cw37DecorateSegmented);return out};
+
+root.addEventListener('click',e=>{
+  const mc=e.target.closest?.('[data-mc-tab]');if(mc&&matchViewId){__cw37UiState.matchTabs[String(matchViewId)]=String(mc.dataset.mcTab||'overview');__cw37SaveUiState()}
+  const side=e.target.closest?.('[data-lineup-team]');if(side&&matchViewId){__cw37UiState.lineupSide[String(matchViewId)]=String(side.dataset.lineupTeam||'home');__cw37SaveUiState()}
+  const ct=e.target.closest?.('[data-club-tab]');if(ct&&clubViewId){__cw37UiState.clubTabs[String(clubViewId)]=String(ct.dataset.clubTab||'overview');__cw37SaveUiState()}
+  const cs=e.target.closest?.('[data-club-scope]');if(cs&&clubViewId){__cw37UiState.clubScope[String(clubViewId)]=String(cs.dataset.clubScope||'overall');__cw37SaveUiState()}
+  const tc=e.target.closest?.('[data-cwtt2-comp]');if(tc){__cw37UiState.tableComp=String(tc.dataset.cwtt2Comp||'serie_a');__cw37SaveUiState()}
+  const tv=e.target.closest?.('[data-cwtt2-view]');if(tv){__cw37UiState.tableView=String(tv.dataset.cwtt2View||'table');__cw37SaveUiState()}
+  const pp=e.target.closest?.('.cw37-pitch-player[data-player-id]');if(pp){const id=Number(pp.dataset.playerId)||0;if(id)__cw37OpenPlayerCard(id)}
+  if(e.target.closest?.('[data-cw37-player-close]'))__cw37ClosePlayerCard();
+  const go=e.target.closest?.('[data-cw37-go-predict]');if(go){const target=main?.querySelector?.('.match,.cwpred-card,[data-cwpred-match]');target?.scrollIntoView?.({behavior:'smooth',block:'center'})}
+},{capture:true});
+
+const __cw37RenderBase=render;
+render=function(){const out=__cw37RenderBase();requestAnimationFrame(()=>{__cw37DecorateSegmented();if(matchViewId)__cw37EnhanceLineups();if(tab==='predict'&&!matchViewId&&!clubViewId){__cw37EnsureHomePriority();__cw37PatchToday()}if(!__cw37FirstRenderSeen){__cw37FirstRenderSeen=true;__cw37Prefetch()}__cw37SaveUiState()});return out};
+
+document.addEventListener('visibilitychange',()=>{if(document.hidden){if(__cw37Timer)clearTimeout(__cw37Timer);__cw37Timer=null}else __cw37ScheduleNext(250)},{passive:true});
+window.addEventListener('focus',()=>{if(!document.hidden)__cw37ScheduleNext(250)},{passive:true});
+__cw37StartScheduler();
+/* /ciao-v37-state-live-premium-20260910 */
+
 /* /ciao-v36-match-center-stability-20260910 */
 
 /* ===== /Ciao, Web! v22.5 product polish layer ===== */
@@ -5952,6 +6166,72 @@ render=function(){const out=__cw36RenderBase();if(matchViewId){main?.querySelect
 }
 </style>
 <!-- /cw36-premium-match-center-style -->
+
+<!-- cw37-premium-stability-ui -->
+<style id="cw37-premium-stability-ui">
+/* Shared segmented control: one frame, flat inactive items, contextual active fill. */
+#ciao-miniapp-root .cw37-segmented{display:flex!important;align-items:stretch!important;gap:2px!important;padding:3px!important;border:1px solid rgba(145,160,214,.28)!important;border-radius:18px!important;background:#07112a!important;background-image:none!important;box-shadow:0 8px 22px rgba(0,0,0,.14)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;overflow-x:auto!important;scrollbar-width:none!important}
+#ciao-miniapp-root .cw37-segmented::-webkit-scrollbar{display:none!important}
+#ciao-miniapp-root .cw37-segment{flex:1 0 auto!important;min-height:39px!important;border:0!important;border-radius:13px!important;background:transparent!important;background-image:none!important;color:#8f9bbb!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;transition:background .16s ease,color .16s ease,transform .14s ease!important}
+#ciao-miniapp-root .cw37-segment::before,#ciao-miniapp-root .cw37-segment::after{display:none!important;content:none!important}
+#ciao-miniapp-root .mc-tabs.cw37-segmented .cw37-segment.active,#ciao-miniapp-root .mc-lineup-switch.cw37-segmented .cw37-segment.active{color:#fff!important;background:linear-gradient(135deg,var(--cw34-match-a,var(--cwmt-a,#3150ff)),var(--cw34-match-b,var(--cwmt-b,#183a86)))!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)!important}
+#ciao-miniapp-root .cw23-scope-strip.cw37-segmented .cw37-segment.active,#ciao-miniapp-root .cw23-club-tabs.cw37-segmented .cw37-segment.active{color:#fff!important;background:linear-gradient(135deg,var(--club-accent,#3150ff),var(--club-accent-2,#183a86))!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)!important}
+#ciao-miniapp-root .cwtt2-nav.cw37-segmented .cw37-segment.active,#ciao-miniapp-root .cwtt2-subnav.cw37-segmented .cw37-segment.active{color:#fff!important;background:linear-gradient(135deg,var(--cwtt2-a,#3150ff),var(--cwtt2-b,#183a86))!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)!important}
+
+/* Value changes animate, layout never does. */
+@keyframes cw37ValuePulse{0%{opacity:.62;transform:translateY(1px)}45%{opacity:1;transform:translateY(0)}100%{opacity:1;transform:none}}
+@keyframes cw37ScorePulse{0%{transform:scale(.93);filter:brightness(1.35)}55%{transform:scale(1.055);filter:brightness(1.15)}100%{transform:scale(1);filter:none}}
+#ciao-miniapp-root .cw37-value-change{animation:cw37ValuePulse .34s ease both!important}
+#ciao-miniapp-root .cw37-score-change{animation:cw37ScorePulse .46s cubic-bezier(.2,.75,.25,1) both!important}
+
+/* Match timeline */
+#ciao-miniapp-root .cw37-live-timeline{margin:-2px 0 12px;padding:11px 13px 10px;border:1px solid rgba(132,153,255,.11);border-radius:16px;background:linear-gradient(180deg,rgba(11,23,55,.78),rgba(6,14,35,.86));overflow:hidden;contain:layout style}
+#ciao-miniapp-root .cw37-live-timeline-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px;color:#7184b3;font-size:7px;text-transform:uppercase;letter-spacing:.06em}
+#ciao-miniapp-root .cw37-live-timeline-head b{color:#ff728c;font-size:7px}
+#ciao-miniapp-root .cw37-live-track{position:relative;height:5px;border-radius:999px;background:rgba(255,255,255,.07);box-shadow:inset 0 1px 3px rgba(0,0,0,.28)}
+#ciao-miniapp-root .cw37-live-progress{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:linear-gradient(90deg,var(--cw34-match-a,#3150ff),var(--cw34-match-b,#183a86));opacity:.76;transition:width .35s ease}
+#ciao-miniapp-root .cw37-timeline-mark{position:absolute;top:50%;width:10px;height:10px;margin:-5px 0 0 -5px;border:2px solid #07112a;border-radius:50%;background:#8998bf;box-shadow:0 2px 7px rgba(0,0,0,.35);z-index:2}
+#ciao-miniapp-root .cw37-timeline-mark span{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);font-style:normal;font-size:7px;white-space:nowrap}
+#ciao-miniapp-root .cw37-timeline-mark.goal{width:12px;height:12px;margin:-6px 0 0 -6px;background:#fff}
+#ciao-miniapp-root .cw37-timeline-mark.card{border-radius:2px;background:#e9bf35}.cw37-timeline-mark.red{border-radius:2px;background:#e94f65}
+#ciao-miniapp-root .cw37-timeline-mark.sub{background:#5b80ff}.cw37-timeline-mark.var{background:#b66bff}
+#ciao-miniapp-root .cw37-timeline-mark.home{transform:translateY(-3px)}#ciao-miniapp-root .cw37-timeline-mark.away{transform:translateY(3px)}
+#ciao-miniapp-root .cw37-live-scale{display:flex;justify-content:space-between;margin-top:6px;color:#566a9a;font-size:6px;font-variant-numeric:tabular-nums}
+
+/* Premium lineup field + compact player event badges */
+#ciao-miniapp-root .mc-pitch.cw37-premium-pitch{border-color:rgba(174,238,213,.34)!important;background:radial-gradient(circle at 50% 42%,rgba(116,209,168,.13),transparent 38%),linear-gradient(180deg,rgba(0,8,12,.02),rgba(0,8,13,.25)),repeating-linear-gradient(0deg,#123f38 0 9.5%,#195148 9.5% 19%)!important;box-shadow:0 24px 60px rgba(0,0,0,.34),inset 0 0 88px rgba(0,5,10,.26),inset 0 1px 0 rgba(255,255,255,.07)!important}
+#ciao-miniapp-root .cw37-pitch-player{position:relative!important}
+#ciao-miniapp-root .cw37-player-marks{position:absolute;top:-3px;left:50%;display:flex;gap:2px;transform:translateX(6px);z-index:4}
+#ciao-miniapp-root .cw37-player-mark{min-width:13px;height:13px;padding:0 2px;border:1px solid rgba(255,255,255,.25);border-radius:5px;background:#0a1534;color:#fff;display:grid;place-items:center;font:900 6px/1 Manrope;font-style:normal;box-shadow:0 3px 8px rgba(0,0,0,.38)}
+#ciao-miniapp-root .cw37-player-mark.captain{background:#d9b53b;color:#111b30}.cw37-player-mark.card{background:#e2bc30;border-radius:3px;min-width:8px;width:8px}.cw37-player-mark.red{background:#e4475f;border-radius:3px;min-width:8px;width:8px}.cw37-player-mark.goal{background:#fff;color:#07112a}.cw37-player-mark.sub{background:#4269ef}
+#ciao-miniapp-root .cw37-bench{margin-top:10px!important;padding:11px!important;border:1px solid rgba(132,153,255,.10)!important;border-radius:16px!important;background:rgba(5,13,34,.50)!important}
+#ciao-miniapp-root .cw37-bench-strip{display:flex;gap:6px;overflow-x:auto;padding:2px 0 3px;scrollbar-width:none}.cw37-bench-strip::-webkit-scrollbar{display:none}
+#ciao-miniapp-root .cw37-bench-player{flex:0 0 auto;min-width:112px;padding:8px 9px;border:1px solid rgba(132,153,255,.09);border-radius:12px;background:rgba(255,255,255,.025);display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 7px;align-items:center}
+#ciao-miniapp-root .cw37-bench-player b{grid-row:1/3;width:22px;height:22px;border-radius:8px;display:grid;place-items:center;background:linear-gradient(135deg,var(--cw34-match-a,#3150ff),var(--cw34-match-b,#183a86));font-size:7px}.cw37-bench-player em{font-style:normal;font-size:7.5px;font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cw37-bench-player small{font-size:6px;color:#8fa1cf}
+
+/* Personal Home priority cards */
+#ciao-miniapp-root .cw37-home-priority{display:grid;grid-template-columns:1.25fr .9fr;gap:8px;margin:10px 0 16px;overflow-anchor:none}
+#ciao-miniapp-root .cw37-home-action{min-height:72px;padding:12px 13px;border:1px solid rgba(98,126,255,.18);border-radius:17px;background:radial-gradient(circle at 100% 0,rgba(71,93,255,.20),transparent 42%),linear-gradient(145deg,rgba(16,31,73,.94),rgba(7,16,39,.98));color:#fff;display:flex;align-items:center;justify-content:space-between;text-align:left;box-shadow:0 12px 28px rgba(0,0,0,.18)}
+#ciao-miniapp-root .cw37-home-action span{min-width:0}.cw37-home-action small,.cw37-home-rank small{display:block;color:#7689ba;font-size:6.5px;text-transform:uppercase;letter-spacing:.07em}.cw37-home-action b{display:block;margin-top:4px;font-size:10px}.cw37-home-action em{display:block;margin-top:4px;color:#92a3cf;font-size:7px;font-style:normal}.cw37-home-action i{font-style:normal;font-size:17px;color:#fff}
+#ciao-miniapp-root .cw37-home-rank{min-height:72px;padding:12px;border:1px solid rgba(132,153,255,.10);border-radius:17px;background:linear-gradient(145deg,rgba(255,255,255,.04),rgba(255,255,255,.018));display:grid;grid-template-columns:auto 1fr;gap:3px 8px;align-content:center}.cw37-home-rank b{display:block;margin-top:3px;font-family:"Unbounded","Manrope",sans-serif;font-size:15px}.cw37-home-rank strong{align-self:end;text-align:right;font-size:8px}.cw37-home-rank em{grid-column:1/-1;color:#7f91bc;font-size:6.6px;font-style:normal}
+
+
+/* Player mini-card: fixed overlay, never changes Match Center layout. */
+#ciao-miniapp-root .cw37-player-sheet{position:fixed;inset:0;z-index:180;display:flex;align-items:flex-end;justify-content:center;padding:12px 12px calc(12px + env(safe-area-inset-bottom));box-sizing:border-box}
+#ciao-miniapp-root .cw37-player-sheet-backdrop{position:absolute;inset:0;border:0;background:rgba(1,5,16,.72);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
+#ciao-miniapp-root .cw37-player-sheet>section{position:relative;width:min(100%,430px);padding:18px;border:1px solid rgba(145,160,214,.20);border-radius:22px;background:radial-gradient(circle at 90% 0,rgba(70,95,255,.16),transparent 36%),#07112a;box-shadow:0 24px 70px rgba(0,0,0,.48);animation:cw37SheetIn .2s ease both}
+@keyframes cw37SheetIn{from{opacity:.6;transform:translateY(14px)}to{opacity:1;transform:none}}
+#ciao-miniapp-root .cw37-player-sheet-close{position:absolute;right:12px;top:12px;width:30px;height:30px;border:1px solid rgba(255,255,255,.10);border-radius:10px;background:rgba(255,255,255,.04);color:#9ba9ce;font-size:18px}
+#ciao-miniapp-root .cw37-player-sheet-head{display:flex;align-items:center;gap:12px;padding-right:38px}.cw37-player-shirt{width:42px;height:42px;flex:0 0 42px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(135deg,var(--cw34-match-a,#3150ff),var(--cw34-match-b,#183a86));font:900 13px Manrope;box-shadow:0 8px 22px rgba(0,0,0,.30)}
+#ciao-miniapp-root .cw37-player-sheet-head small{display:block;color:#7588b8;font-size:7px;text-transform:uppercase;letter-spacing:.06em}.cw37-player-sheet-head h3{margin:3px 0 0;font-size:15px;color:#fff}.cw37-player-sheet-head em{display:block;margin-top:3px;color:#91a2ca;font-size:7px;font-style:normal}
+#ciao-miniapp-root .cw37-player-sheet-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:14px}.cw37-player-sheet-grid div{padding:10px 8px;border:1px solid rgba(132,153,255,.09);border-radius:13px;background:rgba(255,255,255,.025);text-align:center}.cw37-player-sheet-grid span{display:block;color:#7082af;font-size:6px;text-transform:uppercase}.cw37-player-sheet-grid b{display:block;margin-top:4px;color:#fff;font-size:11px}
+/* Reduce layout movement on live pages. */
+#ciao-miniapp-root .hero,#ciao-miniapp-root .cw-home-user-card,#ciao-miniapp-root .cw211-favorite-panel,#ciao-miniapp-root .mc-toolbar,#ciao-miniapp-root .mc-tabs,#ciao-miniapp-root .cwtt2-nav,#ciao-miniapp-root .cwtt2-subnav{overflow-anchor:none}
+#ciao-miniapp-root.match-center-open .mc-tab-content{min-height:220px}
+@media(max-width:390px){#ciao-miniapp-root .cw37-segmented{border-radius:16px!important}#ciao-miniapp-root .cw37-segment{min-height:37px!important;border-radius:12px!important}#ciao-miniapp-root .cw37-home-priority{grid-template-columns:1fr}.cw37-home-rank{min-height:60px!important}#ciao-miniapp-root .cw37-live-timeline{border-radius:14px;padding-left:11px;padding-right:11px}}
+@media(prefers-reduced-motion:reduce){#ciao-miniapp-root .cw37-value-change,#ciao-miniapp-root .cw37-score-change{animation:none!important}#ciao-miniapp-root .cw37-live-progress{transition:none!important}}
+</style>
+<!-- /cw37-premium-stability-ui -->
 
 </body>
 </html>
