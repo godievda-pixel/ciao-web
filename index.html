@@ -6162,5 +6162,255 @@ try{
 })();
 </script>
 
+
+<style id="ciao-premium-liquid-glass-buttons">
+/* ===== CIAO PREMIUM LIQUID GLASS BUTTONS 2026-09-10 =====
+   Final visual override. No app logic/data/navigation changes. */
+#ciao-miniapp-root{
+  --cw-lg-blur:24px;
+  --cw-lg-sat:165%;
+  --cw-lg-idle-top:rgba(31,43,82,.76);
+  --cw-lg-idle-bottom:rgba(12,19,48,.72);
+  --cw-lg-purple-a:#625cff;
+  --cw-lg-purple-b:#4438db;
+  --cw-lg-purple-c:#2927a8;
+  --cw-lg-shadow:0 12px 30px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.09),inset 0 -12px 28px rgba(0,0,0,.08);
+}
+
+/* Buttons that behave as navigation / filters / segmented controls */
+#ciao-miniapp-root :is(
+  .round-chip,
+  .mc-tab,
+  .cw16-club-tab,
+  .cw18-scope,
+  .cw30-comp,
+  .cw31-profile-comp,
+  .cwtt2-nav-btn,
+  .cwtt2-subnav button,
+  .cwpred-mode button,
+  .cwpred-rounds .round-chip,
+  [data-cw231-filter],
+  .nav button
+){
+  position:relative!important;
+  isolation:isolate!important;
+  overflow:hidden!important;
+  border:0!important;
+  outline:0!important;
+  background:
+    linear-gradient(180deg,var(--cw-lg-idle-top),var(--cw-lg-idle-bottom))!important;
+  color:#aeb9d9!important;
+  box-shadow:var(--cw-lg-shadow)!important;
+  backdrop-filter:blur(var(--cw-lg-blur)) saturate(var(--cw-lg-sat))!important;
+  -webkit-backdrop-filter:blur(var(--cw-lg-blur)) saturate(var(--cw-lg-sat))!important;
+  transition:
+    transform .16s cubic-bezier(.2,.8,.2,1),
+    color .2s ease,
+    background .22s ease,
+    box-shadow .22s ease,
+    filter .22s ease!important;
+}
+
+/* Glass volume/highlight — intentionally not an outline */
+#ciao-miniapp-root :is(
+  .round-chip,
+  .mc-tab,
+  .cw16-club-tab,
+  .cw18-scope,
+  .cw30-comp,
+  .cw31-profile-comp,
+  .cwtt2-nav-btn,
+  .cwtt2-subnav button,
+  .cwpred-mode button,
+  .cwpred-rounds .round-chip,
+  [data-cw231-filter],
+  .nav button
+)::before{
+  content:""!important;
+  position:absolute!important;
+  inset:0!important;
+  z-index:-1!important;
+  pointer-events:none!important;
+  border-radius:inherit!important;
+  background:
+    radial-gradient(120% 95% at 50% -18%,rgba(255,255,255,.23),transparent 43%),
+    radial-gradient(65% 70% at 15% 0%,rgba(255,255,255,.08),transparent 58%),
+    linear-gradient(105deg,rgba(255,255,255,.06),transparent 35%,rgba(255,255,255,.02) 70%,transparent)!important;
+  opacity:.72!important;
+}
+
+/* Active state: purple liquid-glass capsule like the approved reference */
+#ciao-miniapp-root :is(
+  .round-chip.active,
+  .mc-tab.active,
+  .cw16-club-tab.active,
+  .cw18-scope.active,
+  .cw30-comp.active,
+  .cw31-profile-comp.active,
+  .cwtt2-nav-btn.active,
+  .cwtt2-subnav button.active,
+  .cwpred-mode button.active,
+  [aria-selected="true"].round-chip,
+  [aria-selected="true"].mc-tab,
+  [data-cw231-filter][aria-selected="true"]
+){
+  border:0!important;
+  color:#fff!important;
+  background:
+    radial-gradient(110% 100% at 50% -28%,rgba(255,255,255,.34),transparent 42%),
+    linear-gradient(145deg,var(--cw-lg-purple-a) 0%,var(--cw-lg-purple-b) 51%,var(--cw-lg-purple-c) 100%)!important;
+  box-shadow:
+    0 13px 31px rgba(44,38,170,.30),
+    inset 0 1px 0 rgba(255,255,255,.27),
+    inset 0 -14px 28px rgba(17,15,98,.18)!important;
+  text-shadow:0 1px 10px rgba(255,255,255,.10)!important;
+}
+
+/* Competition identity remains, but with the same glass material */
+#ciao-miniapp-root .mc-shell.mc-theme-ucl .mc-tab.active{
+  border:0!important;
+  background:radial-gradient(110% 100% at 50% -28%,rgba(255,255,255,.28),transparent 43%),linear-gradient(145deg,#735fff,#563ee4 54%,#3026aa)!important;
+}
+#ciao-miniapp-root .mc-shell.mc-theme-uel .mc-tab.active{
+  border:0!important;
+  background:radial-gradient(110% 100% at 50% -28%,rgba(255,255,255,.26),transparent 43%),linear-gradient(145deg,#ff9a3d,#e46617 52%,#9f3c08)!important;
+  box-shadow:0 13px 31px rgba(187,77,14,.25),inset 0 1px 0 rgba(255,255,255,.25),inset 0 -14px 28px rgba(88,31,4,.16)!important;
+}
+#ciao-miniapp-root .mc-shell.mc-theme-uecl .mc-tab.active{
+  border:0!important;
+  background:radial-gradient(110% 100% at 50% -28%,rgba(255,255,255,.25),transparent 43%),linear-gradient(145deg,#38d989,#19ae68 54%,#087344)!important;
+  box-shadow:0 13px 31px rgba(10,116,67,.24),inset 0 1px 0 rgba(255,255,255,.24),inset 0 -14px 28px rgba(3,66,38,.16)!important;
+}
+#ciao-miniapp-root .mc-shell.mc-theme-coppa .mc-tab.active{
+  border:0!important;
+  background:radial-gradient(110% 100% at 50% -28%,rgba(255,255,255,.25),transparent 43%),linear-gradient(110deg,#17925d 0%,#2458b2 54%,#b72f45 100%)!important;
+  box-shadow:0 13px 31px rgba(20,63,133,.25),inset 0 1px 0 rgba(255,255,255,.24),inset 0 -14px 28px rgba(9,35,86,.16)!important;
+}
+
+/* Bottom navigation: one calm glass tray, active item floats softly — no framed tiles */
+#ciao-miniapp-root .nav{
+  border-top:0!important;
+  background:linear-gradient(180deg,rgba(7,12,31,.70),rgba(5,9,24,.91))!important;
+  backdrop-filter:blur(30px) saturate(150%)!important;
+  -webkit-backdrop-filter:blur(30px) saturate(150%)!important;
+  box-shadow:0 -16px 42px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.035)!important;
+}
+#ciao-miniapp-root .nav button{
+  background:transparent!important;
+  box-shadow:none!important;
+  border:0!important;
+}
+#ciao-miniapp-root .nav button.active{
+  color:#fff!important;
+  border:0!important;
+  background:
+    radial-gradient(100% 120% at 50% -35%,rgba(255,255,255,.15),transparent 48%),
+    linear-gradient(180deg,rgba(84,83,188,.34),rgba(42,44,101,.28))!important;
+  box-shadow:0 9px 22px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.10)!important;
+}
+#ciao-miniapp-root .nav button.active::after{display:none!important}
+
+/* Current-round hint must not become a hard outline */
+#ciao-miniapp-root .round-chip.cw209-current:not(.active){
+  border:0!important;
+  box-shadow:0 10px 24px rgba(0,0,0,.20),inset 0 1px 0 rgba(255,255,255,.09)!important;
+  color:#eef3ff!important;
+}
+
+/* Buttons on the new Tables screen */
+#ciao-miniapp-root .cwtt2-nav{
+  border:0!important;
+  background:rgba(8,13,33,.56)!important;
+  box-shadow:0 14px 34px rgba(0,0,0,.20),inset 0 1px 0 rgba(255,255,255,.035)!important;
+  backdrop-filter:blur(24px) saturate(150%)!important;
+  -webkit-backdrop-filter:blur(24px) saturate(150%)!important;
+}
+#ciao-miniapp-root .cwtt2-nav-btn{
+  border:0!important;
+  box-shadow:none!important;
+  background:transparent!important;
+}
+#ciao-miniapp-root .cwtt2-nav-btn.active{
+  background:
+    radial-gradient(105% 100% at 50% -30%,rgba(255,255,255,.26),transparent 44%),
+    linear-gradient(145deg,#625cff 0%,#473cdd 52%,#2d2aa9 100%)!important;
+  box-shadow:0 12px 27px rgba(43,39,164,.27),inset 0 1px 0 rgba(255,255,255,.24),inset 0 -12px 24px rgba(18,18,86,.15)!important;
+}
+#ciao-miniapp-root .cwtt2-subnav{
+  border:0!important;
+  background:rgba(8,13,33,.48)!important;
+  box-shadow:0 12px 30px rgba(0,0,0,.17),inset 0 1px 0 rgba(255,255,255,.03)!important;
+  backdrop-filter:blur(22px) saturate(145%)!important;
+  -webkit-backdrop-filter:blur(22px) saturate(145%)!important;
+}
+#ciao-miniapp-root .cwtt2-subnav button{
+  border:0!important;
+}
+
+/* New Predictions hub segmented control */
+#ciao-miniapp-root .cwpred-mode{
+  border:0!important;
+  background:rgba(8,13,33,.52)!important;
+  box-shadow:0 13px 32px rgba(0,0,0,.19),inset 0 1px 0 rgba(255,255,255,.035)!important;
+  backdrop-filter:blur(24px) saturate(150%)!important;
+  -webkit-backdrop-filter:blur(24px) saturate(150%)!important;
+}
+#ciao-miniapp-root .cwpred-mode button{
+  border:0!important;
+  box-shadow:none!important;
+  background:transparent!important;
+}
+#ciao-miniapp-root .cwpred-mode button.active{
+  background:
+    radial-gradient(105% 100% at 50% -30%,rgba(255,255,255,.25),transparent 44%),
+    linear-gradient(145deg,#625cff 0%,#473cdd 52%,#2d2aa9 100%)!important;
+  box-shadow:0 12px 27px rgba(43,39,164,.27),inset 0 1px 0 rgba(255,255,255,.23),inset 0 -12px 24px rgba(18,18,86,.15)!important;
+}
+
+/* Tactile interaction */
+#ciao-miniapp-root :is(
+  .round-chip,.mc-tab,.cw16-club-tab,.cw18-scope,.cw30-comp,.cw31-profile-comp,
+  .cwtt2-nav-btn,.cwtt2-subnav button,.cwpred-mode button,[data-cw231-filter],.nav button
+):active{
+  transform:scale(.972)!important;
+  filter:brightness(.98)!important;
+}
+
+/* Accessible focus without a cheap border */
+#ciao-miniapp-root :is(
+  .round-chip,.mc-tab,.cw16-club-tab,.cw18-scope,.cw30-comp,.cw31-profile-comp,
+  .cwtt2-nav-btn,.cwtt2-subnav button,.cwpred-mode button,[data-cw231-filter],.nav button
+):focus-visible{
+  border:0!important;
+  outline:0!important;
+  box-shadow:0 0 0 4px rgba(102,96,255,.13),0 12px 28px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.10)!important;
+}
+
+/* Keep disabled controls premium and quiet */
+#ciao-miniapp-root :is(.round-chip,.mc-tab,.cwtt2-nav-btn,.cwpred-mode button):disabled,
+#ciao-miniapp-root .round-chip.locked{
+  border:0!important;
+  opacity:.42!important;
+  filter:saturate(.72)!important;
+}
+
+/* WebView fallback */
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  #ciao-miniapp-root :is(
+    .round-chip,.mc-tab,.cw16-club-tab,.cw18-scope,.cw30-comp,.cw31-profile-comp,
+    .cwtt2-nav-btn,.cwtt2-subnav button,.cwpred-mode button,[data-cw231-filter]
+  ){
+    background:linear-gradient(180deg,#1d2a50,#0d1638)!important;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  #ciao-miniapp-root :is(
+    .round-chip,.mc-tab,.cw16-club-tab,.cw18-scope,.cw30-comp,.cw31-profile-comp,
+    .cwtt2-nav-btn,.cwtt2-subnav button,.cwpred-mode button,[data-cw231-filter],.nav button
+  ){transition:none!important}
+}
+</style>
+
 </body>
 </html>
