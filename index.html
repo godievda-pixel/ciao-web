@@ -1369,7 +1369,7 @@ html::-webkit-scrollbar,body::-webkit-scrollbar,#ciao-miniapp-root::-webkit-scro
 </style>
 
 </head>
-<body class="ciao-pronostici-page"><div id="cw225-start-cover"><div class="cw225-start-inner cw38-boot-skeleton"><div class="cw38-boot-brand"><b>Ciao, Web!</b><span>Загружаем последние данные</span></div><div class="cw38-boot-grid"><div class="cw38-boot-card"></div><div class="cw38-boot-card"></div><div class="cw38-boot-card"></div></div></div></div>
+<body class="ciao-pronostici-page"><div id="cw225-start-cover"><div class="cw225-start-inner"><b>Ciao, Web!</b><div class="cw225-italy-loader" aria-hidden="true"></div><span>Загружаем последние данные</span></div></div>
 <!-- Ciao, Web! Mini App v7 — detached from Tilda shell -->
 <script>
 (function(){
@@ -5831,6 +5831,93 @@ root.addEventListener('keydown',e=>{
 /* /ciao-v41-ui-cleanup-20260911 */
 
 
+
+/* ciao-v43-loader-h2h-profile-stability */
+const __CW43_H2H_API='https://dkefzepiiudehhzbbrjn.supabase.co/functions/v1/ciao-bsd-probe';
+const __CW43_MATCH_SECTIONS=['detail','stats','incidents','lineups','player_stats','overview_meta'];
+
+function __cw43MatchLoaderHtml(){
+  return `<div class="mc-shell cw43-mc-loading"><div class="mc-toolbar"><button class="mc-back" id="mcBack" aria-label="Назад"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button><div class="mc-toolbar-title">Матч-центр</div><span class="mc-toolbar-spacer"></span></div><div class="cw43-loader-wrap"><b>Матч-центр</b><div class="cw225-italy-loader" aria-hidden="true"></div><span>Загружаем матч полностью</span><small>составы · статистика · события · H2H</small></div></div>`;
+}
+function __cw43ProviderTeamId(t){
+  const refs=typeof __cw42H2HTeamRefs==='function'?__cw42H2HTeamRefs(t||{}):null;
+  const n=Number(refs?.provider??t?.bsd_team_id??t?.provider_team_id??0);return Number.isFinite(n)&&n>0?n:0;
+}
+async function __cw43H2HApi(d){
+  const m=d?.match||d||{},home=__cw43ProviderTeamId(m?.home),away=__cw43ProviderTeamId(m?.away),eventId=Number(m?.provider_event_id??m?.bsd_event_id??0)||0;
+  if(!home||!away)return {ok:true,matches:[]};
+  try{return await __cw9Post(__CW43_H2H_API,{home_bsd_team_id:home,away_bsd_team_id:away,current_event_id:eventId,limit:5},'Не удалось загрузить H2H')}
+  catch(_e){return {ok:false,matches:[]}}
+}
+async function __cw43FullMatchApi(id,source){
+  return await __cw9Post(__CW9_MATCH_API,{source:String(source||'serie_a'),match_id:Number(id),sections:__CW43_MATCH_SECTIONS,include_split:true},'Не удалось загрузить Матч-центр');
+}
+async function __cw43OpenMatchCenter(id,source=matchViewSource){
+  if(matchLoading)return false;
+  const mid=Number(id),src=String(source||matchViewSource||'serie_a');if(!Number.isFinite(mid)||mid<=0)return false;
+  matchLoading=true;matchReturnTab=tab;matchViewId=mid;matchViewSource=src;matchCenterTab=__cw38Ui?.matchTabs?.[String(mid)]||'overview';
+  root.classList.add('match-center-open');main.innerHTML=__cw43MatchLoaderHtml();root.querySelector('#mcBack')?.addEventListener('click',closeMatchCenter);main.scrollTop=0;
+  try{
+    const core=await __cw43FullMatchApi(mid,src);
+    if(Number(matchViewId)!==mid)return false;
+    const h2h=await __cw43H2HApi(core);
+    if(Number(matchViewId)!==mid)return false;
+    const merged={...core,h2h:Array.isArray(h2h?.matches)?h2h.matches:[]};
+    matchData=typeof __cw35NormalizeMatchData==='function'?__cw35NormalizeMatchData(merged):merged;
+    __cw38H2HCache.set(mid,{matches:merged.h2h,at:Date.now(),loading:false,cw43:true});
+    try{__cw38WriteMatchCache?.(matchData,src)}catch(_e){}
+    main.innerHTML=matchCenterHtml(matchData);bindMatchCenter();main.scrollTop=0;requestAnimationFrame(__cw38AfterRender);
+    try{if(typeof __cw36ScheduleNext==='function')__cw36ScheduleNext(1200)}catch(_e){}
+    return true;
+  }catch(e){
+    if(Number(matchViewId)!==mid)return false;
+    main.innerHTML=`<div class="mc-shell"><div class="mc-toolbar"><button class="mc-back" id="mcBack" aria-label="Назад"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button><div class="mc-toolbar-title">Матч-центр</div><span class="mc-toolbar-spacer"></span></div><div class="empty"><b>Не удалось загрузить матч</b><br><br>${esc(e?.message||'Попробуйте ещё раз')}</div></div>`;
+    root.querySelector('#mcBack')?.addEventListener('click',closeMatchCenter);return false;
+  }finally{matchLoading=false}
+}
+openMatchCenter=__cw43OpenMatchCenter;
+
+/* H2H now comes from provider history, not current-season club-profile rows. */
+__cw38EnsureH2H=async function(){
+  if(!matchViewId||!matchData||__cw38H2HBusy)return;
+  const id=Number(matchViewId),old=__cw38H2HCache.get(id);if(old?.cw43&&Date.now()-Number(old.at||0)<__CW38_H2H_TTL){__cw38PatchH2H();return}
+  __cw38H2HBusy=true;__cw38H2HCache.set(id,{matches:old?.matches||[],at:old?.at||0,loading:true,cw43:true});__cw38PatchH2H();
+  try{const res=await __cw43H2HApi(matchData);if(Number(matchViewId)===id){const matches=Array.isArray(res?.matches)?res.matches:[];matchData={...matchData,h2h:matches};__cw38H2HCache.set(id,{matches,at:Date.now(),loading:false,cw43:true});__cw38PatchH2H()}}
+  finally{__cw38H2HBusy=false}
+};
+
+/* Scope buttons are the Overview navigation. There is no Overview button. */
+function __cw43ForceOverviewOnScope(){clubViewTab='overview';try{if(__cw38Ui?.clubTabs&&clubViewId)__cw38Ui.clubTabs[String(clubViewId)]='overview';__cw38SaveUi?.()}catch(_e){}}
+__cw16BindClubProfile=function(){
+  root.querySelector('#cw16ClubBack')?.addEventListener('click',closeClubProfile);
+  root.querySelectorAll('[data-club-tab]').forEach(b=>b.addEventListener('click',async()=>{const k=String(b.dataset.clubTab||'overview');if(k==='overview')return;if(k===clubViewTab)return;clubViewTab=k;render();if(!__cw16Loaded(k))await loadClubSections([k])}));
+  root.querySelectorAll('[data-club-scope]').forEach(b=>b.addEventListener('click',async()=>{
+    const scope=String(b.dataset.clubScope||'overall');if(scope===clubViewScope&&clubViewTab==='overview')return;const allowed=Array.isArray(clubViewData?.available_scopes)?clubViewData.available_scopes:['overall'];if(!allowed.includes(scope))return;
+    const prev=clubViewData||{};clubViewScope=scope;__cw43ForceOverviewOnScope();const cached=__cw16ScopeCacheGet(clubViewId,scope);clubViewData=cached||{team:prev.team,serie_a:prev.serie_a,season_label:prev.season_label,available_scopes:prev.available_scopes,scope};render();if(!cached||!__cw16Loaded('overview',cached))await loadClubSections(['overview']);
+  }));
+};
+const __cw43OpenClubBase=openClubProfile;
+openClubProfile=async function(teamId){const id=Number(teamId);try{if(__cw38Ui?.clubTabs&&id)__cw38Ui.clubTabs[String(id)]='overview'}catch(_e){}const out=await __cw43OpenClubBase(teamId);if(Number(clubViewId)===id&&clubViewTab!=='overview'){clubViewTab='overview';render();if(!__cw16Loaded('overview'))await loadClubSections(['overview'])}return out};
+
+/* Home: render cached Home immediately and never replace it with a full-screen skeleton during refresh. */
+async function __cw43EnterHomeStable(){
+  if(__cw26HomeEntryBusy)return false;__cw26HomeEntryBusy=true;matchViewId=null;matchData=null;root.classList.remove('match-center-open');tab='predict';
+  const keptDraft=new Map(draft);try{render()}catch(_e){}
+  __cwHomeExternalLoadedAt=0;const ext=Promise.resolve().then(()=>__cwHomeLoadExternal()).catch(()=>false);
+  try{const next=await api({action:'state',round:S?.selected_round});S=next;selectedRound=next?.selected_round;draft.clear();for(const [k,v] of keptDraft)draft.set(k,v);render();Promise.resolve(ext).then(()=>{if(tab==='predict'&&!__cwHomeExternalCenter)try{__cw23PolishToday(main);__cw23PolishFavorite(main);__cwHomeBindPolish();__cw41DecorateHomeProfile()}catch(_e){}}).catch(()=>{});return true}
+  catch(e){try{toast(e?.message||'Не удалось обновить Главную')}catch(_e){}return false}
+  finally{__cw26HomeEntryBusy=false}
+}
+__cw26EnterHomeFresh=__cw43EnterHomeStable;
+
+/* User Profile inherits the favorite club softly, preserving the dark Ciao, Web! surface. */
+function __cw43ApplyProfileTheme(){
+  const on=tab==='profile'&&!matchViewId&&!clubViewId;root.classList.toggle('cw43-profile-themed',on);if(!on)return;
+  const fav=S?.user?.favorite_team;if(fav)try{__cw41ApplyAccent(root,fav)}catch(_e){}
+}
+const __cw43AfterRenderBase=__cw38AfterRender;
+__cw38AfterRender=function(){const out=__cw43AfterRenderBase();requestAnimationFrame(()=>{__cw43ApplyProfileTheme();if(clubViewId){main?.querySelectorAll?.('[data-club-tab="overview"]')?.forEach?.(el=>el.remove())}});return out};
+/* /ciao-v43-loader-h2h-profile-stability */
 /* /ciao-v36-match-center-stability-20260910 */
 
 /* ===== /Ciao, Web! v22.5 product polish layer ===== */
@@ -6214,22 +6301,29 @@ html,body{max-width:100vw!important;overflow-x:hidden!important}
   #ciao-miniapp-root .cw-home-today-center .cw-home-today-time{font-size:7.8px!important}
 }
 </style>
-<script id="ciao-v42-profile-h2h-home-fix-script">
-(function(){
-  function openClubOverview(){
-    if(!clubViewId)return;
-    if(clubViewTab!=='overview'){
-      clubViewTab='overview';
-      try{if(typeof __cw38Ui==='object')__cw38Ui.clubTabs[String(clubViewId)]='overview';if(typeof __cw38SaveUi==='function')__cw38SaveUi()}catch(_e){}
-      render();
-      try{if(typeof __cw16Loaded==='function'&&!__cw16Loaded('overview'))Promise.resolve(loadClubSections(['overview'])).catch(()=>{})}catch(_e){}
-    }
-  }
-  root.addEventListener('click',ev=>{const hero=ev.target?.closest?.('[data-cw42-club-overview]');if(!hero)return;if(ev.target?.closest?.('button,a,input,select,textarea'))return;openClubOverview()});
-  root.addEventListener('keydown',ev=>{const hero=ev.target?.closest?.('[data-cw42-club-overview]');if(!hero||(ev.key!=='Enter'&&ev.key!==' '))return;ev.preventDefault();openClubOverview()});
-})();
-</script>
+
 <!-- /ciao-v42-profile-h2h-home-fix -->
 
+
+<style id="ciao-v43-loader-h2h-profile-stability-style">
+/* Same premium loading language for startup and Match Center. */
+#ciao-miniapp-root .cw43-loader-wrap{min-height:calc(100vh - 150px);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px 20px;color:#fff}
+#ciao-miniapp-root .cw43-loader-wrap>b{font-family:'Unbounded','Manrope',sans-serif;font-size:20px;letter-spacing:-.04em}
+#ciao-miniapp-root .cw43-loader-wrap>span{margin-top:11px;color:#9aabd0;font-size:10px;font-weight:800;letter-spacing:.035em}
+#ciao-miniapp-root .cw43-loader-wrap>small{margin-top:7px;color:#66789f;font-size:7px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+#ciao-miniapp-root .cw43-loader-wrap .cw225-italy-loader{position:relative;width:min(56vw,214px);height:7px;margin:18px auto 0;padding:1px;overflow:hidden;border-radius:999px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.10);box-shadow:0 10px 30px rgba(0,0,0,.30),inset 0 1px 0 rgba(255,255,255,.08)}
+#ciao-miniapp-root .cw43-loader-wrap .cw225-italy-loader::before{content:'';position:absolute;inset:1px auto 1px 0;width:58%;border-radius:999px;background:linear-gradient(90deg,#008C45 0 33.333%,#f5f5f0 33.333% 66.666%,#CD212A 66.666% 100%);box-shadow:0 0 18px rgba(255,255,255,.13);animation:cw225ItalyLoad 1.45s cubic-bezier(.55,.05,.45,.95) infinite}
+#ciao-miniapp-root .cw43-loader-wrap .cw225-italy-loader::after{content:'';position:absolute;inset:1px;border-radius:999px;background:linear-gradient(180deg,rgba(255,255,255,.22),transparent 55%);pointer-events:none}
+/* Overview has no button; scope selectors themselves always open overview content. */
+#ciao-miniapp-root .cw23-club-tabs [data-club-tab="overview"],#ciao-miniapp-root .cw16-club-tabs [data-club-tab="overview"]{display:none!important}
+/* Neutral favorite-club theme for the user's Profile tab. */
+#ciao-miniapp-root.cw43-profile-themed .content>.hero,#ciao-miniapp-root.cw43-profile-themed .content>.cw-home-user-card{border-color:var(--club-accent-faint,rgba(93,120,255,.18))!important;background:radial-gradient(circle at 88% -15%,var(--club-accent-soft,rgba(93,120,255,.16)),transparent 44%),linear-gradient(145deg,#10182d,#071028 100%)!important;box-shadow:0 18px 44px rgba(0,0,0,.25),0 0 20px var(--club-accent-faint,rgba(93,120,255,.08)),inset 0 1px 0 rgba(255,255,255,.045)!important}
+#ciao-miniapp-root.cw43-profile-themed .stats-grid .stat,#ciao-miniapp-root.cw43-profile-themed .content>.card{border-color:var(--club-accent-faint,rgba(93,120,255,.13))!important;background:radial-gradient(circle at 95% -30%,var(--club-accent-soft,rgba(93,120,255,.09)),transparent 52%),linear-gradient(145deg,rgba(14,24,48,.96),rgba(7,15,35,.98))!important}
+#ciao-miniapp-root.cw43-profile-themed .stats-grid .stat b{color:var(--club-accent-light,#fff)!important}
+#ciao-miniapp-root.cw43-profile-themed .nav button[data-tab="profile"].active{border-color:var(--club-accent-faint,rgba(93,120,255,.20))!important;background:linear-gradient(180deg,var(--club-accent-soft,rgba(93,120,255,.16)),rgba(255,255,255,.025))!important}
+/* Club surfaces keep the app dark; club palette remains an accent only. */
+#ciao-miniapp-root.club-profile-open .cw23-club-hero.cw43-club-neutral,#ciao-miniapp-root.club-profile-open .cw23-club-hero{background:radial-gradient(circle at 88% -20%,var(--club-accent-soft,rgba(93,120,255,.15)),transparent 44%),linear-gradient(145deg,#10182d,#071028 100%)!important;border-color:var(--club-accent-faint,rgba(93,120,255,.16))!important}
+@media(prefers-reduced-motion:reduce){#ciao-miniapp-root .cw43-loader-wrap .cw225-italy-loader::before{animation-duration:2.8s}}
+</style>
 </body>
 </html>
