@@ -2867,7 +2867,7 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
   clubProfileHtml=function(d){
     const t=d?.team||__cw16TeamById(clubViewId)||{},sa=d?.serie_a||{},r=d?.overview?.record||{},scope=String(d?.scope||clubViewScope||'overall'),pos=Number(sa?.position)||0,points=Number(sa?.points)||0,played=Number(r?.played)||0;
     const stats=scope==='serie_a'?`<div><span>Место</span><b>${pos?`${pos}-е`:'—'}</b></div><div><span>Очки</span><b>${points}</b><small>${__cw11Plural(points,'очко','очка','очков')}</small></div><div><span>Матчи</span><b>${played}</b><small>${__cw11Plural(played,'матч','матча','матчей')}</small></div>`:`<div><span>Матчи</span><b>${played}</b></div><div><span>В</span><b>${Number(r.won)||0}</b></div><div><span>Н</span><b>${Number(r.drawn)||0}</b></div><div><span>П</span><b>${Number(r.lost)||0}</b></div><div><span>Голы</span><b>${Number(r.goals_for)||0}:${Number(r.goals_against)||0}</b></div>`;
-    return `<div class="cw16-club-shell cw17-club-shell cw23-club-shell" style="${__cw17AccentStyle(t)}"><div class="cw16-club-toolbar"><button type="button" class="cw16-club-back" id="cw16ClubBack" aria-label="Назад"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button><div class="cw16-club-toolbar-title">Профиль клуба</div><span class="cw16-club-toolbar-spacer"></span></div><div class="cw16-club-hero cw17-club-hero cw23-club-hero"><div class="cw16-club-hero-main"><div class="cw16-club-crest">${teamLogoHtml(t,'cw16-team-logo')}</div><div class="cw17-club-identity"><div class="cw16-club-name">${esc(t.name||'Клуб')}</div><div class="cw16-club-season">${esc(d?.season_label||sa.season_label||'Текущий сезон')}</div><div class="cw23-scope-kicker">${esc(__cw23ScopeLabel(d))}</div></div></div><div class="cw17-hero-stats cw23-hero-stats ${scope==='serie_a'?'serie':''}">${stats}</div></div>${__cw23ScopeHtml(d)}<div class="cw16-club-tabs cw17-sticky-tabs cw23-club-tabs" role="tablist">${(scope==='overall'?__cw16ClubTabs:__cw16ClubTabs.filter(([k])=>k!=='squad')).map(([k,l])=>`<button type="button" class="cw16-club-tab ${clubViewTab===k?'active':''}" data-club-tab="${k}" role="tab" aria-selected="${clubViewTab===k?'true':'false'}">${l}</button>`).join('')}</div><div data-club-content>${__cw16ClubTabContent(d)}</div></div>`;
+    return `<div class="cw16-club-shell cw17-club-shell cw23-club-shell cw42-no-overview-tab cw42-club-scope-${esc(scope)}" style="${__cw17AccentStyle(t)}"><div class="cw16-club-toolbar"><button type="button" class="cw16-club-back" id="cw16ClubBack" aria-label="Назад"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button><div class="cw16-club-toolbar-title">Профиль клуба</div><span class="cw16-club-toolbar-spacer"></span></div><div class="cw16-club-hero cw17-club-hero cw23-club-hero" data-cw42-club-overview role="button" tabindex="0" aria-label="Открыть обзор клуба"><div class="cw16-club-hero-main"><div class="cw16-club-crest">${teamLogoHtml(t,'cw16-team-logo')}</div><div class="cw17-club-identity"><div class="cw16-club-name">${esc(t.name||'Клуб')}</div><div class="cw16-club-season">${esc(d?.season_label||sa.season_label||'Текущий сезон')}</div><div class="cw23-scope-kicker">${esc(__cw23ScopeLabel(d))}</div></div></div><div class="cw17-hero-stats cw23-hero-stats ${scope==='serie_a'?'serie':''}">${stats}</div></div>${__cw23ScopeHtml(d)}<div class="cw16-club-tabs cw17-sticky-tabs cw23-club-tabs" role="tablist">${(scope==='overall'?__cw16ClubTabs.filter(([k])=>k!=='overview'):__cw16ClubTabs.filter(([k])=>k!=='overview'&&k!=='squad')).map(([k,l])=>`<button type="button" class="cw16-club-tab ${clubViewTab===k?'active':''}" data-club-tab="${k}" role="tab" aria-selected="${clubViewTab===k?'true':'false'}">${l}</button>`).join('')}</div><div data-club-content>${__cw16ClubTabContent(d)}</div></div>`;
   };
   const __cw17BaseRefreshLive=refreshLive;
   refreshLive=async function(){if(clubViewId)return;return await __cw17BaseRefreshLive()};
@@ -4520,6 +4520,18 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
   predict=function(){if(__cwHomeExternalCenter)return __cwHomeExternalCenterHtml();__cwHomeEnsureExternal();return __cw23RenderHomeHtml(__cw23HomeRenderBase())};
 
   function __cwHomeBindPolish(){
+    if(root.dataset.cw42HomeMatchRouter!=='1'){
+      root.dataset.cw42HomeMatchRouter='1'; /* data-cw42-home-match-router */
+      root.addEventListener('click',ev=>{
+        const el=ev.target?.closest?.('[data-cw-home-match],[data-cw211-match]');if(!el)return;
+        const legacyId=Number(el.getAttribute('data-cw211-match')||0);
+        if(legacyId>0){ev.preventDefault();ev.stopPropagation();openMatchCenter(legacyId,'serie_a');return}
+        const key=String(el.getAttribute('data-cw-home-match')||''),competition=String(el.getAttribute('data-cw-home-competition')||'');
+        if(!key||!competition)return;
+        const match=__cwHomeExternalRows().find(row=>String(row?.matchId||'')===key&&String(row?.competition||'')===competition),id=Number(match?.externalMatchId);
+        if(id>0){ev.preventDefault();ev.stopPropagation();openMatchCenter(id,'external')}
+      });
+    }
     root.querySelectorAll?.('[data-cw-home-match][data-cw-home-competition]').forEach(el=>{if(String(el.getAttribute('data-cw-home-competition')||'')==='serie_a')return;if(el.dataset.cwHomeBound==='1')return;el.dataset.cwHomeBound='1';const open=ev=>{ev?.preventDefault?.();ev?.stopPropagation?.();(()=>{const key=String(el.getAttribute('data-cw-home-match')||''),competition=String(el.getAttribute('data-cw-home-competition')||''),match=__cwHomeExternalRows().find(row=>String(row?.matchId||'')===key&&String(row?.competition||'')===competition),id=Number(match?.externalMatchId);if(id>0)openMatchCenter(id,'external')})()};el.addEventListener('click',open);if(el.getAttribute('role')==='button')el.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();open(ev)}})});
     root.querySelector?.('[data-cw-home-back]')?.addEventListener('click',()=>{__cwHomeExternalCenter=null;__cwHomeExternalCenterOverview=null;__cwHomeExternalCenterLoading=false;render()});
   }
@@ -5596,16 +5608,32 @@ function __cw38PatchPhase(d){const cur=main?.querySelector?.('[data-cw38-phase]'
 const __cw38MatchCenterHtmlBase=matchCenterHtml;
 matchCenterHtml=function(d){const normalized=typeof __cw35NormalizeMatchData==='function'?__cw35NormalizeMatchData(d):d;let html=__cw38MatchCenterHtmlBase(normalized);if(!html.includes('data-cw38-phase'))html=html.replace(/(<\/section>)/,`$1${__cw38PhaseHtml(normalized)}`);return html};
 
-function __cw38TeamId(t){for(const v of [t?.id,t?.team_id,t?.local_team_id,t?.localTeamId,t?.provider_team_id]){const n=Number(v);if(Number.isFinite(n)&&n>0)return n}return 0}
-function __cw38TeamName(t){return String(t?.name||t?.team_name||'').trim()}
+function __cw42NormTeamName(v){return String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\b(fc|cf|calcio|football club)\b/g,' ').replace(/[^a-zа-яё0-9]+/gi,' ').replace(/ё/g,'е').trim().replace(/\s+/g,' ')}
+function __cw42H2HTeamRefs(t){
+  const x=t||{};let local=0,provider=0;
+  for(const v of [x?.local_team_id,x?.localTeamId,x?.local_id]){const n=Number(v);if(Number.isFinite(n)&&n>0){local=n;break}}
+  const generic=Number(x?.id??x?.team_id);
+  if(!local&&Number.isFinite(generic)&&generic>0&&typeof __cw16TeamById==='function'){
+    try{if(__cw16TeamById(generic))local=generic}catch(_e){}
+  }
+  for(const v of [x?.bsd_team_id,x?.bsdTeamId,x?.provider_team_id,x?.providerTeamId,x?.external_team_id,x?.source_team_id]){const n=Number(v);if(Number.isFinite(n)&&n>0){provider=n;break}}
+  if(local&&typeof __cw16TeamById==='function'){
+    try{const known=__cw16TeamById(local),n=Number(known?.bsd_team_id??known?.provider_team_id);if(!provider&&Number.isFinite(n)&&n>0)provider=n}catch(_e){}
+  }
+  if(!provider&&!local&&Number.isFinite(generic)&&generic>0)provider=generic;
+  return {local,provider,name:__cw42NormTeamName(x?.name||x?.team_name||x?.short_name||'')};
+}
+function __cw38TeamId(t){const r=__cw42H2HTeamRefs(t);/* bsd_team_id + provider_team_id are supported by __cw42H2HTeamRefs */return r.local||r.provider||0}
+function __cw38TeamName(t){return String(t?.name||t?.team_name||t?.short_name||'').trim()}
 function __cw38ScoreOf(m){const h=m?.home_score??m?.homeScore??m?.score?.home??m?.home?.score,a=m?.away_score??m?.awayScore??m?.score?.away??m?.away?.score;return Number.isFinite(Number(h))&&Number.isFinite(Number(a))?[Number(h),Number(a)]:null}
-function __cw38MatchSides(m){return {home:m?.home||m?.homeTeam||{},away:m?.away||m?.awayTeam||{}}}
-function __cw38Finished(m){const s=String(m?.status||m?.live_status||'').toLowerCase(),score=__cw38ScoreOf(m),at=Date.parse(m?.kickoff_at||m?.kickoffAt||m?.date||'');return m?.is_finished===true||['finished','ft','full_time','fulltime','ended','after_extra_time','aet'].includes(s)||!!(score&&Number.isFinite(at)&&at<Date.now()-4*60*60*1000)}
-function __cw38ExtractMatches(obj){const out=[],push=v=>{if(Array.isArray(v))out.push(...v)};push(obj?.h2h);push(obj?.h2h?.matches);push(obj?.matches);push(obj?.matches?.all);push(obj?.matches?.recent);push(obj?.recent_matches);push(obj?.last_matches);push(obj?.overview?.recent_matches);if(obj?.overview?.last_match)out.push(obj.overview.last_match);return out.filter(Boolean)}
-function __cw38SamePair(m,home,away){const s=__cw38MatchSides(m),hi=__cw38TeamId(s.home),ai=__cw38TeamId(s.away),hn=__cw38TeamName(s.home).toLowerCase(),an=__cw38TeamName(s.away).toLowerCase(),hId=__cw38TeamId(home),aId=__cw38TeamId(away),hName=__cw38TeamName(home).toLowerCase(),aName=__cw38TeamName(away).toLowerCase();if(hId&&aId&&hi&&ai)return (hi===hId&&ai===aId)||(hi===aId&&ai===hId);return !!hName&&!!aName&&((hn===hName&&an===aName)||(hn===aName&&an===hName))}
-function __cw38H2HRows(d,extra=[]){const home=d?.match?.home||{},away=d?.match?.away||{},all=[...__cw38ExtractMatches(d),...extra],seen=new Set(),rows=[];for(const m of all){if(!__cw38SamePair(m,home,away)||!__cw38Finished(m))continue;const sides=__cw38MatchSides(m),score=__cw38ScoreOf(m);if(!score)continue;const key=String(m?.id||m?.match_id||m?.matchId||`${m?.kickoff_at||m?.kickoffAt||''}:${__cw38TeamName(sides.home)}:${score.join(':')}`);if(seen.has(key))continue;seen.add(key);rows.push({m,sides,score,date:Date.parse(m?.kickoff_at||m?.kickoffAt||m?.date||'')||0})}return rows.sort((a,b)=>b.date-a.date).slice(0,5)}
-function __cw38H2HHtml(d){const mid=Number(d?.match?.id||matchViewId)||0,cache=__cw38H2HCache.get(mid),rows=__cw38H2HRows(d,cache?.matches||[]),home=d?.match?.home||{},hId=__cw38TeamId(home);let w=0,dr=0,l=0;for(const r of rows){const host=__cw38TeamId(r.sides.home)===hId||(!hId&&__cw38TeamName(r.sides.home)===__cw38TeamName(home)),a=r.score[0],b=r.score[1],mine=host?a:b,opp=host?b:a;mine>opp?w++:mine<opp?l++:dr++}const state=cache?.loading?'Загружаем последние встречи…':rows.length?'Последние очные встречи':'Данных об очных встречах пока недостаточно';const list=rows.map(r=>{const dt=r.date?new Intl.DateTimeFormat('ru-RU',{day:'2-digit',month:'2-digit',year:'2-digit'}).format(new Date(r.date)):'';return `<div class="cw38-h2h-row"><span>${__cw38Esc(dt)}</span><b>${__cw38Esc(__cw38TeamName(r.sides.home))}</b><strong>${r.score[0]}:${r.score[1]}</strong><b>${__cw38Esc(__cw38TeamName(r.sides.away))}</b></div>`}).join('');return `<section class="mc-section cw38-h2h" data-cw38-h2h><div class="mc-section-head"><div class="mc-section-title">H2H</div><div class="mc-section-note">${rows.length?`${w} побед · ${dr} ничьих · ${l} поражений`:state}</div></div>${list?`<div class="cw38-h2h-list">${list}</div>`:`<div class="cw38-inline-empty">${__cw38Esc(state)}</div>`}</section>`}
-async function __cw38EnsureH2H(){if(!matchViewId||!matchData||__cw38H2HBusy)return;const id=Number(matchViewId),old=__cw38H2HCache.get(id);if(old&&Date.now()-Number(old.at||0)<__CW38_H2H_TTL){__cw38PatchH2H();return}const home=matchData?.match?.home||{},away=matchData?.match?.away||{},ids=[__cw38TeamId(home),__cw38TeamId(away)].filter(Boolean);__cw38H2HCache.set(id,{matches:old?.matches||[],at:old?.at||0,loading:true});__cw38PatchH2H();if(ids.length<2||typeof __cwOptClubRequest!=='function'){__cw38H2HCache.set(id,{matches:old?.matches||[],at:Date.now(),loading:false});__cw38PatchH2H();return}__cw38H2HBusy=true;try{const res=await Promise.allSettled(ids.map(tid=>__cwOptClubRequest(tid,['matches'],'overall'))),matches=[];for(const r of res)if(r.status==='fulfilled')matches.push(...__cw38ExtractMatches(r.value));if(Number(matchViewId)===id){__cw38H2HCache.set(id,{matches,at:Date.now(),loading:false});__cw38PatchH2H()}}finally{__cw38H2HBusy=false}}
+function __cw38MatchSides(m){let home=m?.home||m?.homeTeam||m?.home_team||{},away=m?.away||m?.awayTeam||m?.away_team||{};if(typeof home==='number'||typeof home==='string')home={id:Number(home)||null};if(typeof away==='number'||typeof away==='string')away={id:Number(away)||null};return {home,away}}
+function __cw38Finished(m){const s=String(m?.status||m?.live_status||'').toLowerCase(),score=__cw38ScoreOf(m),at=Date.parse(m?.kickoff_at||m?.kickoffAt||m?.event_date||m?.date||'');return m?.is_finished===true||['finished','ft','full_time','fulltime','ended','after_extra_time','aet'].includes(s)||!!(score&&Number.isFinite(at)&&at<Date.now()-4*60*60*1000)}
+function __cw38ExtractMatches(obj){const out=[],push=v=>{if(Array.isArray(v))out.push(...v)};push(obj?.h2h);push(obj?.h2h?.matches);push(obj?.head_to_head);push(obj?.headToHead);push(obj?.history);push(obj?.detail?.h2h);push(obj?.detail?.head_to_head);push(obj?.match?.h2h);push(obj?.matches);push(obj?.matches?.all);push(obj?.matches?.recent);push(obj?.recent_matches);push(obj?.last_matches);push(obj?.overview?.recent_matches);push(obj?.overview_meta?.form?.home);push(obj?.overview_meta?.form?.away);push(obj?.detail?.overview_meta?.form?.home);push(obj?.detail?.overview_meta?.form?.away);if(obj?.overview?.last_match)out.push(obj.overview.last_match);return out.filter(Boolean)}
+function __cw42SameTeam(a,b){const x=__cw42H2HTeamRefs(a),y=__cw42H2HTeamRefs(b);if(x.local&&y.local&&x.local===y.local)return true;if(x.provider&&y.provider&&x.provider===y.provider)return true;return !!x.name&&!!y.name&&x.name===y.name}
+function __cw38SamePair(m,home,away){const s=__cw38MatchSides(m);return (__cw42SameTeam(s.home,home)&&__cw42SameTeam(s.away,away))||(__cw42SameTeam(s.home,away)&&__cw42SameTeam(s.away,home))}
+function __cw38H2HRows(d,extra=[]){const home=d?.match?.home||{},away=d?.match?.away||{},all=[...__cw38ExtractMatches(d),...extra],seen=new Set(),rows=[];for(const m of all){if(!__cw38SamePair(m,home,away)||!__cw38Finished(m))continue;const sides=__cw38MatchSides(m),score=__cw38ScoreOf(m);if(!score)continue;const key=String(m?.id||m?.event_id||m?.match_id||m?.matchId||`${m?.kickoff_at||m?.kickoffAt||m?.event_date||m?.date||''}:${__cw42NormTeamName(__cw38TeamName(sides.home))}:${score.join(':')}`);if(seen.has(key))continue;seen.add(key);rows.push({m,sides,score,date:Date.parse(m?.kickoff_at||m?.kickoffAt||m?.event_date||m?.date||'')||0})}return rows.sort((a,b)=>b.date-a.date).slice(0,5)}
+function __cw38H2HHtml(d){const mid=Number(d?.match?.id||matchViewId)||0,cache=__cw38H2HCache.get(mid),rows=__cw38H2HRows(d,cache?.matches||[]),home=d?.match?.home||{};let w=0,dr=0,l=0;for(const r of rows){const host=__cw42SameTeam(r.sides.home,home),a=r.score[0],b=r.score[1],mine=host?a:b,opp=host?b:a;mine>opp?w++:mine<opp?l++:dr++}const state=cache?.loading?'Загружаем последние встречи…':rows.length?'Последние очные встречи':'Данных об очных встречах пока недостаточно';const list=rows.map(r=>{const dt=r.date?new Intl.DateTimeFormat('ru-RU',{day:'2-digit',month:'2-digit',year:'2-digit'}).format(new Date(r.date)):'';return `<div class="cw38-h2h-row"><span>${__cw38Esc(dt)}</span><b>${__cw38Esc(__cw38TeamName(r.sides.home))}</b><strong>${r.score[0]}:${r.score[1]}</strong><b>${__cw38Esc(__cw38TeamName(r.sides.away))}</b></div>`}).join('');return `<section class="mc-section cw38-h2h" data-cw38-h2h><div class="mc-section-head"><div class="mc-section-title">H2H</div><div class="mc-section-note">${rows.length?`${w} побед · ${dr} ничьих · ${l} поражений`:state}</div></div>${list?`<div class="cw38-h2h-list">${list}</div>`:`<div class="cw38-inline-empty">${__cw38Esc(state)}</div>`}</section>`}
+async function __cw38EnsureH2H(){if(!matchViewId||!matchData||__cw38H2HBusy)return;const id=Number(matchViewId),old=__cw38H2HCache.get(id);if(old?.cw42&&Date.now()-Number(old.at||0)<__CW38_H2H_TTL){__cw38PatchH2H();return}const home=matchData?.match?.home||{},away=matchData?.match?.away||{},localIds=[...new Set([__cw42H2HTeamRefs(home).local,__cw42H2HTeamRefs(away).local].filter(Boolean))];__cw38H2HCache.set(id,{matches:old?.matches||[],at:old?.at||0,loading:localIds.length>0,cw42:true});__cw38PatchH2H();if(!localIds.length||typeof __cwOptClubRequest!=='function'){__cw38H2HCache.set(id,{matches:old?.matches||[],at:Date.now(),loading:false,cw42:true});__cw38PatchH2H();return}__cw38H2HBusy=true;try{const res=await Promise.allSettled(localIds.map(tid=>__cwOptClubRequest(tid,['matches'],'overall'))),matches=[];for(const r of res)if(r.status==='fulfilled')matches.push(...__cw38ExtractMatches(r.value));if(Number(matchViewId)===id){__cw38H2HCache.set(id,{matches,at:Date.now(),loading:false,cw42:true});__cw38PatchH2H()}}finally{__cw38H2HBusy=false}}
 function __cw38PatchH2H(){const cur=main?.querySelector?.('[data-cw38-h2h]');if(!cur||!matchData)return;const t=document.createElement('template');t.innerHTML=__cw38H2HHtml(matchData);const n=t.content.firstElementChild;if(n&&cur.outerHTML!==n.outerHTML)cur.replaceWith(n)}
 
 function __cw38FinishedHtml(d){const c=__cw38NormalizeMatch(d);if(c.status!=='finished')return '';const events=__cw38IncidentRows(d).filter(e=>__cw38IncidentKind(e)==='goal'),goals=events.length?events.map(e=>`<span>${__cw38Esc((__cw38IncidentMinute(e)||0)+'′')} · ${__cw38Esc(e?.player?.name||e?.player_name||e?.player||'Гол')}</span>`).join(''):'<span>Авторы голов не указаны</span>',h=d?.stats?.stats?.home||{},a=d?.stats?.stats?.away||{},xgH=Number(h?.expected_goals??h?.xg?.actual),xgA=Number(a?.expected_goals??a?.xg?.actual),shotsH=Number(h?.total_shots),shotsA=Number(a?.total_shots),p=d?.match?.prediction;return `<section class="mc-section cw38-finished" data-cw38-finished><div class="cw38-finished-score"><small>Финальный счёт</small><b>${__cw38Esc(c.scoreText)}</b><span>${__cw38Esc(d?.match?.home?.name||'')} · ${__cw38Esc(d?.match?.away?.name||'')}</span></div><div class="cw38-finished-grid"><div><small>xG</small><b>${Number.isFinite(xgH)?xgH.toFixed(2):'—'} : ${Number.isFinite(xgA)?xgA.toFixed(2):'—'}</b></div><div><small>Удары</small><b>${Number.isFinite(shotsH)?shotsH:'—'} : ${Number.isFinite(shotsA)?shotsA:'—'}</b></div><div><small>Твой прогноз</small><b>${p?`${Number(p.home_score)||0}:${Number(p.away_score)||0}`:'—'}</b></div></div><div class="cw38-finished-goals">${goals}</div></section>`}
@@ -5747,7 +5775,7 @@ function __cw41DecorateHomeProfile(){
   const card=main.querySelector('.cw-home-user-card,.hero.cw32-user-hero,.hero');
   if(card){
     card.classList.remove('cw40-user-club-card');
-    card.classList.add('cw41-user-club-card');
+    card.classList.add('cw41-user-club-card','cw42-user-neutral-card');
     card.dataset.cw41OpenProfile='1';
     card.setAttribute('role','button');
     card.setAttribute('tabindex','0');
@@ -6157,5 +6185,51 @@ html,body{max-width:100vw!important;overflow-x:hidden!important}
 }
 </style>
 <!-- /ciao-v39-match-center-corrective-style -->
+
+<!-- ciao-v42-profile-h2h-home-fix -->
+<style id="ciao-v42-profile-h2h-home-fix-style">
+/* Favorite-club-inspired neutral user card: club color is an accent, not the whole surface. */
+#ciao-miniapp-root .cw41-user-club-card.cw42-user-neutral-card{
+  border-color:var(--club-accent-faint,rgba(93,120,255,.18))!important;
+  background:
+    radial-gradient(circle at 90% -20%,var(--club-accent-soft,rgba(93,120,255,.18)),transparent 46%),
+    radial-gradient(circle at 0% 115%,var(--club-accent-2-soft,rgba(16,26,56,.24)),transparent 42%),
+    linear-gradient(145deg,#10182d,#071028 100%)!important;
+  box-shadow:0 18px 44px rgba(0,0,0,.27),0 0 22px var(--club-accent-faint,rgba(93,120,255,.10)),inset 0 1px 0 rgba(255,255,255,.045)!important;
+}
+#ciao-miniapp-root .cw41-user-club-card.cw42-user-neutral-card p{color:#91a1c7!important}
+
+/* Club profile has no Overview tab; tapping the hero returns to overview. */
+#ciao-miniapp-root .cw42-no-overview-tab .cw23-club-tabs{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+#ciao-miniapp-root .cw42-no-overview-tab:not(.cw42-club-scope-overall) .cw23-club-tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+#ciao-miniapp-root [data-cw42-club-overview]{cursor:pointer!important}
+#ciao-miniapp-root [data-cw42-club-overview]:active{transform:scale(.997)}
+
+/* cw42-today-meta-size: tournament and time/status are intentionally a little larger. */
+#ciao-miniapp-root .cw-home-today-center small{font-size:6.7px!important;line-height:1.15!important}
+#ciao-miniapp-root .cw-home-today-center .cw-home-today-time{font-size:8.3px!important;line-height:1.15!important}
+#ciao-miniapp-root .cw-home-today-center .cw-home-today-state{font-size:7.1px!important;line-height:1.15!important}
+@media(max-width:370px){
+  #ciao-miniapp-root .cw-home-today-center small{font-size:6.2px!important}
+  #ciao-miniapp-root .cw-home-today-center .cw-home-today-time{font-size:7.8px!important}
+}
+</style>
+<script id="ciao-v42-profile-h2h-home-fix-script">
+(function(){
+  function openClubOverview(){
+    if(!clubViewId)return;
+    if(clubViewTab!=='overview'){
+      clubViewTab='overview';
+      try{if(typeof __cw38Ui==='object')__cw38Ui.clubTabs[String(clubViewId)]='overview';if(typeof __cw38SaveUi==='function')__cw38SaveUi()}catch(_e){}
+      render();
+      try{if(typeof __cw16Loaded==='function'&&!__cw16Loaded('overview'))Promise.resolve(loadClubSections(['overview'])).catch(()=>{})}catch(_e){}
+    }
+  }
+  root.addEventListener('click',ev=>{const hero=ev.target?.closest?.('[data-cw42-club-overview]');if(!hero)return;if(ev.target?.closest?.('button,a,input,select,textarea'))return;openClubOverview()});
+  root.addEventListener('keydown',ev=>{const hero=ev.target?.closest?.('[data-cw42-club-overview]');if(!hero||(ev.key!=='Enter'&&ev.key!==' '))return;ev.preventDefault();openClubOverview()});
+})();
+</script>
+<!-- /ciao-v42-profile-h2h-home-fix -->
+
 </body>
 </html>
