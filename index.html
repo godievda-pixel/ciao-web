@@ -5691,7 +5691,117 @@ const __cw39AfterRenderBase=__cw38AfterRender;
 __cw38AfterRender=function(){const r=__cw39AfterRenderBase();requestAnimationFrame(__cw39ReflowLineups);return r};
 root.addEventListener('click',e=>{if(e.target.closest?.('[data-lineup-team]'))requestAnimationFrame(__cw39ReflowLineups)},{passive:true});
 /* /ciao-v39-match-center-corrective-runtime */
-/* /ciao-v38-product-upgrade-20260911 */
+/* /ciao-v38-product-upgrade-20260911 *//* ciao-v41-ui-cleanup-20260911 */
+/* Remove duplicated Match Center summary panels. The hero remains the single score/status source. */
+__cw38PhaseHtml=function(){return ''};
+__cw38PatchPhase=function(){try{main?.querySelectorAll?.('[data-cw38-phase]')?.forEach?.(el=>el.remove())}catch(_e){}};
+__cw38FinishedHtml=function(){return ''};
+
+const __cw41PatchOverviewBase=__cw38PatchOverviewExtras;
+__cw38PatchOverviewExtras=function(){
+  try{main?.querySelectorAll?.('[data-cw38-finished],[data-cw38-phase]')?.forEach?.(el=>el.remove())}catch(_e){}
+  try{__cw38PatchH2H()}catch(_e){}
+};
+
+/* Home no longer has a separate "Твой футбольный день" card. */
+const __cw41PredictBase=predict;
+predict=function(){
+  const html=__cw41PredictBase();
+  if(__cwHomeExternalCenter)return html;
+  try{
+    const box=document.createElement('div');
+    box.innerHTML=String(html||'');
+    box.querySelectorAll('[data-cw38-home-dashboard]').forEach(el=>el.remove());
+    return box.innerHTML;
+  }catch(_e){return html}
+};
+function __cw38PatchHomeDashboard(){
+  try{main?.querySelectorAll?.('[data-cw38-home-dashboard]')?.forEach?.(el=>el.remove())}catch(_e){}
+}
+
+/* Serie A keeps its second navigation row. Cups/Europe go straight to their only relevant table/bracket view. */
+function __cw41TableNavHtml(comp=__cwTt2Comp,view=__cwTt2View){
+  const nav='<div class="cwtt2-nav">'+__CWTT2_COMPS.map(x=>'<button class="cwtt2-nav-btn '+(x[0]===comp?'active':'')+'" data-cwtt2-comp="'+x[0]+'">'+x[1]+'</button>').join('')+'</div>';
+  if(comp!=='serie_a'){
+    try{__cwTt2View='table'}catch(_e){}
+    return nav;
+  }
+  return nav+'<div class="cwtt2-subnav">'+__CWTT2_VIEWS.map(x=>'<button class="cwtt2-sub-btn '+(x[0]===view?'active':'')+'" data-cwtt2-view="'+x[0]+'">'+x[1]+'</button>').join('')+'</div>';
+}
+try{__cwTt2Nav=function(){return __cw41TableNavHtml(__cwTt2Comp,__cwTt2View)}}catch(_e){}
+
+function __cw41ApplyAccent(el,team){
+  if(!el||!team||typeof __cw17AccentStyle!=='function')return;
+  try{
+    for(const part of String(__cw17AccentStyle(team)||'').split(';')){
+      const i=part.indexOf(':');
+      if(i>0)el.style.setProperty(part.slice(0,i),part.slice(i+1));
+    }
+  }catch(_e){}
+}
+
+/* User card = favorite-club palette + direct route to Profile. */
+function __cw41DecorateHomeProfile(){
+  if(!main||tab!=='predict'||matchViewId||clubViewId||__cwHomeExternalCenter)return;
+  const fav=S?.user?.favorite_team;
+  const card=main.querySelector('.cw-home-user-card,.hero.cw32-user-hero,.hero');
+  if(card){
+    card.classList.remove('cw40-user-club-card');
+    card.classList.add('cw41-user-club-card');
+    card.dataset.cw41OpenProfile='1';
+    card.setAttribute('role','button');
+    card.setAttribute('tabindex','0');
+    card.setAttribute('aria-label','Открыть профиль');
+    __cw41ApplyAccent(card,fav);
+  }
+  const clubButton=main.querySelector('.cw211-profile-btn');
+  if(clubButton){
+    clubButton.classList.add('cw-home-profile-premium','cw41-favorite-club-button');
+    __cw41ApplyAccent(clubButton,fav);
+  }
+}
+
+/* A lone "Обзор" row in club profile is redundant. Keep the section tabs only when they offer a real choice. */
+function __cw41CleanClubTabs(){
+  if(!clubViewId||!main)return;
+  const tabs=main.querySelector('.cw23-club-tabs,.cw16-club-tabs');
+  if(!tabs)return;
+  const buttons=[...tabs.querySelectorAll('[data-club-tab]')].filter(b=>getComputedStyle(b).display!=='none');
+  const meaningful=buttons.filter(b=>String(b.dataset.clubTab||'')!=='overview');
+  if(buttons.length===1&&String(buttons[0].dataset.clubTab||'')==='overview'){
+    tabs.classList.add('cw41-clean-club-tabs');
+    tabs.remove();
+    return;
+  }
+  /* If legacy CSS left only Overview visible while other controls are unavailable, remove the empty-feeling row. */
+  if(!meaningful.length){tabs.classList.add('cw41-clean-club-tabs');tabs.remove()}
+}
+
+function __cw41AfterRender(){
+  __cw41DecorateHomeProfile();
+  __cw41CleanClubTabs();
+  __cw38PatchPhase();
+  try{main?.querySelectorAll?.('[data-cw38-finished],[data-cw38-phase],[data-cw38-home-dashboard]')?.forEach?.(el=>el.remove())}catch(_e){}
+}
+const __cw41AfterRenderBase=__cw38AfterRender;
+__cw38AfterRender=function(){const out=__cw41AfterRenderBase();requestAnimationFrame(__cw41AfterRender);return out};
+
+root.addEventListener('click',e=>{
+  const card=e.target.closest?.('[data-cw41-open-profile]');
+  if(!card)return;
+  if(e.target.closest?.('button,a,input,select,textarea')&&e.target!==card)return;
+  try{window.Telegram?.WebApp?.HapticFeedback?.selectionChanged?.()}catch(_e){}
+  tab='profile';render();
+},{passive:true});
+root.addEventListener('keydown',e=>{
+  if((e.key==='Enter'||e.key===' ')&&e.target?.matches?.('[data-cw41-open-profile]')){
+    e.preventDefault();
+    try{window.Telegram?.WebApp?.HapticFeedback?.selectionChanged?.()}catch(_e){}
+    tab='profile';render();
+  }
+});
+/* /ciao-v41-ui-cleanup-20260911 */
+
 
 /* /ciao-v36-match-center-stability-20260910 */
 
@@ -5942,6 +6052,80 @@ html,body{max-width:100vw!important;overflow-x:hidden!important}
 @media(max-width:390px){#ciao-miniapp-root .cw38-segment{min-height:37px!important;padding:6px 4px!important;font-size:8.5px!important}#ciao-miniapp-root .mc-pitch{width:min(100%,340px)!important}.cw38-h2h-row{grid-template-columns:42px minmax(0,1fr) 38px minmax(0,1fr);gap:5px;padding:8px}.cw38-profile2-grid{grid-template-columns:repeat(2,1fr)}.cw38-home-live{grid-template-columns:minmax(0,1fr) 62px minmax(0,1fr)}}
 @media(max-width:340px){#ciao-miniapp-root.match-center-open .content{padding-left:8px!important;padding-right:8px!important}#ciao-miniapp-root .mc-team .logo{width:43px!important;height:43px!important;flex-basis:43px!important}#ciao-miniapp-root .mc-team-name{font-size:10px!important}#ciao-miniapp-root .mc-score{font-size:24px!important}#ciao-miniapp-root .cw38-segment{font-size:7.4px!important;letter-spacing:-.02em!important}#ciao-miniapp-root .mc-pitch{width:min(100%,310px)!important;border-radius:18px!important}#ciao-miniapp-root .mc-pitch-player{width:50px!important}#ciao-miniapp-root .mc-pitch-number{width:28px!important;height:28px!important;font-size:8px!important}#ciao-miniapp-root .mc-pitch-name{font-size:6.8px!important}.cw38-h2h-row{grid-template-columns:36px minmax(0,1fr) 34px minmax(0,1fr);font-size:7px}.cw38-finished-grid{grid-template-columns:1fr}.cw38-home-live{padding-left:7px;padding-right:7px;grid-template-columns:minmax(0,1fr) 54px minmax(0,1fr)}.cw38-home-live>strong{font-size:11px}.cw38-pred-context{font-size:6.3px;gap:3px}}
 @media(prefers-reduced-motion:reduce){#ciao-miniapp-root .cw38-phase-track>i,.cw38-sk::after,#cw225-start-cover .cw38-boot-card::after{transition:none!important;animation:none!important}}
+
+/* ciao-v41-ui-cleanup */
+#ciao-miniapp-root [data-cw38-phase],
+#ciao-miniapp-root [data-cw38-finished],
+#ciao-miniapp-root [data-cw38-home-dashboard]{display:none!important}
+
+#ciao-miniapp-root .cw41-user-club-card{
+  cursor:pointer!important;
+  border-color:var(--club-accent-faint,rgba(93,120,255,.22))!important;
+  background:
+    radial-gradient(circle at 88% -10%,var(--club-accent-soft,rgba(93,120,255,.26)),transparent 42%),
+    linear-gradient(135deg,var(--club-accent,#3150ff),var(--club-accent-2,#101a38))!important;
+  box-shadow:0 18px 40px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.11)!important;
+  transition:transform .14s ease,border-color .14s ease!important;
+}
+#ciao-miniapp-root .cw41-user-club-card:active{transform:scale(.992)}
+#ciao-miniapp-root .cw41-user-club-card h2,
+#ciao-miniapp-root .cw41-user-club-card .rank{color:#fff!important}
+#ciao-miniapp-root .cw41-user-club-card p{color:rgba(255,255,255,.72)!important}
+
+#ciao-miniapp-root .cw211-profile-btn.cw-home-profile-premium,
+#ciao-miniapp-root .cw211-profile-btn.cw41-favorite-club-button{
+  background:linear-gradient(135deg,var(--club-accent,#3150ff),var(--club-accent-2,#101a38))!important;
+  border:1px solid rgba(255,255,255,.18)!important;
+  color:#fff!important;
+  box-shadow:0 10px 26px var(--club-accent-faint,rgba(49,80,255,.18)),inset 0 1px 0 rgba(255,255,255,.16)!important;
+}
+
+#ciao-miniapp-root .cw41-clean-club-tabs{display:none!important}
+
+#ciao-miniapp-root .cwtt2-screen .cwtt2-nav + .cwtt2-body{padding-top:10px}
+#ciao-miniapp-root .cwtt2-screen:not([data-cwtt2-theme="serie-a"]) .cwtt2-subnav{display:none!important}
+
+/* Clickable and provider-only Coppa clubs must be visually identical. */
+#ciao-miniapp-root button.cwtt-bracket-team,
+#ciao-miniapp-root span.cwtt-bracket-team{
+  appearance:none!important;
+  -webkit-appearance:none!important;
+  display:grid!important;
+  width:100%!important;
+  grid-template-columns:20px minmax(0,1fr) 24px!important;
+  align-items:center!important;
+  gap:6px!important;
+  min-height:25px!important;
+  margin:0!important;
+  padding:2px!important;
+  border:0!important;
+  border-radius:8px!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  font-family:Manrope,Arial,sans-serif!important;
+  font-size:10px!important;
+  font-weight:800!important;
+  line-height:1.15!important;
+  letter-spacing:0!important;
+  color:#d8e0f4!important;
+  opacity:1!important;
+  text-align:left!important;
+  text-decoration:none!important;
+  box-sizing:border-box!important;
+}
+#ciao-miniapp-root button.cwtt-bracket-team{cursor:pointer!important}
+#ciao-miniapp-root span.cwtt-bracket-team{cursor:default!important}
+#ciao-miniapp-root .cwtt-bracket-team.winner{color:#fff!important}
+#ciao-miniapp-root .cwtt-bracket-team b{
+  min-width:0!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+  color:inherit!important;
+  font:inherit!important;
+}
+#ciao-miniapp-root .cwtt-bracket-team strong{font-family:Manrope,Arial,sans-serif!important}
+/* /ciao-v41-ui-cleanup */
 </style>
 <!-- /cw38-product-ui -->
 
