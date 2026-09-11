@@ -1368,6 +1368,64 @@ html::-webkit-scrollbar,body::-webkit-scrollbar,#ciao-miniapp-root::-webkit-scro
 }
 </style>
 
+<!-- ciao-ui-refinements -->
+<style id="ciao-ui-refinements">/* Ciao UI refinements */
+
+/* Stable My Predictions layout */
+#ciao-miniapp-root .cw44-mine-grid{min-height:154px!important;padding:12px!important}
+#ciao-miniapp-root .cw44-mine-grid .cwpred-card-top{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;gap:10px!important;min-height:28px!important;margin-bottom:8px!important}
+#ciao-miniapp-root .cw44-mine-grid .cwpred-status{max-width:100%!important;width:max-content!important;min-width:0!important}
+#ciao-miniapp-root .cw44-mine-grid .cwpred-kickoff{justify-self:end!important;font-variant-numeric:tabular-nums!important}
+#ciao-miniapp-root .cw44-mine-grid .cwpred-mine-matchline{display:grid!important;grid-template-columns:minmax(0,1fr) 100px minmax(0,1fr)!important;align-items:center!important;gap:8px!important;min-height:82px!important}
+#ciao-miniapp-root .cw44-mine-grid .cwpred-team{width:100%!important;min-width:0!important;min-height:80px!important;display:flex!important;align-items:center!important;justify-content:flex-start!important}
+#ciao-miniapp-root .cw44-mine-grid .cwpred-team-logo,#ciao-miniapp-root .cw44-mine-grid .cwpred-team .logo{width:42px!important;height:42px!important;max-width:42px!important;flex-basis:42px!important}
+#ciao-miniapp-root .cw44-mine-grid .cwpred-team-name{width:100%!important;min-height:26px!important;display:flex!important;align-items:flex-start!important;justify-content:center!important;font-size:10.5px!important;line-height:1.2!important;text-align:center!important;overflow:hidden!important}
+#ciao-miniapp-root .cw44-mine-grid .cwpred-mine-primary{width:100%!important;min-height:52px!important;box-sizing:border-box!important;padding:8px 4px!important}
+#ciao-miniapp-root .cw44-mine-grid .cwpred-mine-primary b{font-variant-numeric:tabular-nums!important}
+#ciao-miniapp-root .cw44-mine-grid .cwpred-mine-result-strip{min-height:34px!important;margin-top:7px!important;padding-top:8px!important}
+@media(max-width:390px){
+  #ciao-miniapp-root .cw44-mine-grid{padding:11px 9px!important}
+  #ciao-miniapp-root .cw44-mine-grid .cwpred-mine-matchline{grid-template-columns:minmax(0,1fr) 90px minmax(0,1fr)!important;gap:5px!important}
+  #ciao-miniapp-root .cw44-mine-grid .cwpred-team-logo,#ciao-miniapp-root .cw44-mine-grid .cwpred-team .logo{width:39px!important;height:39px!important;max-width:39px!important;flex-basis:39px!important}
+  #ciao-miniapp-root .cw44-mine-grid .cwpred-team-name{font-size:10px!important}
+}
+
+/* Club profile: compact route to the full match list */
+#ciao-miniapp-root .cw44-no-matches-tab .cw23-club-tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+#ciao-miniapp-root .cw44-no-matches-tab:not(.cw42-club-scope-overall) .cw23-club-tabs{display:flex!important;justify-content:center!important}
+#ciao-miniapp-root .cw44-no-matches-tab:not(.cw42-club-scope-overall) .cw23-club-tabs .cw16-club-tab{flex:0 1 180px!important;max-width:180px!important}
+#ciao-miniapp-root .cw44-club-matches-action{display:flex;justify-content:flex-end;margin:-2px 2px 12px}
+#ciao-miniapp-root .cw44-club-matches-action button{min-height:34px;padding:0 12px;border:1px solid var(--club-accent-faint,rgba(118,140,255,.16));border-radius:12px;background:linear-gradient(180deg,var(--club-accent-faint,rgba(118,140,255,.08)),rgba(255,255,255,.025));color:#b9c5e3;font:850 9px/1 Manrope,sans-serif;box-shadow:none}
+#ciao-miniapp-root .cw44-club-matches-action button span{margin-left:5px;color:var(--club-accent-light,#aab8ff);font-size:13px}
+#ciao-miniapp-root .cw44-club-matches-action button:active{transform:scale(.975)}
+
+/* Coppa Italia: vertical mobile-first bracket */
+#ciao-miniapp-root .cw44-coppa-vertical{overflow:visible!important;margin:0!important;padding:0 0 8px!important;scroll-snap-type:none!important}
+#ciao-miniapp-root .cw44-coppa-vertical .cwtt-bracket{display:grid!important;width:100%!important;min-width:0!important;min-height:0!important;gap:16px!important}
+#ciao-miniapp-root .cw44-coppa-vertical .cwtt-round{display:block!important;width:100%!important;min-width:0!important;flex:none!important}
+#ciao-miniapp-root .cw44-coppa-vertical .cwtt-round header{min-height:32px!important;padding:0 4px 7px!important}
+#ciao-miniapp-root .cw44-coppa-vertical .cwtt-round header b{font-size:13px!important}
+#ciao-miniapp-root .cw44-coppa-vertical .cwtt-round-matches{display:grid!important;grid-template-columns:1fr!important;gap:8px!important;padding:8px 0 0!important}
+#ciao-miniapp-root .cw44-coppa-vertical .cwtt-bracket-match{width:100%!important;min-height:76px!important;padding:9px 10px!important;border-radius:16px!important;background:linear-gradient(180deg,rgba(15,27,59,.98),rgba(7,15,34,.98))!important}
+#ciao-miniapp-root .cw44-coppa-vertical .cwtt-bracket-match[role="button"]{border-color:rgba(var(--cwtt2-rgb,21,148,87),.18)!important}
+#ciao-miniapp-root .cw44-coppa-vertical .cwtt-bracket-team{grid-template-columns:23px minmax(0,1fr) 28px!important;min-height:28px!important;gap:7px!important;padding:2px 3px!important;cursor:default!important}
+#ciao-miniapp-root .cw44-coppa-vertical .cwtt-bracket-team b{font-size:10.5px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+#ciao-miniapp-root .cw44-coppa-vertical .cwtt-bracket-team strong{font-size:12px!important}
+#ciao-miniapp-root .cw44-coppa-vertical .cwtt-bracket-logo,#ciao-miniapp-root .cw44-coppa-vertical .cwtt-bracket-dot{width:22px!important;height:22px!important}
+#ciao-miniapp-root .cw44-coppa-vertical .cwtt-bracket-status{font-size:8px!important;margin-bottom:5px!important}
+#ciao-miniapp-root .cw44-coppa-vertical .cwtt-bracket-placeholder{min-height:58px!important}
+
+/* Shot map: one attacking half, enlarged */
+#ciao-miniapp-root .mc-pitch.cw44-shotmap-half{position:relative!important;width:min(100%,430px)!important;max-width:430px!important;aspect-ratio:68/52.5!important;min-height:0!important;margin:0 auto!important;border-radius:20px!important;overflow:hidden!important;background:repeating-linear-gradient(0deg,rgba(35,105,86,.68) 0 20%,rgba(27,88,74,.72) 20% 40%)!important;border:1px solid rgba(120,200,177,.28)!important}
+#ciao-miniapp-root .mc-pitch.cw44-shotmap-half::before{content:''!important;position:absolute!important;left:0!important;right:0!important;bottom:0!important;top:auto!important;width:auto!important;height:1px!important;background:rgba(225,255,245,.30)!important}
+#ciao-miniapp-root .mc-pitch.cw44-shotmap-half::after{content:''!important;position:absolute!important;left:50%!important;top:0!important;width:70px!important;height:24px!important;border:1px solid rgba(225,255,245,.28)!important;border-top:0!important;border-radius:0 0 70px 70px!important;transform:translateX(-50%)!important}
+#ciao-miniapp-root .cw44-shotmap-half .cw212-penalty.top{display:block!important;position:absolute!important;left:22%!important;right:22%!important;top:0!important;height:42%!important;border:1px solid rgba(225,255,245,.30)!important;border-top:0!important;border-radius:0 0 8px 8px!important}
+#ciao-miniapp-root .cw44-shotmap-half .cw212-six.top{display:block!important;position:absolute!important;left:36%!important;right:36%!important;top:0!important;height:17%!important;border:1px solid rgba(225,255,245,.30)!important;border-top:0!important;border-radius:0 0 6px 6px!important}
+#ciao-miniapp-root .cw44-shotmap-half .mc-shot{z-index:4!important;box-shadow:0 0 0 2px rgba(3,8,23,.68),0 4px 12px rgba(0,0,0,.38)!important}
+#ciao-miniapp-root .cw44-shotmap-half .mc-shot.selected{z-index:7!important}
+@media(max-width:390px){#ciao-miniapp-root .mc-pitch.cw44-shotmap-half{width:100%!important;border-radius:17px!important}}
+</style>
+<!-- /ciao-ui-refinements -->
 </head>
 <body class="ciao-pronostici-page"><div id="cw225-start-cover"><div class="cw225-start-inner"><b>Ciao, Web!</b><div class="cw225-italy-loader" aria-hidden="true"></div><span>Загружаем последние данные</span></div></div>
 <!-- Ciao, Web! Mini App v7 — detached from Tilda shell -->
@@ -5918,6 +5976,121 @@ function __cw43ApplyProfileTheme(){
 const __cw43AfterRenderBase=__cw38AfterRender;
 __cw38AfterRender=function(){const out=__cw43AfterRenderBase();requestAnimationFrame(()=>{__cw43ApplyProfileTheme();if(clubViewId){main?.querySelectorAll?.('[data-club-tab="overview"]')?.forEach?.(el=>el.remove())}});return out};
 /* /ciao-v43-loader-h2h-profile-stability */
+/* Ciao UI refinements: H2H names, prediction alignment, club match CTA, Coppa bracket, half-pitch shot map. */
+
+function __cw44H2HDisplayName(team,d){
+  const raw=String(__cw38TeamName(team)||'').trim();
+  if(raw&&!/^\d+$/.test(raw))return typeof __cwRuTeamName==='function'?__cwRuTeamName(raw):raw;
+  const refs=__cw42H2HTeamRefs(team||{}),m=d?.match||{},candidates=[m?.home,m?.away].filter(Boolean);
+  for(const current of candidates){
+    const cur=__cw42H2HTeamRefs(current||{});
+    if((refs.provider&&cur.provider&&refs.provider===cur.provider)||(refs.local&&cur.local&&refs.local===cur.local)){
+      const name=String(current?.name||current?.team_name||current?.short_name||'').trim();
+      if(name)return typeof __cwRuTeamName==='function'?__cwRuTeamName(name):name;
+    }
+  }
+  if(refs.provider&&typeof __cw16TeamCatalog==='function'){
+    try{
+      const known=(__cw16TeamCatalog()||[]).find(x=>Number(x?.bsd_team_id??x?.provider_team_id)===Number(refs.provider));
+      if(known?.name)return typeof __cwRuTeamName==='function'?__cwRuTeamName(known.name):String(known.name);
+    }catch(_e){}
+  }
+  if(refs.local&&typeof __cw16TeamById==='function'){
+    try{
+      const known=__cw16TeamById(refs.local);
+      if(known?.name)return typeof __cwRuTeamName==='function'?__cwRuTeamName(known.name):String(known.name);
+    }catch(_e){}
+  }
+  return raw||'Команда';
+}
+
+__cw38H2HHtml=function(d){
+  const mid=Number(d?.match?.id||matchViewId)||0,cache=__cw38H2HCache.get(mid),rows=__cw38H2HRows(d,cache?.matches||[]),home=d?.match?.home||{};
+  let w=0,dr=0,l=0;
+  for(const r of rows){const host=__cw42SameTeam(r.sides.home,home),a=r.score[0],b=r.score[1],mine=host?a:b,opp=host?b:a;mine>opp?w++:mine<opp?l++:dr++}
+  const state=cache?.loading?'Загружаем последние встречи…':rows.length?'Последние очные встречи':'Данных об очных встречах пока недостаточно';
+  const list=rows.map(r=>{const dt=r.date?new Intl.DateTimeFormat('ru-RU',{day:'2-digit',month:'2-digit',year:'2-digit'}).format(new Date(r.date)):'';return `<div class="cw38-h2h-row"><span>${__cw38Esc(dt)}</span><b>${__cw38Esc(__cw44H2HDisplayName(r.sides.home,d))}</b><strong>${r.score[0]}:${r.score[1]}</strong><b>${__cw38Esc(__cw44H2HDisplayName(r.sides.away,d))}</b></div>`}).join('');
+  return `<section class="mc-section cw38-h2h" data-cw38-h2h><div class="mc-section-head"><div class="mc-section-title">H2H</div><div class="mc-section-note">${rows.length?`${w} побед · ${dr} ничьих · ${l} поражений`:state}</div></div>${list?`<div class="cw38-h2h-list">${list}</div>`:`<div class="cw38-inline-empty">${__cw38Esc(state)}</div>`}</section>`;
+};
+
+/* My predictions: keep all cards on one stable grid. */
+try{
+  const extMine=__cwPredExternalMineCard,serieMine=__cwPredSerieMineCard;
+  __cwPredExternalMineCard=function(m){return String(extMine(m)).replace('cwpred-mine-card--v2','cwpred-mine-card--v2 cw44-mine-grid')};
+  __cwPredSerieMineCard=function(m){return String(serieMine(m)).replace('cwpred-mine-card--v2','cwpred-mine-card--v2 cw44-mine-grid')};
+}catch(_e){}
+
+/* Club profile: overview stays the default content, but Matches is a compact action instead of a large tab. */
+try{
+  const overviewBase=__cw16OverviewHtml;
+  __cw16OverviewHtml=function(d){
+    let html=String(overviewBase(d)||'');
+    const action='<div class="cw44-club-matches-action"><button type="button" data-cw44-all-matches>Все матчи <span>→</span></button></div>';
+    const leaders='<section class="cw16-club-section"><div class="cw16-club-section-head"><div class="cw16-club-section-title">Лидеры</div>';
+    return html.includes(leaders)?html.replace(leaders,action+leaders):html+action;
+  };
+  const clubHtmlBase=clubProfileHtml;
+  clubProfileHtml=function(d){
+    let html=String(clubHtmlBase(d)||'');
+    html=html.replace(/<button\b[^>]*data-club-tab="matches"[^>]*>[\s\S]*?<\/button>/,'');
+    return html.replace('cw42-no-overview-tab','cw42-no-overview-tab cw44-no-matches-tab');
+  };
+}catch(_e){}
+
+if(!root.dataset.cw44ClubMatchesBound){
+  root.dataset.cw44ClubMatchesBound='1';
+  root.addEventListener('click',async e=>{
+    const btn=e.target?.closest?.('[data-cw44-all-matches]');if(!btn||!clubViewId)return;
+    e.preventDefault();
+    clubViewTab='matches';render();
+    if(!__cw16Loaded('matches'))try{await loadClubSections(['matches'])}catch(_e){}
+  });
+}
+
+/* Tables: short Coppa label and a vertical mobile bracket whose match cards open Match Center. */
+const __cw44TablesKiLabel='КИ';
+try{const item=__CWTT2_COMPS.find(x=>x?.[0]==='coppa_italia');if(item)item[1]=__cw44TablesKiLabel}catch(_e){}
+function __cw44BracketTeam(team,score,winner){
+  if(!team)return '<span class="cwtt-bracket-team"><span class="cwtt-bracket-dot"></span><b>—</b><strong>—</strong></span>';
+  const t={...team,name:typeof __cwRuTeamName==='function'?__cwRuTeamName(team?.name):team?.name},id=String(t?.local_custom_emoji_id||'').trim(),crest=typeof __cwTt2ProviderCrest==='function'?__cwTt2ProviderCrest(t):String(t?.crest_url||''),name=String(t?.name||'—');
+  const logo=id?'<img class="cwtt-bracket-logo" loading="lazy" decoding="async" src="'+API_BASE+'?asset=emoji&id='+encodeURIComponent(id)+'" alt="">':crest?'<img class="cwtt-bracket-logo" loading="lazy" decoding="async" src="'+__cwTtEsc(crest)+'" alt="">':'<span class="cwtt-bracket-dot"></span>';
+  return '<span class="cwtt-bracket-team '+(winner?'winner':'')+'">'+logo+'<b>'+__cwTtEsc(name)+'</b><strong>'+(score==null?'—':Number(score))+'</strong></span>';
+}
+__cwTtBracketTeam=__cw44BracketTeam;
+try{
+  __cwTt2Bracket=function(p){const r=Array.isArray(p?.rounds)?p.rounds:[];return r.length?'<div class="cwtt2-caption"><b>Кубок Италии · сетка</b><span>'+__cwTtEsc(__cwTtUpdated(p))+'</span></div><div class="cwtt-bracket-scroll cwtt2-bracket-scroll cw44-coppa-vertical"><div class="cwtt-bracket">'+r.map(__cwTtBracketRound).join('')+'</div></div>':'<div class="cwtt2-empty">Сетка пока недоступна</div>'};
+}catch(_e){}
+if(!root.dataset.cw44CoppaMatchBound){
+  root.dataset.cw44CoppaMatchBound='1';
+  root.addEventListener('click',e=>{
+    const card=e.target?.closest?.('.cw44-coppa-vertical [data-cwtt-match]');if(!card)return;
+    e.preventDefault();e.stopPropagation();
+    const id=Number(card.dataset.cwttMatch)||0;if(id>0)openMatchCenter(id,'external');
+  },true);
+  root.addEventListener('keydown',e=>{
+    const card=e.target?.closest?.('.cw44-coppa-vertical [data-cwtt-match]');if(!card||(e.key!=='Enter'&&e.key!==' '))return;
+    e.preventDefault();e.stopPropagation();const id=Number(card.dataset.cwttMatch)||0;if(id>0)openMatchCenter(id,'external');
+  },true);
+}
+
+/* Shot map: fold both teams onto the same attacking half and use the full card width. */
+function __cw44HalfPitchPoint(s){
+  const x=Math.max(0,Math.min(100,Number(s?.pos?.x??s?.x??50)||0)),y=Math.max(0,Math.min(100,Number(s?.pos?.y??s?.y??50)||0)),home=s?.home===true||s?.is_home===true;
+  const attackingX=home?x:100-x,depth=Math.max(0,Math.min(50,100-attackingX));
+  return {left:Math.max(2,Math.min(98,home?100-y:y)),top:Math.max(2,Math.min(98,depth*2))};
+}
+function __cw44ShotmapHtml(d){
+  const shots=Array.isArray(d?.stats?.shotmap)?d.stats.shotmap:[];if(!shots.length)return '<div class="empty">Карта ударов пока недоступна</div>';
+  const short=t=>String(t?.short_name||t?.name||'').trim().slice(0,3).toUpperCase()||'—';
+  const dots=shots.map((s,i)=>{const p=__cw44HalfPitchPoint(s),home=s?.home===true||s?.is_home===true,goal=!!s?.is_goal||String(s?.type||'').toLowerCase().includes('goal'),xg=Number(s?.xg??s?.expected_goals),size=Number.isFinite(xg)?Math.max(9,Math.min(16,9+xg*9)):10;return `<button type="button" aria-label="Удар ${i+1}" class="mc-shot ${home?'home':'away'} ${goal?'goal':''}" data-cw2151-shot="${i}" style="left:${p.left}%;top:${p.top}%;width:${size}px;height:${size}px" title="${esc(`${s?.min??s?.minute??''}′ · xG ${Number.isFinite(xg)?xg.toFixed(2):'—'}`)}"></button>`}).join('');
+  return `<div class="mc-chart-pad"><div class="mc-pitch cw44-shotmap-half"><span class="cw212-penalty top"></span><span class="cw212-six top"></span>${dots}</div><div class="cw212-shot-legend"><span><i></i>${esc(short(d?.match?.home))}</span><span><i class="away"></i>${esc(short(d?.match?.away))}</span><span><i class="goal"></i>гол</span></div><div class="cw2151-shot-detail" data-cw2151-shot-detail>${__cw2151ShotDetailHtml(null,d)}</div></div>`;
+}
+__cw2151ShotmapHtml=__cw44ShotmapHtml;
+__cw212ShotmapHtml=__cw44ShotmapHtml;
+__cw14ShotmapHtml=__cw44ShotmapHtml;
+
+/* End Ciao UI refinements. */
+
 /* /ciao-v36-match-center-stability-20260910 */
 
 /* ===== /Ciao, Web! v22.5 product polish layer ===== */
