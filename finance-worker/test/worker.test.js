@@ -14,6 +14,8 @@ function deps(overrides = {}) {
     listEvents: async () => [{ id: 'v1' }],
     getEventDetail: async (id) => id === 'v1' ? { event: { id } } : null,
     listReferences: async () => ({ units: [] }),
+    createReference: async (body) => ({ id: 'ref-1', ...body }),
+    archiveReference: async (body) => ({ id: body.id, is_active: false }),
     createEmployee: async (body) => ({ id: 'e2', ...body }),
     createEvent: async (body) => body,
     createEventJob: async (body) => body,
@@ -49,6 +51,25 @@ test('returns reference dictionaries for an authorized admin', async () => {
   const response = await worker.fetch(req('/api/qpf/references'), env);
   assert.equal(response.status, 200);
   assert.deepEqual((await response.json()).data.units, [{ code: 'moscow' }]);
+});
+
+test('creates an editable reference through the protected API', async () => {
+  let received;
+  const worker = createWorker(deps({ createReference: async (body) => { received = body; return { id: 'c1', name: body.name }; } }));
+  const body = { kind: 'regionCity', name: 'Казань' };
+  const response = await worker.fetch(req('/api/qpf/references', { method: 'POST', body: JSON.stringify(body) }), env);
+  assert.equal(response.status, 201);
+  assert.deepEqual(received, body);
+});
+
+test('archives a reference instead of deleting it', async () => {
+  let received;
+  const worker = createWorker(deps({ archiveReference: async (body) => { received = body; return { id: body.id, is_active: false }; } }));
+  const body = { kind: 'duty', id: 'd1' };
+  const response = await worker.fetch(req('/api/qpf/references/archive', { method: 'POST', body: JSON.stringify(body) }), env);
+  assert.equal(response.status, 200);
+  assert.deepEqual(received, body);
+  assert.equal((await response.json()).data.is_active, false);
 });
 
 test('returns one event detail by id', async () => {
