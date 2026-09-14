@@ -101,6 +101,16 @@ export function createWorker(deps = {}) {
           const body = await readJsonBody(request);
           if (!body) return json({ ok: false, error: 'invalid_json' }, 400);
 
+          if (url.pathname === '/api/qpf/references') {
+            const data = await deps.createReference(body, env, auth.admin);
+            return json({ ok: true, data }, 201);
+          }
+
+          if (url.pathname === '/api/qpf/references/archive') {
+            const data = await deps.archiveReference(body, env, auth.admin);
+            return json({ ok: true, data });
+          }
+
           const createRoutes = {
             '/api/qpf/employees': deps.createEmployee,
             '/api/qpf/events': deps.createEvent,
