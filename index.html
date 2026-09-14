@@ -4629,7 +4629,7 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
   async function __cw30RatingLoad(comp,{force=false}={}){comp=__cw30RatingOrder.includes(String(comp))?String(comp):'all';if(__cw30RatingLoading&&!force)return false;if(!force&&__cw30RatingLoadedCompetition===comp)return true;const version=++__cw30RatingRequestVersion,previous=__cw30RatingLoadedCompetition;__cw30RatingCompetition=comp;__cw30RatingLoading=true;__cw30RatingError='';render();try{const r=await __cw18Post({action:'standings_scope',competition:comp});if(version!==__cw30RatingRequestVersion)return false;__cw30RatingRows=Array.isArray(r?.standings)?r.standings:[];__cw30RatingMeta=r?.standings_meta||{};__cw30RatingLoadedCompetition=comp;__cw30RatingLoading=false;render();return true}catch(e){if(version!==__cw30RatingRequestVersion)return false;__cw30RatingLoading=false;__cw30RatingError=String(e?.message||'rating_failed');if(previous){__cw30RatingCompetition=previous}render();return false}}
   const __cw47RatingLoadBase=__cw30RatingLoad;
   __cw30RatingLoad=async function(comp,opt={}){const ok=await __cw47RatingLoadBase(comp,opt);if(ok)__cw47RatingFreshAt=Date.now();return ok};
-  async function __cw47RefreshRatingVisible(force=false){if(tab!=='table'||document.hidden||__cw30RatingLoading)return false;const fresh=__cw30RatingLoadedCompetition===__cw30RatingCompetition&&Date.now()-Number(__cw47RatingFreshAt||0)<__CW47_RATING_TTL;if(fresh&&!force)return false;return await __cw30RatingLoad(__cw30RatingCompetition,{force:true})}
+  async function __cw47RefreshRatingVisible(force=false){if(tab!=='table'||__cw30RatingLoading)return false;const fresh=__cw30RatingLoadedCompetition===__cw30RatingCompetition&&Date.now()-Number(__cw47RatingFreshAt||0)<__CW47_RATING_TTL;if(fresh&&!force)return false;return await __cw30RatingLoad(__cw30RatingCompetition,{force:true})}
   table=function(){return __cw30RatingHtml()};
   const __cw30RatingBaseBind=bind;
   bind=function(){__cw30RatingBaseBind();root.querySelectorAll('[data-cw30-rating-comp]').forEach(b=>b.onclick=()=>{const k=String(b.dataset.cw30RatingComp||'all');if(k!==__cw30RatingCompetition)__cw30RatingLoad(k)});root.querySelectorAll('[data-cw30-rating-retry]').forEach(b=>b.onclick=()=>__cw30RatingLoad(__cw30RatingCompetition,{force:true}));root.querySelectorAll('[data-cw30-predictor]').forEach(b=>b.onclick=()=>__cw18OpenPredictor(Number(b.dataset.cw30Predictor)))};
@@ -4659,7 +4659,7 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
   let __cw47PredictorFreshAt=0;
   const __cw47PredictorFetchBase=__cw31FetchProfile;
   __cw31FetchProfile=async function(opts={}){const ok=await __cw47PredictorFetchBase(opts);if(ok&&!opts?.append)__cw47PredictorFreshAt=Date.now();return ok};
-  async function __cw47RefreshPredictorVisible(force=false){if(!__cw31PredictorId||document.hidden||__cw31PredictorLoading||__cw31PredictorMoreLoading)return false;const fresh=Date.now()-Number(__cw47PredictorFreshAt||0)<__CW47_RATING_TTL;if(fresh&&!force)return false;return await __cw31FetchProfile()}
+  async function __cw47RefreshPredictorVisible(force=false){if(!__cw31PredictorId||__cw31PredictorLoading||__cw31PredictorMoreLoading)return false;const fresh=Date.now()-Number(__cw47PredictorFreshAt||0)<__CW47_RATING_TTL;if(fresh&&!force)return false;return await __cw31FetchProfile()}
   function __cw31OpenPredictor(id,competition=__cw30RatingCompetition){id=Number(id);if(!id)return;__cw31RatingScroll=Number(main?.scrollTop)||0;__cw31PredictorId=id;__cw31PredictorCompetition=__cw30RatingOrder.includes(String(competition))?String(competition):'all';__cw31PredictorData=null;__cw31PredictorError='';__cw31Mount();__cw31FetchProfile()}
   function __cw31ClosePredictor(){__cw31PredictorRequestVersion++;__cw31PredictorId=0;__cw31PredictorData=null;__cw31PredictorError='';root.querySelector('[data-cw31-overlay]')?.remove();root.classList.remove('cw31-profile-open');requestAnimationFrame(()=>{if(main)main.scrollTop=__cw31RatingScroll})}
   async function __cw31SwitchCompetition(k){if(!__cw30RatingOrder.includes(String(k))||k===__cw31PredictorCompetition)return;__cw31PredictorCompetition=String(k);__cw31PredictorData=null;__cw31PredictorError='';__cw31PredictorLoading=true;__cw31PatchBody();await __cw31FetchProfile()}
@@ -6085,6 +6085,51 @@ try{
 
 /* /ciao-v36-match-center-stability-20260910 */
 
+/* ciao-v49-rating-foreground-refresh-20260914 */
+(function(){
+  let __cw49LastBeat=0;
+  let __cw49Busy=false;
+
+  async function __cw49ForceRatingNow(reason){
+    if(typeof tab==='undefined'||tab!=='table'||__cw49Busy)return false;
+    __cw49Busy=true;
+    try{
+      if(typeof __cw31PredictorId!=='undefined'&&__cw31PredictorId&&typeof __cw31FetchProfile==='function'){
+        return await __cw31FetchProfile();
+      }
+      if(typeof __cw30RatingLoad==='function'){
+        const comp=(typeof __cw30RatingCompetition==='string'&&__cw30RatingCompetition)||'all';
+        return await __cw30RatingLoad(comp,{force:true,reason:reason||'foreground'});
+      }
+      return false;
+    }catch(_e){return false}
+    finally{__cw49Busy=false}
+  }
+  window.__cw49ForceRatingNow=__cw49ForceRatingNow;
+
+  const ratingNav=root?.querySelector?.('.nav [data-tab="table"]');
+  if(ratingNav&&!ratingNav.hasAttribute('data-cw49-rating-refresh-bound')){
+    ratingNav.setAttribute('data-cw49-rating-refresh-bound','1');
+    ratingNav.addEventListener('click',()=>setTimeout(()=>__cw49ForceRatingNow('nav'),0));
+  }
+
+  window.addEventListener('focus',()=>setTimeout(()=>__cw49ForceRatingNow('focus'),0),{passive:true});
+  window.addEventListener('pageshow',()=>setTimeout(()=>__cw49ForceRatingNow('pageshow'),0),{passive:true});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(()=>__cw49ForceRatingNow('visible'),0)},{passive:true});
+  try{window.Telegram?.WebApp?.onEvent?.('activated',()=>setTimeout(()=>__cw49ForceRatingNow('telegram-activated'),0))}catch(_e){}
+
+  function __cw49RatingHeartbeat(ts){
+    try{
+      if(typeof tab!=='undefined'&&tab==='table'&&ts-__cw49LastBeat>=10000){
+        __cw49LastBeat=ts;
+        Promise.resolve(__cw49ForceRatingNow('raf')).catch(()=>{});
+      }
+    }catch(_e){}
+    requestAnimationFrame(__cw49RatingHeartbeat);
+  }
+  requestAnimationFrame(__cw49RatingHeartbeat);
+})();
+
 /* ===== /Ciao, Web! v22.5 product polish layer ===== */
 
 })();
@@ -6676,5 +6721,7 @@ html,body{max-width:100vw!important;overflow-x:hidden!important}
 <!-- /ciao-ui-refinements -->
 <!-- ciao-v47-rating-final-cache-fix -->
 /* ciao-v48-rating-refresh-scheduler-fix-20260914 */
+
+
 </body>
 </html>
