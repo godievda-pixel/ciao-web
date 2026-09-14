@@ -2052,6 +2052,7 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
     if(!quiet)main.innerHTML=LOADER_HTML;
     try{
       S=await api({action:'state',round});
+      await __cw52SyncCanonicalRating(true);
       clearSubscriptionGate();
       diag('api-done');
       selectedRound=S.selected_round;
@@ -6179,6 +6180,45 @@ try{
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(()=>__cw50RefreshRating('visible',false),0)},{passive:true});
   try{window.Telegram?.WebApp?.onEvent?.('activated',()=>setTimeout(()=>__cw50RefreshRating('telegram-activated',false),0))}catch(_e){}
 })();
+
+/* ciao-v52-home-profile-canonical-rating-20260914 */
+let __cw52RatingSyncedAt=0;
+let __cw52RatingBusy=null;
+async function __cw52SyncCanonicalRating(force=false){
+  if(!S?.user?.id)return false;
+  const now=Date.now();
+  if(!force&&now-Number(__cw52RatingSyncedAt||0)<60000)return false;
+  if(__cw52RatingBusy)return __cw52RatingBusy;
+  __cw52RatingBusy=(async()=>{
+    try{
+      const r=await __cw18Post({action:'standings_scope',competition:'all'});
+      const rows=Array.isArray(r?.standings)?r.standings:[];
+      const me=rows.find(x=>Number(x?.id)===Number(S?.user?.id));
+      if(!me)return false;
+      S.stats={...(S.stats||{}),points:Number(me.points)||0,exact:Number(me.exact)||0,successful:Number(me.successful)||0,calculated:Number(me.calculated)||0,success_rate:Number(me.success_rate)||0,streak:Number(me.streak)||0,rank:Number(me.rank)||0,trend:Number(me.trend)||0};
+      S.standings=rows;
+      S.standings_meta=r?.standings_meta||S.standings_meta||{};
+      __cw52RatingSyncedAt=Date.now();
+      return true;
+    }catch(_e){return false}
+    finally{__cw52RatingBusy=null}
+  })();
+  return __cw52RatingBusy;
+}
+function __cw52RefreshHomeProfile(force=false){
+  if(tab!=='predict'&&tab!=='profile')return;
+  setTimeout(()=>Promise.resolve(__cw52SyncCanonicalRating(force)).then(changed=>{
+    if(changed&&(tab==='predict'||tab==='profile'))render();
+  }).catch(()=>{}),0);
+}
+root?.querySelectorAll?.('[data-tab="predict"],[data-tab="profile"]').forEach(btn=>{
+  if(btn.dataset.cw52RatingSyncBound==='1')return;
+  btn.dataset.cw52RatingSyncBound='1';
+  btn.addEventListener('click',()=>__cw52RefreshHomeProfile(false));
+});
+window.addEventListener('focus',()=>__cw52RefreshHomeProfile(false),{passive:true});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)__cw52RefreshHomeProfile(false)},{passive:true});
+try{window.Telegram?.WebApp?.onEvent?.('activated',()=>__cw52RefreshHomeProfile(false))}catch(_e){}
 
 /* ===== /Ciao, Web! v22.5 product polish layer ===== */
 
