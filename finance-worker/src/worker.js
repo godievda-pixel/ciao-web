@@ -5,6 +5,16 @@ function json(data, status = 200) {
   });
 }
 
+async function readJsonBody(request) {
+  try {
+    const value = await request.json();
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+    return value;
+  } catch {
+    return null;
+  }
+}
+
 async function authenticateAdmin(request, env, deps) {
   const initData = request.headers.get('x-telegram-init-data');
   if (!initData) {
@@ -71,6 +81,34 @@ export function createWorker(deps = {}) {
             to: url.searchParams.get('to'),
           }, env, auth.admin);
           return json({ ok: true, data });
+        }
+
+        if (request.method === 'POST') {
+          const body = await readJsonBody(request);
+          if (!body) return json({ ok: false, error: 'invalid_json' }, 400);
+
+          const createRoutes = {
+            '/api/qpf/employees': deps.createEmployee,
+            '/api/qpf/events': deps.createEvent,
+            '/api/qpf/event-jobs': deps.createEventJob,
+            '/api/qpf/incomes': deps.createIncome,
+            '/api/qpf/expenses': deps.createExpense,
+            '/api/qpf/accruals': deps.createAccrual,
+            '/api/qpf/payments': deps.createPayment,
+          };
+          const creator = createRoutes[url.pathname];
+          if (creator) {
+            const data = await creator(body, env, auth.admin);
+            return json({ ok: true, data }, 201);
+          }
+
+          if (url.pathname === '/api/qpf/annul') {
+            if (typeof body.reason !== 'string' || !body.reason.trim()) {
+              return json({ ok: false, error: 'annul_reason_required' }, 400);
+            }
+            const data = await deps.annulEntity({ ...body, reason: body.reason.trim() }, env, auth.admin);
+            return json({ ok: true, data });
+          }
         }
       }
 
