@@ -6,10 +6,10 @@ import {
   listEventsWithFinancials,
 } from './supabase.js';
 import { listReferences } from './references.js';
+import { createEventJobWithDuties } from './eventJobs.js';
 import {
   createEmployee,
   createEvent,
-  createEventJob,
   createIncome,
   createExpense,
   createAccrual,
@@ -27,7 +27,7 @@ const app = createWorker({
   listReferences: (env) => listReferences(env),
   createEmployee: (payload, env, admin) => createEmployee(payload, env, admin),
   createEvent: (payload, env, admin) => createEvent(payload, env, admin),
-  createEventJob: (payload, env, admin) => createEventJob(payload, env, admin),
+  createEventJob: (payload, env, admin) => createEventJobWithDuties(payload, env, admin),
   createIncome: (payload, env, admin) => createIncome(payload, env, admin),
   createExpense: (payload, env, admin) => createExpense(payload, env, admin),
   createAccrual: (payload, env, admin) => createAccrual(payload, env, admin),
