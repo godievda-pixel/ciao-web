@@ -74,6 +74,15 @@ export function createWorker(deps = {}) {
           return json({ ok: true, data });
         }
 
+        const eventDetailMatch = request.method === 'GET'
+          ? url.pathname.match(/^\/api\/qpf\/events\/([^/]+)$/)
+          : null;
+        if (eventDetailMatch) {
+          const data = await deps.getEventDetail(eventDetailMatch[1], env, auth.admin);
+          if (!data) return json({ ok: false, error: 'event_not_found' }, 404);
+          return json({ ok: true, data });
+        }
+
         if (request.method === 'GET' && url.pathname === '/api/qpf/events') {
           const data = await deps.listEvents({
             unit: url.searchParams.get('unit'),
