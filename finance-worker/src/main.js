@@ -5,6 +5,7 @@ import {
   listEmployeesWithBalances,
   listEventsWithFinancials,
 } from './supabase.js';
+import { listReferences } from './references.js';
 import {
   createEmployee,
   createEvent,
@@ -23,6 +24,7 @@ const app = createWorker({
   getDashboard: (query, env) => getDashboardSummary(query, env),
   listEmployees: (env) => listEmployeesWithBalances(env),
   listEvents: (query, env) => listEventsWithFinancials(query, env),
+  listReferences: (env) => listReferences(env),
   createEmployee: (payload, env, admin) => createEmployee(payload, env, admin),
   createEvent: (payload, env, admin) => createEvent(payload, env, admin),
   createEventJob: (payload, env, admin) => createEventJob(payload, env, admin),
