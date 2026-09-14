@@ -6,6 +6,7 @@ import {
   listEventsWithFinancials,
 } from './supabase.js';
 import { listReferences } from './references.js';
+import { createReference, archiveReference } from './referenceMutations.js';
 import { createEventJobWithDuties } from './eventJobs.js';
 import { getEventDetail } from './eventDetail.js';
 import {
@@ -27,6 +28,8 @@ const app = createWorker({
   listEvents: (query, env) => listEventsWithFinancials(query, env),
   getEventDetail: (eventId, env) => getEventDetail(eventId, env),
   listReferences: (env) => listReferences(env),
+  createReference: (payload, env, admin) => createReference(payload, env, admin),
+  archiveReference: (payload, env, admin) => archiveReference(payload, env, admin),
   createEmployee: (payload, env, admin) => createEmployee(payload, env, admin),
   createEvent: (payload, env, admin) => createEvent(payload, env, admin),
   createEventJob: (payload, env, admin) => createEventJobWithDuties(payload, env, admin),
