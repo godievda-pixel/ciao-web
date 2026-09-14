@@ -6085,49 +6085,99 @@ try{
 
 /* /ciao-v36-match-center-stability-20260910 */
 
-/* ciao-v49-rating-foreground-refresh-20260914 */
+/* ciao-v50-rating-stable-refresh-20260914 */
+/* ciao-v51-rating-fullscan-rpc-20260914 */
 (function(){
-  let __cw49LastBeat=0;
-  let __cw49Busy=false;
+  const __CW50_RATING_TTL=60000;
+  const __CW51_REST='https://dkefzepiiudehhzbbrjn.supabase.co/rest/v1/rpc/';
+  const __CW51_PUBLISHABLE='sb_publishable_-kzzKkUBRn90k13RkvfiHg_R36R1Vhv';
+  let __cw50LastRefresh=0;
+  let __cw50Busy=false;
 
-  async function __cw49ForceRatingNow(reason){
-    if(typeof tab==='undefined'||tab!=='table'||__cw49Busy)return false;
-    __cw49Busy=true;
+  const __cw50PostBase=__cw18Post;
+  __cw18Post=function(body){
+    const action=String(body?.action||'');
+    const modernStandings=action==='standings_scope'&&Object.prototype.hasOwnProperty.call(body||{},'competition');
+    const predictor=action==='public_predictor';
+    if(!modernStandings&&!predictor)return __cw50PostBase(body);
+
+    const rpc=modernStandings?'ciao_rating_standings':'ciao_predictor_profile';
+    const payload=modernStandings
+      ? {p_competition:String(body?.competition||'all')}
+      : {
+          p_user_id:Number(body?.user_id)||0,
+          p_competition:String(body?.competition||'all'),
+          p_limit:Math.max(1,Math.min(50,Number(body?.history_limit)||20)),
+          p_offset:Math.max(0,Number(body?.history_cursor)||0)
+        };
+    return fetch(__CW51_REST+rpc,{
+      method:'POST',
+      cache:'no-store',
+      headers:{
+        'content-type':'application/json',
+        'apikey':__CW51_PUBLISHABLE,
+        'cache-control':'no-cache, no-store, max-age=0',
+        'pragma':'no-cache'
+      },
+      body:JSON.stringify(payload)
+    }).then(async r=>{
+      const j=await r.json().catch(()=>({}));
+      if(!r.ok||!j?.ok){const e=new Error(j?.error||'Не удалось выполнить запрос');e.status=r.status;throw e}
+      return j;
+    });
+  };
+
+  __cw30RatingEnsure=function(){
+    if(__cw30RatingLoading)return;
+    const stale=__cw30RatingLoadedCompetition!==__cw30RatingCompetition||Date.now()-Number(__cw47RatingFreshAt||0)>=__CW50_RATING_TTL;
+    if(!stale)return;
+    setTimeout(()=>__cw30RatingLoad(__cw30RatingCompetition,{force:__cw30RatingLoadedCompetition===__cw30RatingCompetition}),0);
+  };
+
+  __cw47RefreshRatingVisible=async function(force=false){
+    if(tab!=='table'||__cw30RatingLoading)return false;
+    const fresh=__cw30RatingLoadedCompetition===__cw30RatingCompetition&&Date.now()-Number(__cw47RatingFreshAt||0)<__CW50_RATING_TTL;
+    if(fresh&&!force)return false;
+    return await __cw30RatingLoad(__cw30RatingCompetition,{force:true});
+  };
+
+  __cw47RefreshPredictorVisible=async function(force=false){
+    if(!__cw31PredictorId||__cw31PredictorLoading||__cw31PredictorMoreLoading)return false;
+    const fresh=Date.now()-Number(__cw47PredictorFreshAt||0)<__CW50_RATING_TTL;
+    if(fresh&&!force)return false;
+    return await __cw31FetchProfile();
+  };
+
+  async function __cw50RefreshRating(reason,force=false){
+    if(typeof tab==='undefined'||tab!=='table'||__cw50Busy)return false;
+    const now=Date.now();
+    if(!force&&now-__cw50LastRefresh<__CW50_RATING_TTL)return false;
+    __cw50Busy=true;
     try{
+      let ok=false;
       if(typeof __cw31PredictorId!=='undefined'&&__cw31PredictorId&&typeof __cw31FetchProfile==='function'){
-        return await __cw31FetchProfile();
-      }
-      if(typeof __cw30RatingLoad==='function'){
+        ok=await __cw31FetchProfile();
+      }else if(typeof __cw30RatingLoad==='function'){
         const comp=(typeof __cw30RatingCompetition==='string'&&__cw30RatingCompetition)||'all';
-        return await __cw30RatingLoad(comp,{force:true,reason:reason||'foreground'});
+        ok=await __cw30RatingLoad(comp,{force:true,reason:reason||'foreground'});
       }
-      return false;
+      if(ok!==false)__cw50LastRefresh=Date.now();
+      return ok;
     }catch(_e){return false}
-    finally{__cw49Busy=false}
+    finally{__cw50Busy=false}
   }
-  window.__cw49ForceRatingNow=__cw49ForceRatingNow;
+  window.__cw50RefreshRating=__cw50RefreshRating;
 
   const ratingNav=root?.querySelector?.('.nav [data-tab="table"]');
-  if(ratingNav&&!ratingNav.hasAttribute('data-cw49-rating-refresh-bound')){
-    ratingNav.setAttribute('data-cw49-rating-refresh-bound','1');
-    ratingNav.addEventListener('click',()=>setTimeout(()=>__cw49ForceRatingNow('nav'),0));
+  if(ratingNav&&!ratingNav.hasAttribute('data-cw50-rating-refresh-bound')){
+    ratingNav.setAttribute('data-cw50-rating-refresh-bound','1');
+    ratingNav.addEventListener('click',()=>setTimeout(()=>__cw50RefreshRating('nav',true),0));
   }
 
-  window.addEventListener('focus',()=>setTimeout(()=>__cw49ForceRatingNow('focus'),0),{passive:true});
-  window.addEventListener('pageshow',()=>setTimeout(()=>__cw49ForceRatingNow('pageshow'),0),{passive:true});
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(()=>__cw49ForceRatingNow('visible'),0)},{passive:true});
-  try{window.Telegram?.WebApp?.onEvent?.('activated',()=>setTimeout(()=>__cw49ForceRatingNow('telegram-activated'),0))}catch(_e){}
-
-  function __cw49RatingHeartbeat(ts){
-    try{
-      if(typeof tab!=='undefined'&&tab==='table'&&ts-__cw49LastBeat>=10000){
-        __cw49LastBeat=ts;
-        Promise.resolve(__cw49ForceRatingNow('raf')).catch(()=>{});
-      }
-    }catch(_e){}
-    requestAnimationFrame(__cw49RatingHeartbeat);
-  }
-  requestAnimationFrame(__cw49RatingHeartbeat);
+  window.addEventListener('focus',()=>setTimeout(()=>__cw50RefreshRating('focus',false),0),{passive:true});
+  window.addEventListener('pageshow',()=>setTimeout(()=>__cw50RefreshRating('pageshow',false),0),{passive:true});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(()=>__cw50RefreshRating('visible',false),0)},{passive:true});
+  try{window.Telegram?.WebApp?.onEvent?.('activated',()=>setTimeout(()=>__cw50RefreshRating('telegram-activated',false),0))}catch(_e){}
 })();
 
 /* ===== /Ciao, Web! v22.5 product polish layer ===== */
