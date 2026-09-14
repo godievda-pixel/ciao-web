@@ -1,0 +1,33 @@
+name: QPF Finance tests
+
+on:
+  push:
+    branches: ["feat/qpf-telegram-auth"]
+    paths:
+      - "finance-worker/**"
+      - "finance-app/**"
+      - ".github/workflows/qpf-tests.yml"
+  pull_request:
+    paths:
+      - "finance-worker/**"
+      - "finance-app/**"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Worker tests
+        working-directory: finance-worker
+        run: npm test
+      - name: Frontend tests
+        working-directory: finance-app
+        run: npm test
+      - name: Frontend syntax
+        run: |
+          node --check finance-app/app.js
+          node --check finance-app/api.js
+          node --check finance-app/logic.js
