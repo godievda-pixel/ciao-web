@@ -83,6 +83,11 @@ export function createWorker(deps = {}) {
           return json({ ok: true, data });
         }
 
+        if (request.method === 'GET' && url.pathname === '/api/qpf/references') {
+          const data = await deps.listReferences(env, auth.admin);
+          return json({ ok: true, data });
+        }
+
         if (request.method === 'POST') {
           const body = await readJsonBody(request);
           if (!body) return json({ ok: false, error: 'invalid_json' }, 400);
@@ -110,8 +115,11 @@ export function createWorker(deps = {}) {
             return json({ ok: true, data });
           }
         }
+
+        return json({ ok: false, error: 'not_found' }, 404);
       }
 
+      if (env.ASSETS) return env.ASSETS.fetch(request);
       return new Response('not found', { status: 404 });
     },
   };
