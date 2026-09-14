@@ -5341,6 +5341,11 @@ async function __cwPerfTick(){
   try{
     if(matchViewId)return await refreshLive();
     if(clubViewId)return false;
+    if(tab==='table'){
+      if(typeof __cw47RefreshPredictorVisible==='function'&&typeof __cw31PredictorId!=='undefined'&&__cw31PredictorId)return await __cw47RefreshPredictorVisible(false);
+      if(typeof __cw47RefreshRatingVisible==='function')return await __cw47RefreshRatingVisible(false);
+      return false;
+    }
     if(tab==='calendar'){
       if(typeof __cwMtCompetition==='string'&&__cwMtCompetition&&__cwMtCompetition!=='serie_a')return await __cwPerfExternalLive(__cwMtCompetition);
       return await refreshLive();
@@ -6670,5 +6675,6 @@ html,body{max-width:100vw!important;overflow-x:hidden!important}
 </style>
 <!-- /ciao-ui-refinements -->
 <!-- ciao-v47-rating-final-cache-fix -->
+/* ciao-v48-rating-refresh-scheduler-fix-20260914 */
 </body>
 </html>
