@@ -6067,9 +6067,10 @@ function __cw45ShotPoint(s,home){
   const depth=Math.max(0,Math.min(52.5,Number(s?.pos?.x??s?.x??26.25)||0));
   const lateral=Math.max(0,Math.min(100,Number(s?.pos?.y??s?.y??50)||0));
   const half=Math.max(0,Math.min(48,depth/52.5*48));
+  const top=home?100-lateral:lateral;
   return {
     left:home?2+half:98-half,
-    top:Math.max(4,Math.min(96,100-lateral))
+    top:Math.max(4,Math.min(96,top))
   };
 }
 function __cw45ShotKind(s){
@@ -6211,6 +6212,81 @@ root?.querySelectorAll?.('[data-tab="predict"],[data-tab="profile"]').forEach(bt
 window.addEventListener('focus',()=>__cw52RefreshHomeProfile(false),{passive:true});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)__cw52RefreshHomeProfile(false)},{passive:true});
 try{window.Telegram?.WebApp?.onEvent?.('activated',()=>__cw52RefreshHomeProfile(false))}catch(_e){}
+
+
+/* ciao-v58-external-final-score-fix-20260915 */
+/* External Match Center can receive a stale 0:0 in detail while the tournament feed/incidents
+   already contain the final score. Resolve the score from all authoritative sources and keep
+   the most advanced score for finished external matches. */
+function __cw58ScorePair(obj){
+  if(!obj||typeof obj!=='object')return null;
+  const h=obj.home_score??obj.homeScore??obj?.score?.home??obj?.home?.score??obj.final_home_score??obj.finalHomeScore;
+  const a=obj.away_score??obj.awayScore??obj?.score?.away??obj?.away?.score??obj.final_away_score??obj.finalAwayScore;
+  const hn=Number(h),an=Number(a);
+  return Number.isFinite(hn)&&Number.isFinite(an)&&hn>=0&&an>=0?[hn,an]:null;
+}
+function __cw58IncidentScore(d){
+  const rows=Array.isArray(d?.incidents?.incidents)?d.incidents.incidents:[];
+  let best=null,bestOrder=-1,homeGoals=0,awayGoals=0,goalSeen=false;
+  for(const e of rows){
+    const pair=__cw58ScorePair(e),minute=Number(e?.minute??e?.time??0)||0,added=Number(e?.added_time??e?.added??0)||0,order=minute*100+added;
+    if(pair&&(best==null||order>=bestOrder)){best=pair;bestOrder=order}
+    const type=String(e?.type??'').toLowerCase();
+    if(type==='goal'||type.includes('goal')){
+      goalSeen=true;
+      if(e?.is_home===false)awayGoals++;else if(e?.is_home===true)homeGoals++;
+    }
+  }
+  return best||(goalSeen?[homeGoals,awayGoals]:null);
+}
+function __cw58ExternalStateScore(d){
+  const localId=Number(d?.match?.id??d?.match_id??matchViewId)||0;
+  const providerId=Number(d?.match?.provider_event_id??d?.match?.bsd_event_id??d?.provider_event_id??0)||0;
+  const same=m=>{
+    if(!m)return false;
+    const ext=Number(m?.externalMatchId??m?.external_match_id??0)||0,provider=Number(m?.providerEventId??m?.provider_event_id??m?.bsd_event_id??0)||0;
+    if(localId&&ext===localId)return true;
+    if(providerId&&provider===providerId)return true;
+    return false;
+  };
+  const sources=[];
+  try{if(Array.isArray(__cwMtPayload?.matches))sources.push(...__cwMtPayload.matches)}catch(_e){}
+  try{if(Array.isArray(__cwPredExternalPayload?.matches))sources.push(...__cwPredExternalPayload.matches)}catch(_e){}
+  try{for(const rows of (__cwHomeExternalByCompetition?.values?.()||[]))if(Array.isArray(rows))sources.push(...rows)}catch(_e){}
+  for(const m of sources){if(!same(m))continue;const pair=__cw58ScorePair(m);if(pair)return pair}
+  try{
+    for(const payload of (__cwTt2Cache?.values?.()||[])){
+      const rounds=Array.isArray(payload?.rounds)?payload.rounds:[];
+      for(const round of rounds){
+        const matches=Array.isArray(round?.matches)?round.matches:[];
+        for(const m of matches){if(!same(m))continue;const pair=__cw58ScorePair(m);if(pair)return pair}
+      }
+    }
+  }catch(_e){}
+  return null;
+}
+function __cw58FinalScorePair(d){
+  const state=typeof __cw35LiveState==='function'?__cw35LiveState(d):String(d?.status??'').toLowerCase();
+  const source=String(d?.source??d?.match?.source??matchViewSource??'').toLowerCase();
+  const external=source==='external'||['coppa_italia','ucl','uel','uecl'].includes(String(d?.competition??d?.match?.competition??'').toLowerCase());
+  const candidates=[];
+  if(external)candidates.push(__cw58ExternalStateScore(d));
+  candidates.push(__cw58IncidentScore(d),__cw58ScorePair(d?.match),__cw58ScorePair(d?.detail),__cw58ScorePair(d));
+  const valid=candidates.filter(Boolean);
+  if(!valid.length)return null;
+  if(external&&state==='finished'){
+    let best=valid[0],bestTotal=best[0]+best[1];
+    for(let i=1;i<valid.length;i++){
+      const cur=valid[i],total=cur[0]+cur[1];
+      if(total>bestTotal){best=cur;bestTotal=total}
+    }
+    return best;
+  }
+  return valid[0];
+}
+const __cw58MatchCenterScoreBase=matchCenterScore;
+matchCenterScore=function(d){const pair=__cw58FinalScorePair(d);return pair?`${pair[0]}:${pair[1]}`:__cw58MatchCenterScoreBase(d)};
+/* /ciao-v58-external-final-score-fix-20260915 */
 
 /* ===== /Ciao, Web! v22.5 product polish layer ===== */
 
