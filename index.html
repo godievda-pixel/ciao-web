@@ -3067,9 +3067,10 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
   function __cw20EventIcon(e){const t=String(e?.type||'').toLowerCase();if(t==='goal')return '⚽';if(t==='card')return String(e.card_type).toLowerCase()==='red'?'🟥':'🟨';if(t==='substitution')return '↕';if(t.includes('var'))return '🎥';if(t==='period')return '•';return '·'}
   function __cw20EventText(e){const t=String(e?.type||'').toLowerCase();if(t==='goal')return [e.player,e.assist?`ассист: ${e.assist}`:null].filter(Boolean);if(t==='card')return [e.player,e.reason].filter(Boolean);if(t==='substitution')return [e.player_in?`↑ ${e.player_in}`:null,e.player_out?`↓ ${e.player_out}`:null].filter(Boolean);if(t==='period')return [e.text||'Период'];if(t.includes('var'))return [e.player||'VAR',e.reason||e.text].filter(Boolean);return [e.player||e.text||String(e.type||'Событие')]}
   function __cw20EventsHtml(d){
-    const raw=Array.isArray(d?.incidents?.incidents)?d.incidents.incidents:[],events=raw.filter(e=>['goal','card','substitution','var','period'].some(t=>String(e?.type||'').toLowerCase().includes(t))).slice().sort((x,y)=>(Number(x.minute)||0)-(Number(y.minute)||0)||((Number(x.added_time)||0)-(Number(y.added_time)||0)));
+    const raw=Array.isArray(d?.incidents?.incidents)?d.incidents.incidents:[];
+    const events=raw.filter(e=>{const t=String(e?.type||'').toLowerCase();if(t==='period'){const x=String(e?.text||'').trim().toUpperCase();return x==='HT'||x==='FT'}return ['goal','card','substitution','var'].some(k=>t.includes(k))}).slice().sort((x,y)=>{const key=e=>{const t=String(e?.type||'').toLowerCase(),label=String(e?.text||'').trim().toUpperCase();if(t==='period'&&label==='FT')return 999999;if(t==='period'&&label==='HT')return 45999;return (Number(e?.minute)||0)*1000+(Number(e?.added_time)||0)};return key(x)-key(y)});
     if(!events.length)return '<div class="empty">Событий пока нет</div>';
-    const rows=events.map(e=>{const side=e.is_home===false?'away':'home',m=`${Number(e.minute)||0}${e.added_time?`+${Number(e.added_time)}`:''}′`,parts=__cw20EventText(e),score=String(e?.type||'').toLowerCase()==='goal'&&e.home_score!=null&&e.away_score!=null?`<span class="cw20-event-score">${e.home_score}:${e.away_score}</span>`:'',title=esc(parts[0]||'Событие'),detail=parts.slice(1).map(esc).join(' · ');return `<div class="cw20-event-row ${side}"><div class="cw20-event-minute">${m}<i>${__cw20EventIcon(e)}</i></div><div class="cw20-event-card"><b>${title}</b>${detail?`<span>${detail}</span>`:''}${score}</div></div>`}).join('');
+    const rows=events.map(e=>{const type=String(e?.type||'').toLowerCase();if(type==='period'){const label=String(e?.text||'').trim().toUpperCase()==='FT'?'FT':'HT',score=e.home_score!=null&&e.away_score!=null?`<b>${e.home_score}:${e.away_score}</b>`:'';return `<div class="cw20-event-row period"><div class="cw20-period-marker"><span>${label}</span>${score}</div></div>`}const side=e.is_home===false?'away':'home',m=`${Number(e.minute)||0}${e.added_time?`+${Number(e.added_time)}`:''}′`,parts=__cw20EventText(e),score=type==='goal'&&e.home_score!=null&&e.away_score!=null?`<span class="cw20-event-score">${e.home_score}:${e.away_score}</span>`:'',title=esc(parts[0]||'Событие'),detail=parts.slice(1).map(esc).join(' · ');return `<div class="cw20-event-row ${side}"><div class="cw20-event-minute">${m}<i>${__cw20EventIcon(e)}</i></div><div class="cw20-event-card"><b>${title}</b>${detail?`<span>${detail}</span>`:''}${score}</div></div>`}).join('');
     return `<section class="mc-section" data-cw20-events><div class="mc-section-head"><div class="mc-section-title">События</div><div class="mc-section-note">хронология матча</div></div><div class="cw20-event-list">${rows}</div></section>`;
   }
 
@@ -7179,6 +7180,27 @@ html,body{max-width:100vw!important;overflow-x:hidden!important}
 #ciao-miniapp-root .cw62-home-loading::after{content:'';position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(255,255,255,.045),transparent);animation:cw62Shimmer 1.25s infinite}
 @keyframes cw62Shimmer{100%{transform:translateX(100%)}}
 @media(max-width:390px){#ciao-miniapp-root .cw62-all-matches-action button{min-height:42px}#ciao-miniapp-root .cw62-club-page{gap:10px}}
+
+/* v64 Match Center surface clipping + clean wrappers */
+#ciao-miniapp-root .cw45-mc-themed :is(
+  .mc-lineup-extra,.mc-stats,.mc-chart-pad,.mc-timeline,
+  .cw14-form-card,.cw14-match-info,.cw20-stat-card,.cw20-stat-secondary,
+  .cw20-event-list,.cw20-player-list
+){background:transparent!important;background-image:none!important;border-color:transparent!important;box-shadow:none!important}
+#ciao-miniapp-root .mc-section{overflow:hidden!important;isolation:isolate!important}
+#ciao-miniapp-root .mc-section-head{position:relative!important;z-index:1!important;background:transparent!important}
+#ciao-miniapp-root [data-mc="lineups"] .mc-lineup-extra{border-radius:0!important;overflow:visible!important}
+#ciao-miniapp-root .mc-lineup-list{overflow:hidden!important}
+#ciao-miniapp-root .mc-lineup-chip{display:inline-flex!important;align-items:center!important;gap:4px!important;flex-wrap:wrap!important;vertical-align:top!important;line-height:1.2!important}
+#ciao-miniapp-root .mc-lineup-chip .cw212-player-events{display:inline-flex!important;align-items:center!important;justify-content:flex-start!important;gap:3px!important;flex-wrap:wrap!important;margin:0!important;width:auto!important}
+#ciao-miniapp-root .mc-lineup-chip .cw212-player-event{display:inline-flex!important;align-items:center!important;min-height:15px!important;padding:2px 4px!important;margin:0!important;border-radius:6px!important;font-size:6px!important;line-height:1!important;white-space:nowrap!important}
+#ciao-miniapp-root .cw20-event-row.period{grid-template-columns:1fr!important;min-height:40px!important;padding:2px 0!important}
+#ciao-miniapp-root .cw20-event-row.period .cw20-period-marker{grid-column:1!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:7px!important;justify-self:center!important;position:relative!important;z-index:2!important;padding:5px 9px!important;border-radius:999px!important;background:#0b1735!important;border:1px solid rgba(132,153,255,.16)!important;color:#cbd4ec!important;font-size:8px!important;font-weight:950!important;letter-spacing:.04em!important}
+#ciao-miniapp-root .cw20-event-row.period .cw20-period-marker b{font-family:'Unbounded','Manrope',sans-serif!important;font-size:8px!important;color:#fff!important}
+#ciao-miniapp-root .cw20-event-row.home .cw20-event-card{margin-right:4px!important}
+#ciao-miniapp-root .cw20-event-row.away .cw20-event-card{margin-left:4px!important}
+#ciao-miniapp-root .cw20-event-card{max-width:100%!important;box-sizing:border-box!important;overflow:hidden!important}
+/* /v64 Match Center surface clipping + clean wrappers */
 </style>
 
 <!-- /ciao-v62-home-club-profile-coherent -->
