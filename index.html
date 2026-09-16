@@ -1922,12 +1922,43 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
   const MATCH_CENTER_API = 'https://dkefzepiiudehhzbbrjn.supabase.co/functions/v1/ciao-match-center';
   let matchViewId=null, matchViewSource='serie_a', matchData=null, matchReturnTab='calendar', matchLoading=false, matchCenterTab='overview';
   const LOADER_HTML = `<div class="cw38-skeleton-screen" aria-label="Загрузка"><div class="cw38-sk hero"></div><div class="cw38-sk tabs"></div><div class="cw38-sk card"></div><div class="cw38-sk card"></div></div>`;
+  /* ciao-v60-boot-timeout-20260916: never leave Telegram WebView on an endless boot loader. */
+  async function __cw60FetchJson(endpoint,options,timeoutMs=7000){
+    const ms=Math.max(1000,Number(timeoutMs)||7000),controller=typeof AbortController==='function'?new AbortController():null;
+    let timer=0;
+    const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>{try{controller?.abort()}catch(_e){}const e=new Error('Сервер отвечает слишком долго. Попробуй ещё раз.');e.code='BOOT_TIMEOUT';reject(e)},ms)});
+    try{
+      const request=fetch(endpoint,{...options,...(controller?{signal:controller.signal}:{})});
+      const r=await Promise.race([request,timeout]);
+      let j={};try{j=await r.json()}catch(_e){}
+      if(!r.ok||!j.ok){const e=new Error(j.error||('HTTP '+r.status));e.status=r.status;e.payload=j;throw e;}
+      return j;
+    }catch(error){
+      if(error?.name==='AbortError'&&error?.code!=='BOOT_TIMEOUT'){
+        const e=new Error('Сервер отвечает слишком долго. Попробуй ещё раз.');e.code='BOOT_TIMEOUT';throw e;
+      }
+      throw error;
+    }finally{if(timer)clearTimeout(timer)}
+  }
   const api = async (body) => {
     const isState=String(body?.action||'')==='state',endpoint=isState?STATE_API_BASE:API_BASE;
-    const r=await fetch(endpoint,{method:'POST',cache:isState?'no-store':'default',headers:{'content-type':'application/json','x-telegram-init-data':initData,...(isState?{'cache-control':'no-cache, no-store, max-age=0','pragma':'no-cache'}:{})},body:JSON.stringify(body)});
-    let j={};try{j=await r.json()}catch(_e){}
-    if(!r.ok||!j.ok){const e=new Error(j.error||'Ошибка');e.status=r.status;e.payload=j;throw e;}
-    return j;
+    const options={method:'POST',cache:isState?'no-store':'default',headers:{'content-type':'application/json','x-telegram-init-data':initData,...(isState?{'cache-control':'no-cache, no-store, max-age=0','pragma':'no-cache'}:{})},body:JSON.stringify(body)};
+    if(!isState){
+      const r=await fetch(endpoint,options);
+      let j={};try{j=await r.json()}catch(_e){}
+      if(!r.ok||!j.ok){const e=new Error(j.error||'Ошибка');e.status=r.status;e.payload=j;throw e;}
+      return j;
+    }
+    let lastError=null;
+    for(let attempt=0;attempt<2;attempt++){
+      try{return await __cw60FetchJson(endpoint,options,7000)}
+      catch(error){
+        lastError=error;
+        if(error?.payload?.subscription_required)throw error;
+        if(attempt===0)await new Promise(r=>setTimeout(r,220));
+      }
+    }
+    throw lastError||new Error('Не удалось загрузить данные');
   };
   const matchApi = async (matchId) => { const r=await fetch(MATCH_CENTER_API,{method:'POST',headers:{'content-type':'application/json','x-telegram-init-data':initData},body:JSON.stringify({match_id:Number(matchId)})}); const j=await r.json(); if(!r.ok||!j.ok) throw new Error(j.error||'Не удалось загрузить статистику матча'); return j; };
   const logo = t => t?.custom_emoji_id ? `<img class="logo" loading="lazy" decoding="async" fetchpriority="low" src="${API_BASE}?asset=emoji&id=${encodeURIComponent(t.custom_emoji_id)}" alt="">` : '<span class="logo">⚽</span>';
@@ -5173,8 +5204,8 @@ try{
 /* ciao-v12-performance-stability-20260910 */
 /* Final performance layer: one 10s live scheduler, shared request cache, SWR tables, warm state. */
 const __CW_PERF_TICK_MS=10000;
-const __CW_PERF_EXTERNAL_STATE_TTL=120000;
-const __CW_PERF_HOME_EXT_TTL=120000;
+const __CW_PERF_EXTERNAL_STATE_TTL=300000;
+const __CW_PERF_HOME_EXT_TTL=300000;
 const __CW_PERF_CLUB_OVERVIEW_TTL=300000;
 const __CW_PERF_TABLE_TTL=300000;
 const __CW_PERF_ASSETS_TTL=3600000;
@@ -6287,6 +6318,109 @@ function __cw58FinalScorePair(d){
 const __cw58MatchCenterScoreBase=matchCenterScore;
 matchCenterScore=function(d){const pair=__cw58FinalScorePair(d);return pair?`${pair[0]}:${pair[1]}`:__cw58MatchCenterScoreBase(d)};
 /* /ciao-v58-external-final-score-fix-20260915 */
+
+
+/* ciao-v61-match-center-rescue-20260916
+   Fast-open Match Center: render from existing local/cached data immediately,
+   then hydrate provider sections in the background with hard client timeouts.
+   This keeps a slow BSD/provider request from trapping the whole Mini App on a loader. */
+async function __cw61PostJson(url,body,timeoutMs=6000){
+  const controller=typeof AbortController==='function'?new AbortController():null;
+  let timer=0;
+  try{
+    const ms=Math.max(1200,Number(timeoutMs)||6000);
+    const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>{try{controller?.abort()}catch(_e){}const e=new Error('Данные матча загружаются слишком долго');e.code='CW61_TIMEOUT';reject(e)},ms)});
+    const request=fetch(url,{method:'POST',headers:{'content-type':'application/json','x-telegram-init-data':String(initData||'')},body:JSON.stringify(body),...(controller?{signal:controller.signal}:{})});
+    const r=await Promise.race([request,timeout]);
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok||!j?.ok){const e=new Error(String(j?.error||('HTTP '+r.status)));e.status=r.status;e.payload=j;throw e}
+    return j;
+  }catch(e){
+    if(e?.name==='AbortError'){const x=new Error('Данные матча загружаются слишком долго');x.code='CW61_TIMEOUT';throw x}
+    throw e;
+  }finally{if(timer)clearTimeout(timer)}
+}
+function __cw61ExternalRows(){
+  const out=[],add=rows=>{if(Array.isArray(rows))out.push(...rows)};
+  try{add(__cwMtPayload?.matches)}catch(_e){}
+  try{add(__cwPredExternalPayload?.matches)}catch(_e){}
+  try{for(const rows of (__cwHomeExternalByCompetition?.values?.()||[]))add(rows)}catch(_e){}
+  return out;
+}
+function __cw61SeedMatch(mid,src){
+  if(String(src)!=='external'){
+    const scheduleRows=Array.isArray(__cw209Schedule?.rounds)?__cw209Schedule.rounds.flatMap(r=>Array.isArray(r?.matches)?r.matches:[]):[];
+    const pools=[S?.round?.matches,S?.matches,scheduleRows];
+    let m=null;for(const rows of pools){if(!Array.isArray(rows))continue;m=rows.find(x=>Number(x?.id??x?.match_id)===Number(mid));if(m)break}
+    if(!m)return null;
+    return {ok:true,source:'serie_a',competition:'serie_a',status:typeof __cw35LiveState==='function'?__cw35LiveState(m):String(m?.live_status||'scheduled'),match:{...m,id:Number(mid),source:'serie_a',competition:'serie_a'},coverage:{},errors:{}};
+  }
+  const row=__cw61ExternalRows().find(x=>Number(x?.externalMatchId??x?.external_match_id??x?.id)===Number(mid));
+  if(!row)return null;
+  const home=row?.homeTeam||row?.home||{},away=row?.awayTeam||row?.away||{},status=String(row?.status??row?.liveStatus??row?.live_status??'scheduled').toLowerCase(),finished=['finished','ft','ended'].includes(status)||row?.is_finished===true;
+  return {ok:true,source:'external',competition:String(row?.competition||''),stage:{key:row?.stageKey??row?.stage_key??null,label:row?.stageLabel??row?.stage_label??null,order:row?.stageOrder??row?.stage_order??null,round_number:row?.roundNumber??row?.round_number??null},status:finished?'finished':status,match:{id:Number(mid),source:'external',competition:String(row?.competition||''),provider_event_id:Number(row?.providerEventId??row?.provider_event_id??row?.bsd_event_id??0)||null,kickoff_at:row?.kickoffAt??row?.kickoff_at??null,home_score:row?.homeScore??row?.home_score??null,away_score:row?.awayScore??row?.away_score??null,is_finished:finished,live_status:finished?'finished':status,live_elapsed:row?.minute??row?.live_elapsed??null,home:{...home,bsd_team_id:home?.bsd_team_id??home?.providerTeamId??home?.provider_team_id??home?.id??null,crest_url:home?.crest_url??home?.crestUrl??''},away:{...away,bsd_team_id:away?.bsd_team_id??away?.providerTeamId??away?.provider_team_id??away?.id??null,crest_url:away?.crest_url??away?.crestUrl??''}},coverage:{},errors:{}};
+}
+function __cw61MergeMatch(base,next){
+  if(!base)return next;if(!next)return base;
+  try{return typeof __cw9MergeMatch==='function'?__cw9MergeMatch(base,next):{...base,...next,match:{...(base?.match||{}),...(next?.match||{})}}}catch(_e){return {...base,...next}}
+}
+function __cw61RenderMatch(data,mid,src,{preserveScroll=false}={}){
+  if(Number(matchViewId)!==Number(mid)||!data)return false;
+  const y=preserveScroll?Number(main?.scrollTop||0):0;
+  matchData=typeof __cw35NormalizeMatchData==='function'?__cw35NormalizeMatchData(data):data;
+  matchViewSource=String(src||matchViewSource||'serie_a');
+  root.classList.add('match-center-open');
+  main.innerHTML=matchCenterHtml(matchData);bindMatchCenter();
+  if(preserveScroll)main.scrollTop=y;else main.scrollTop=0;
+  try{__cw38WriteMatchCache?.(matchData,matchViewSource)}catch(_e){}
+  requestAnimationFrame(()=>{try{__cw38AfterRender?.()}catch(_e){}});
+  return true;
+}
+async function __cw61HydrateMatch(mid,src,base){
+  const body={source:String(src||'serie_a'),match_id:Number(mid),sections:[...__CW43_MATCH_SECTIONS],include_split:true};
+  const fullP=__cw61PostJson(__CW9_MATCH_API,body,6500).catch(()=>null);
+  const summaryP=__cw61PostJson(__CW9_SUMMARY_API,{source:String(src||'serie_a'),match_id:Number(mid)},4200).catch(()=>null);
+  const [summary,full]=await Promise.all([summaryP,fullP]);
+  if(Number(matchViewId)!==Number(mid))return false;
+  let next=__cw61MergeMatch(base,summary);next=__cw61MergeMatch(next,full);
+  if(!next)return false;
+  const prev=matchData;
+  matchData=typeof __cw35NormalizeMatchData==='function'?__cw35NormalizeMatchData(next):next;
+  if(full){__cw61RenderMatch(matchData,mid,src,{preserveScroll:true})}
+  else try{__cw36PatchHero?.(prev,matchData);__cw36PatchActiveTab?.(prev,matchData,String(matchCenterTab||'overview'));__cw38PatchPhase?.(matchData);__cw38PatchOverviewExtras?.();__cw38WriteMatchCache?.(matchData,src)}catch(_e){__cw61RenderMatch(matchData,mid,src,{preserveScroll:true})}
+  try{
+    const h2h=await Promise.race([__cw43H2HApi(matchData),new Promise(resolve=>setTimeout(()=>resolve(null),4200))]);
+    if(Number(matchViewId)===Number(mid)&&Array.isArray(h2h?.matches)){matchData={...matchData,h2h:h2h.matches};__cw38H2HCache?.set?.(Number(mid),{matches:h2h.matches,at:Date.now(),loading:false,cw43:true});__cw38PatchH2H?.()}
+  }catch(_e){}
+  return true;
+}
+openMatchCenter=async function(id,source=matchViewSource){
+  const mid=Number(id),src=String(source||matchViewSource||'serie_a');if(!Number.isFinite(mid)||mid<=0)return false;
+  if(matchLoading&&Number(matchViewId)===mid)return false;
+  matchReturnTab=tab;matchViewId=mid;matchViewSource=src;matchCenterTab=__cw38Ui?.matchTabs?.[String(mid)]||'overview';root.classList.add('match-center-open');
+  const cached=typeof __cw38ReadMatchCache==='function'?__cw38ReadMatchCache(mid,src):null,seed=cached||__cw61SeedMatch(mid,src);
+  if(seed){matchLoading=false;__cw61RenderMatch(seed,mid,src)}
+  else{matchLoading=true;main.innerHTML=typeof __cw43MatchLoaderHtml==='function'?__cw43MatchLoaderHtml():('<div class="mc-shell">'+LOADER_HTML+'</div>');root.querySelector('#mcBack')?.addEventListener('click',closeMatchCenter);main.scrollTop=0}
+  try{
+    const summary=seed?null:await __cw61PostJson(__CW9_SUMMARY_API,{source:src,match_id:mid},4200);
+    if(Number(matchViewId)!==mid)return false;
+    const base=summary||seed;
+    if(base&&!seed)__cw61RenderMatch(base,mid,src);
+    matchLoading=false;
+    Promise.resolve(__cw61HydrateMatch(mid,src,base)).catch(()=>{});
+    return !!base;
+  }catch(e){
+    matchLoading=false;
+    if(Number(matchViewId)!==mid)return false;
+    if(seed)return true;
+    main.innerHTML=`<div class="mc-shell"><div class="mc-toolbar"><button class="mc-back" id="mcBack" aria-label="Назад"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button><div class="mc-toolbar-title">Матч-центр</div><span class="mc-toolbar-spacer"></span></div><div class="empty"><b>Не удалось загрузить матч</b><br><br>${esc(e?.message||'Попробуйте ещё раз')}</div></div>`;root.querySelector('#mcBack')?.addEventListener('click',closeMatchCenter);return false
+  }
+};
+/* Specialized Match Center requests also get a hard ceiling so tab switches/polls cannot hang forever. */
+__cw9FastMatchApi=(id,sections=[],source=matchViewSource)=>__cw61PostJson(__CW9_MATCH_API,{source:String(source||'serie_a'),match_id:Number(id),sections,include_split:false},6500);
+/* External data screens keep their shared cache but no single request may hold a loader forever. */
+__cwPerfJsonPost=function(url,body){return __cw61PostJson(url,body,7000)};
+/* /ciao-v61-match-center-rescue-20260916 */
 
 /* ===== /Ciao, Web! v22.5 product polish layer ===== */
 
