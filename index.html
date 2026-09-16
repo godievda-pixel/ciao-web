@@ -2173,7 +2173,7 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
     return j;
   }
   const __cw9FastApi=body=>__cw9Post(__CW9_FAST_API,body,'Не удалось обновить матчи');
-  const __cw9FastMatchApi=(id,sections=[],source=matchViewSource)=>__cw9Post(__CW9_MATCH_API,{source,match_id:Number(id),sections,include_split:false},'Не удалось загрузить Матч-центр');
+  let __cw9FastMatchApi=(id,sections=[],source=matchViewSource)=>__cw9Post(__CW9_MATCH_API,{source,match_id:Number(id),sections,include_split:false},'Не удалось загрузить Матч-центр');
   const __cw9SummaryApi=(id,source=matchViewSource)=>__cw9Post(__CW9_SUMMARY_API,{source,match_id:Number(id)},'Не удалось загрузить матч');
 
   function isPredictionDirty(m){
