@@ -6738,6 +6738,66 @@ try{
 }catch(_e){}
 /* /ciao-v70-club-theme-isolation */
 
+
+
+/* ciao-v71-club-profile-refine-runtime */
+const __cw71UpcomingExpanded=new Set();
+function __cw71UpcomingKey(){return `${Number(clubViewId)||0}:${String(clubViewScope||'overall')}`}
+function __cw71AllMatchesAction(){return '<div class="cw62-all-matches-action cw71-all-matches-action"><button type="button" data-cw62-all-matches>Все матчи <span>→</span></button></div>'}
+function __cw71PromoteAllMatchesAction(html){
+  try{
+    const box=document.createElement('div');box.innerHTML=String(html||'');
+    box.querySelectorAll('.cw44-club-matches-action,.cw62-all-matches-action').forEach(el=>el.remove());
+    const sections=[...box.querySelectorAll('.cw16-club-section')];
+    const leaders=sections.find(section=>String(section.querySelector('.cw16-club-section-title')?.textContent||'').trim().toLowerCase()==='лидеры');
+    const wrap=document.createElement('div');wrap.innerHTML=__cw71AllMatchesAction();const action=wrap.firstElementChild;
+    if(leaders&&action)leaders.before(action);else if(action)box.append(action);
+    return box.innerHTML;
+  }catch(_e){return String(html||'').replace(/<div class="cw44-club-matches-action">[\s\S]*?<\/div>/,'')+__cw71AllMatchesAction()}
+}
+try{
+  const __cw71OverviewBase=__cw16OverviewHtml;
+  __cw16OverviewHtml=function(d){return __cw71PromoteAllMatchesAction(__cw71OverviewBase(d))};
+}catch(_e){}
+try{
+  __cw62ClubPageHtml=function(d){
+    const parts=[];
+    parts.push(__cw16Loaded('overview',d)?__cw16OverviewHtml(d):__cw62ClubSkeleton(true));
+    if(String(clubViewScope||'overall')==='overall')parts.push(__cw16Loaded('squad',d)?__cw16SquadHtml(d):__cw62ClubSkeleton(true));
+    parts.push(__cw16Loaded('stats',d)?__cw16StatsHtml(d):__cw62ClubSkeleton(true));
+    return '<div class="cw62-club-page cw71-club-page">'+parts.join('')+'</div>';
+  };
+}catch(_e){}
+try{
+  const __cw71ScopeHtmlBase=__cw23ScopeHtml;
+  __cw23ScopeHtml=function(d){return String(__cw71ScopeHtmlBase(d)||'').replace('class="cw23-scope-strip','class="cw23-scope-strip cw71-club-scope-premium')};
+}catch(_e){}
+__cw16MatchesHtml=function(d){
+  const matches=d?.matches||{},raw=Array.isArray(matches.all)?matches.all:[...(Array.isArray(matches.recent)?matches.recent:[]),...(Array.isArray(matches.upcoming)?matches.upcoming:[])];
+  const all=[...new Map(raw.filter(Boolean).map((m,i)=>[String(m?.id??m?.provider_match_id??`${m?.kickoff_at||''}:${i}`),m])).values()];
+  const isFinished=x=>x?.is_finished||String(x?.status||'').toLowerCase()==='finished';
+  const finished=all.filter(isFinished).sort((a,b)=>Date.parse(b?.kickoff_at||'')-Date.parse(a?.kickoff_at||''));
+  const future=all.filter(x=>!isFinished(x)).sort((a,b)=>{const live=s=>['live','halftime','extra_time','penalties'].includes(String(s||'').toLowerCase()),al=live(a?.status),bl=live(b?.status);if(al!==bl)return al?-1:1;return Date.parse(a?.kickoff_at||'')-Date.parse(b?.kickoff_at||'')});
+  const label=d?.scope_label||__cw16ClubScopeLabels[clubViewScope]||'Все турниры',expanded=__cw71UpcomingExpanded.has(__cw71UpcomingKey()),shownFuture=expanded?future:future.slice(0,3);
+  const upcoming=future.length?`<section class="cw16-club-section cw71-upcoming-section"><div class="cw16-club-section-head cw71-matches-head"><div><div class="cw16-club-section-title">Ближайшие матчи</div><div class="cw71-matches-sub">${esc(label)}</div></div><div class="cw71-matches-count">${Math.min(3,future.length)} ближайших</div></div>${__cw16MatchRows(shownFuture,d.team?.id,'Ближайших матчей пока нет')}${future.length>3?`<button type="button" class="cw71-upcoming-toggle" data-cw71-toggle-upcoming aria-expanded="${expanded?'true':'false'}"><span>${expanded?'Скрыть':'Показать все'}</span><i>${expanded?'↑':'↓'}</i></button>`:''}</section>`:'';
+  const past=finished.length?`<section class="cw16-club-section cw71-history-section"><div class="cw16-club-section-head"><div class="cw16-club-section-title">Прошедшие</div><div class="cw16-club-section-note">${esc(label)}</div></div>${__cw16MatchRows(finished,d.team?.id,'Матчей пока нет')}</section>`:'';
+  return `${upcoming}${past}${!all.length?'<div class="mc-empty">Матчей в выбранном турнире пока нет</div>':''}`;
+};
+try{
+  const __cw71EnterAllMatchesBase=__cw45EnterAllMatches;
+  __cw45EnterAllMatches=async function(...args){__cw71UpcomingExpanded.delete(__cw71UpcomingKey());return await __cw71EnterAllMatchesBase(...args)};
+}catch(_e){}
+if(!root.dataset.cw71ClubProfileBound){
+  root.dataset.cw71ClubProfileBound='1';
+  root.addEventListener('click',e=>{
+    const toggle=e.target?.closest?.('[data-cw71-toggle-upcoming]');if(!toggle||!clubViewId)return;
+    e.preventDefault();e.stopPropagation();const key=__cw71UpcomingKey();if(__cw71UpcomingExpanded.has(key))__cw71UpcomingExpanded.delete(key);else __cw71UpcomingExpanded.add(key);
+    try{window.Telegram?.WebApp?.HapticFeedback?.selectionChanged?.()}catch(_e){}
+    if(typeof __cw16KeepScrollRender==='function')__cw16KeepScrollRender();else render();
+  });
+}
+/* /ciao-v71-club-profile-refine-runtime */
+
 /* ===== /Ciao, Web! v22.5 product polish layer ===== */
 
 })();
@@ -7638,6 +7698,33 @@ html,body{max-width:100vw!important;overflow-x:hidden!important}
 }
 </style>
 <!-- /ciao-v70-match-club-finish -->
+
+
+<!-- ciao-v71-club-profile-refine -->
+<style id="ciao-v71-club-profile-refine-style">
+#ciao-miniapp-root.club-profile-open .cw71-all-matches-action{margin:0!important;padding:0!important}
+#ciao-miniapp-root.club-profile-open .cw71-all-matches-action button{min-height:47px!important;padding:0 15px!important;border-radius:15px!important;border:1px solid var(--club-accent-faint,rgba(118,140,255,.22))!important;background:radial-gradient(circle at 10% -65%,rgba(255,255,255,.12),transparent 46%),linear-gradient(135deg,var(--club-accent-soft,rgba(49,80,255,.13)),rgba(5,11,27,.98) 68%)!important;color:#f4f7ff!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.055),0 13px 28px rgba(0,0,0,.20)!important;font:900 10px/1 'Manrope',sans-serif!important;letter-spacing:.005em!important}
+#ciao-miniapp-root.club-profile-open .cw71-all-matches-action button span{font-size:17px!important;color:var(--club-accent-light,#dbe4ff)!important;filter:drop-shadow(0 0 8px var(--club-accent-faint,rgba(118,140,255,.20)))}
+#ciao-miniapp-root.club-profile-open .cw23-scope-strip.cw71-club-scope-premium{position:relative!important;display:flex!important;gap:2px!important;align-items:stretch!important;width:100%!important;box-sizing:border-box!important;margin:11px 0 13px!important;padding:4px!important;border-radius:18px!important;overflow:hidden!important;border:1px solid var(--club-accent-faint,rgba(118,140,255,.20))!important;background:radial-gradient(circle at 12% -85%,var(--club-accent-soft,rgba(49,80,255,.18)),transparent 55%),linear-gradient(180deg,rgba(255,255,255,.042),rgba(4,9,23,.98))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.055),0 14px 34px rgba(0,0,0,.22)!important;backdrop-filter:blur(18px) saturate(118%)!important;-webkit-backdrop-filter:blur(18px) saturate(118%)!important}
+#ciao-miniapp-root.club-profile-open .cw23-scope-strip.cw71-club-scope-premium button{position:relative!important;flex:1 1 0!important;min-width:0!important;min-height:40px!important;padding:0 5px!important;border:0!important;border-radius:13px!important;color:#7f8eaf!important;background:transparent!important;background-image:none!important;box-shadow:none!important;font:850 8.45px/1.06 'Manrope',sans-serif!important;letter-spacing:-.01em!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;transition:color .18s ease,background .18s ease,transform .14s ease,box-shadow .18s ease!important}
+#ciao-miniapp-root.club-profile-open .cw23-scope-strip.cw71-club-scope-premium button:active{transform:scale(.975)!important}
+#ciao-miniapp-root.club-profile-open .cw23-scope-strip.cw71-club-scope-premium button.active{color:#fff!important;background:radial-gradient(circle at 22% -40%,rgba(255,255,255,.24),transparent 45%),linear-gradient(135deg,var(--club-accent,#3150ff),var(--club-accent-2,#101a38))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.18),inset 0 -1px 0 rgba(0,0,0,.28),0 9px 23px var(--club-accent-faint,rgba(49,80,255,.20))!important;text-shadow:0 1px 9px rgba(0,0,0,.28)!important}
+#ciao-miniapp-root.club-profile-open .cw23-scope-strip.cw71-club-scope-premium button.active::before{display:block!important;content:''!important;position:absolute!important;left:13%!important;right:13%!important;top:0!important;height:1px!important;background:linear-gradient(90deg,transparent,rgba(255,255,255,.72),transparent)!important;opacity:.58!important;pointer-events:none!important}
+#ciao-miniapp-root.club-profile-open .cw23-scope-strip.cw71-club-scope-premium button::after{display:none!important;content:none!important}
+#ciao-miniapp-root.club-profile-open .cw71-upcoming-section{overflow:visible!important;clip-path:none!important;border:0!important;border-radius:0!important;background:transparent!important;background-image:none!important;box-shadow:none!important;padding:0!important;margin:2px 0 14px!important}
+#ciao-miniapp-root.club-profile-open .cw71-upcoming-section .cw71-matches-head{min-height:0!important;margin:0!important;padding:2px 2px 10px!important;border:0!important;background:transparent!important}
+#ciao-miniapp-root.club-profile-open .cw71-upcoming-section .cw16-club-section-title{font-size:10.5px!important;letter-spacing:.055em!important;color:#e8edfb!important}
+#ciao-miniapp-root.club-profile-open .cw71-matches-sub{margin-top:4px;color:#6f80aa;font-size:7.5px;font-weight:800;letter-spacing:.025em}
+#ciao-miniapp-root.club-profile-open .cw71-matches-count{align-self:center;padding:6px 8px;border:1px solid var(--club-accent-faint,rgba(118,140,255,.14));border-radius:999px;background:var(--club-accent-soft,rgba(49,80,255,.08));color:var(--club-accent-light,#cdd8ff);font-size:7.2px;font-weight:900;white-space:nowrap}
+#ciao-miniapp-root.club-profile-open .cw71-upcoming-section .cw23-match-card{border-color:var(--club-accent-faint,rgba(118,140,255,.16))!important;background:radial-gradient(circle at 100% 0,var(--club-accent-soft,rgba(49,80,255,.08)),transparent 50%),linear-gradient(145deg,rgba(255,255,255,.025),rgba(5,12,29,.98))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.025),0 10px 24px rgba(0,0,0,.13)!important}
+#ciao-miniapp-root.club-profile-open .cw71-upcoming-section .cw23-match-card+.cw23-match-card{margin-top:8px!important}
+#ciao-miniapp-root.club-profile-open .cw71-upcoming-toggle{width:100%;min-height:41px;margin:9px 0 0;padding:0 13px;display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--club-accent-faint,rgba(118,140,255,.16));border-radius:13px;background:linear-gradient(180deg,rgba(255,255,255,.032),rgba(255,255,255,.012));color:#aebbd8;box-shadow:inset 0 1px 0 rgba(255,255,255,.025);font:850 9px/1 'Manrope',sans-serif}
+#ciao-miniapp-root.club-profile-open .cw71-upcoming-toggle i{font-style:normal;color:var(--club-accent-light,#dbe4ff);font-size:11px;opacity:.82}
+#ciao-miniapp-root.club-profile-open .cw71-upcoming-toggle:active{transform:scale(.992)}
+#ciao-miniapp-root.club-profile-open .cw71-history-section{margin-top:4px!important}
+@media(max-width:390px){#ciao-miniapp-root.club-profile-open .cw23-scope-strip.cw71-club-scope-premium{padding:3px!important;border-radius:17px!important}#ciao-miniapp-root.club-profile-open .cw23-scope-strip.cw71-club-scope-premium button{min-height:38px!important;padding:0 2px!important;font-size:7.85px!important}#ciao-miniapp-root.club-profile-open .cw71-all-matches-action button{min-height:45px!important}}
+</style>
+<!-- /ciao-v71-club-profile-refine -->
 
 </body>
 </html>
