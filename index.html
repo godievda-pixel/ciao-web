@@ -2041,7 +2041,7 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
   function overviewTabHtml(d){const stats=d?.stats?.stats??{},home=stats.home??{},away=stats.away??{},weather=d?.detail?.weather;return `<section class="mc-section"><div class="mc-section-head"><div class="mc-section-title">Главное</div><div class="mc-section-note">обновляется автоматически</div></div><div class="mc-key-grid"><div class="mc-key"><b data-key="xg-home">${statFmt('expected_goals',nval(home,'expected_goals'))}</b><span>xG хозяев</span></div><div class="mc-key"><b data-key="shots-total">${(nval(home,'total_shots')??0)+(nval(away,'total_shots')??0)}</b><span>ударов</span></div><div class="mc-key"><b data-key="xg-away">${statFmt('expected_goals',nval(away,'expected_goals'))}</b><span>xG гостей</span></div></div></section>${d.coverage?.momentum?`<section class="mc-section"><div class="mc-section-head"><div class="mc-section-title">Давление</div><div class="mc-section-note">по минутам</div></div><div data-mc="momentum">${momentumHtml(d)}</div></section>`:''}${d.coverage?.shotmap?`<section class="mc-section"><div class="mc-section-head"><div class="mc-section-title">Карта ударов</div><div class="mc-section-note">точки · xG</div></div><div data-mc="shotmap">${shotmapHtml(d)}</div></section>`:''}${weather?`<section class="mc-section"><div class="mc-section-head"><div class="mc-section-title">Условия матча</div></div><div class="mc-extra"><div class="mc-extra-item"><span>Погода</span><b>${esc(weatherText(weather.description))}</b></div><div class="mc-extra-item"><span>Температура</span><b>${weather.temperature_c!=null?`${weather.temperature_c}°C`:'—'}</b></div><div class="mc-extra-item"><span>Ветер</span><b>${weather.wind_speed!=null?`${weather.wind_speed} км/ч`:'—'}</b></div><div class="mc-extra-item"><span>Путь гостей</span><b>${d.detail?.travel_distance_km!=null?`${d.detail.travel_distance_km} км`:'—'}</b></div></div></section>`:''}`}
   function statsTabHtml(d){const all=allStatsHtml(d);return `<section class="mc-section"><div class="mc-section-head"><div class="mc-section-title">Статистика матча</div><div class="mc-section-note">основные показатели</div></div><div class="mc-stats" data-mc="primary-stats">${all.primary||'<div class="mc-empty">Статистика появится после начала матча</div>'}</div></section><section class="mc-section"><div class="mc-section-head"><div class="mc-section-title">Расширенная статистика</div><div class="mc-section-note">все доступные показатели</div></div><div class="mc-stats" data-mc="extra-stats">${all.extra||'<div class="mc-empty">Дополнительных показателей пока нет</div>'}</div></section>`}
   function eventsTabHtml(d){return `<section class="mc-section"><div class="mc-section-head"><div class="mc-section-title">События матча</div><div class="mc-section-note">голы · карточки · замены · VAR</div></div><div class="mc-timeline" data-mc="incidents">${incidentsHtml(d)}</div></section>`}
-  function lineupsTabHtml(d){return `<section class="mc-section"><div class="mc-section-head"><div class="mc-section-title">Составы</div><div class="mc-section-note">${esc(lineupStatusText(d?.lineups?.lineup_status))}</div></div><div data-mc="lineups">${lineupsHtml(d)}</div></section>`}
+  function lineupsTabHtml(d){return `<section class="mc-section cw70-lineups-section"><div class="mc-section-head"><div class="mc-section-title">Составы</div><div class="mc-section-note">${esc(lineupStatusText(d?.lineups?.lineup_status))}</div></div><div data-mc="lineups">${lineupsHtml(d)}</div></section>`}
   function playersTabHtml(d){return `<section class="mc-section"><div class="mc-section-head"><div class="mc-section-title">Игроки</div><div class="mc-section-note">рейтинг · голы · ассисты · xG · xA</div></div><div class="mc-player-list" data-mc="players">${playersHtml(d)}</div></section>`}
   function matchTabContent(d,key=matchCenterTab){if(key==='stats')return statsTabHtml(d);if(key==='events')return eventsTabHtml(d);if(key==='lineups')return lineupsTabHtml(d);if(key==='players')return playersTabHtml(d);return overviewTabHtml(d)}
   function matchCenterHtml(d){const m=d.match,st=String(d.status??'').toLowerCase(),live=st==='live',pred=m?.prediction;return `<div class="mc-shell"><div class="mc-toolbar"><button class="mc-back" id="mcBack" aria-label="Назад"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button><div class="mc-toolbar-title">Матч-центр</div><span class="mc-toolbar-spacer"></span></div><section class="mc-hero" data-mc="hero"><div class="mc-state-row"><span class="mc-status ${live?'live':''}" data-mc="status">${esc(matchStatusText(d))}</span></div><div class="mc-scoreboard"><div class="mc-team">${logo(m.home)}<div class="mc-team-name">${esc(m.home.name)}</div></div><div class="mc-center"><div class="mc-score" data-mc="score">${esc(matchCenterScore(d))}</div><div class="mc-minute" data-mc="minute">${live?'счёт обновляется автоматически':m.is_finished?'финальный счёт':'ожидаем начало'}</div></div><div class="mc-team">${logo(m.away)}<div class="mc-team-name">${esc(m.away.name)}</div></div></div><div class="mc-kickoff">${m.round?.number?`${m.round.number}-й тур · `:''}${fmt(m.kickoff_at)}</div>${pred?`<div class="mc-prediction">Твой прогноз <b>${pred.home_score}:${pred.away_score}</b>${pred.points!=null?` · <b>+${pred.points}</b>`:''}</div>`:''}</section>${matchTabsHtml()}<div class="mc-tab-content" data-mc-tab-content="${matchCenterTab}">${matchTabContent(d,matchCenterTab)}</div></div>`}
@@ -6617,12 +6617,12 @@ function __cw66CompactState(d){
 }
 function __cw66ScoreStripHtml(d){
   const x=__cw66CompactState(d),hasXg=!!x.xg;
-  return `<div class="cw66-sticky-slot" aria-hidden="true"><div class="cw66-score-strip ${x.active?'live':''}" data-cw66-score-strip><span class="cw66-score-logo home" data-cw66-home-logo>${x.homeLogo}</span><span class="cw66-score-team home" data-cw66-home>${esc(x.home)}</span><b class="cw66-score-value" data-cw66-score>${esc(x.score)}</b><span class="cw66-score-team away" data-cw66-away>${esc(x.away)}</span><span class="cw66-score-logo away" data-cw66-away-logo>${x.awayLogo}</span><small class="cw66-score-state"><span class="cw66-score-xg" data-cw66-xg ${hasXg?'':'hidden'}>${esc(x.xg)}</span><i data-cw66-xg-sep ${hasXg?'':'hidden'}>·</i><span data-cw66-state>${esc(x.state)}</span></small></div></div>`;
+  return `<div class="cw66-sticky-slot" aria-hidden="true"><div class="cw66-score-strip ${x.active?'live':''}" data-cw66-score-strip><span class="cw66-score-logo home" data-cw66-home-logo>${x.homeLogo}</span><span class="cw66-score-team home" data-cw66-home>${esc(x.home)}</span><b class="cw66-score-value" data-cw66-score>${esc(x.score)}</b><span class="cw66-score-team away" data-cw66-away>${esc(x.away)}</span><span class="cw66-score-logo away" data-cw66-away-logo>${x.awayLogo}</span><small class="cw66-score-xg-row" data-cw66-xg ${hasXg?'':'hidden'}>${esc(x.xg)}</small><small class="cw66-score-state" data-cw66-state>${esc(x.state)}</small></div></div>`;
 }
 function __cw66PatchCompact(d=matchData){
   const strip=main?.querySelector?.('[data-cw66-score-strip]');if(!strip||!d)return false;
-  const x=__cw66CompactState(d),home=strip.querySelector('[data-cw66-home]'),away=strip.querySelector('[data-cw66-away]'),score=strip.querySelector('[data-cw66-score]'),state=strip.querySelector('[data-cw66-state]'),xg=strip.querySelector('[data-cw66-xg]'),sep=strip.querySelector('[data-cw66-xg-sep]'),homeLogo=strip.querySelector('[data-cw66-home-logo]'),awayLogo=strip.querySelector('[data-cw66-away-logo]');
-  if(home&&home.textContent!==x.home)home.textContent=x.home;if(away&&away.textContent!==x.away)away.textContent=x.away;if(score&&score.textContent!==x.score)score.textContent=x.score;if(state&&state.textContent!==x.state)state.textContent=x.state;if(xg){if(xg.textContent!==x.xg)xg.textContent=x.xg;xg.hidden=!x.xg}if(sep)sep.hidden=!x.xg;if(homeLogo&&homeLogo.innerHTML!==x.homeLogo)homeLogo.innerHTML=x.homeLogo;if(awayLogo&&awayLogo.innerHTML!==x.awayLogo)awayLogo.innerHTML=x.awayLogo;
+  const x=__cw66CompactState(d),home=strip.querySelector('[data-cw66-home]'),away=strip.querySelector('[data-cw66-away]'),score=strip.querySelector('[data-cw66-score]'),state=strip.querySelector('[data-cw66-state]'),xg=strip.querySelector('[data-cw66-xg]'),homeLogo=strip.querySelector('[data-cw66-home-logo]'),awayLogo=strip.querySelector('[data-cw66-away-logo]');
+  if(home&&home.textContent!==x.home)home.textContent=x.home;if(away&&away.textContent!==x.away)away.textContent=x.away;if(score&&score.textContent!==x.score)score.textContent=x.score;if(state&&state.textContent!==x.state)state.textContent=x.state;if(xg){if(xg.textContent!==x.xg)xg.textContent=x.xg;xg.hidden=!x.xg}if(homeLogo&&homeLogo.innerHTML!==x.homeLogo)homeLogo.innerHTML=x.homeLogo;if(awayLogo&&awayLogo.innerHTML!==x.awayLogo)awayLogo.innerHTML=x.awayLogo;
   strip.classList.toggle('live',x.active);return true;
 }
 function __cw69ApplyRootTheme(d=matchData){
@@ -6690,6 +6690,53 @@ if(main&&!main.dataset.cw66StickyBound){
   window.addEventListener('resize',__cw66SyncSticky,{passive:true});
 }
 /* /ciao-v66-matchcenter-visual-pass */
+
+/* ciao-v70-club-theme-isolation */
+function __cw70ClubThemeTeam(fallbackId){
+  const id=Number(fallbackId??clubViewId)||0;
+  return clubViewData?.team||(typeof __cw16TeamById==='function'?__cw16TeamById(id):null)||null;
+}
+function __cw70ApplyClubRootTheme(team){
+  if(!root||!team||typeof __cw17ClubAccent!=='function'||typeof __cw23ClubSecondary!=='function')return false;
+  try{__cw69ClearRootTheme();}catch(_e){}
+  const a=__cw17ClubAccent(team),b=__cw23ClubSecondary(team);
+  try{if(typeof __cw41ApplyAccent==='function')__cw41ApplyAccent(root,team)}catch(_e){}
+  root.setAttribute('data-cw70-club-theme',String(team?.id??clubViewId??''));
+  root.style.setProperty('background',`radial-gradient(circle at 92% -4%,${a.soft},transparent 38%),radial-gradient(circle at -8% 34%,${b.soft},transparent 34%),linear-gradient(180deg,#080d1b 0%,#050a17 48%,#030711 100%)`,'important');
+  root.style.setProperty('background-attachment','fixed','important');
+  return true;
+}
+function __cw70ClearClubRootTheme(){
+  if(!root)return;
+  root.removeAttribute('data-cw70-club-theme');
+  root.style.removeProperty('background');root.style.removeProperty('background-attachment');
+  for(const k of ['--club-accent','--club-accent-light','--club-accent-soft','--club-accent-faint','--club-accent-2','--club-accent-2-soft'])root.style.removeProperty(k);
+}
+try{
+  const __cw70OpenClubBase=openClubProfile;
+  openClubProfile=async function(teamId){
+    const id=Number(teamId)||0;
+    try{__cw69ClearRootTheme();}catch(_e){}
+    const seed=typeof __cw16TeamById==='function'?__cw16TeamById(id):null;if(seed)__cw70ApplyClubRootTheme(seed);
+    const out=await __cw70OpenClubBase(teamId);
+    if(Number(clubViewId)===id)__cw70ApplyClubRootTheme(__cw70ClubThemeTeam(id)||seed);
+    return out;
+  };
+}catch(_e){}
+try{
+  const __cw70CloseClubBase=closeClubProfile;
+  closeClubProfile=function(){
+    const out=__cw70CloseClubBase();
+    requestAnimationFrame(()=>{
+      if(clubViewId){__cw70ApplyClubRootTheme(__cw70ClubThemeTeam(clubViewId));return}
+      __cw70ClearClubRootTheme();
+      if(matchViewId&&matchData){try{__cw69ApplyRootTheme(matchData)}catch(_e){}}
+      else{try{__cw43ApplyProfileTheme?.()}catch(_e){}}
+    });
+    return out;
+  };
+}catch(_e){}
+/* /ciao-v70-club-theme-isolation */
 
 /* ===== /Ciao, Web! v22.5 product polish layer ===== */
 
@@ -7307,7 +7354,7 @@ html,body{max-width:100vw!important;overflow-x:hidden!important}
 </style>
 <!-- /ciao-ui-refinements -->
 <!-- ciao-v47-rating-final-cache-fix -->
-/* ciao-v48-rating-refresh-scheduler-fix-20260914 */
+<!-- ciao-v48-rating-refresh-scheduler-fix-20260914 -->
 
 
 <!-- ciao-v62-home-club-profile-coherent -->
@@ -7527,6 +7574,70 @@ html,body{max-width:100vw!important;overflow-x:hidden!important}
 }
 </style>
 <!-- /ciao-v66-matchcenter-visual-pass -->
+
+
+<!-- ciao-v70-match-club-finish -->
+<style id="ciao-v70-match-club-finish-style">
+/* Lineups: explicit parent reset works even where :has() is unreliable in embedded WebKit. */
+#ciao-miniapp-root .cw70-lineups-section{
+  overflow:visible!important;clip-path:none!important;border-color:transparent!important;border-radius:0!important;
+  background:transparent!important;background-image:none!important;box-shadow:none!important;isolation:auto!important
+}
+#ciao-miniapp-root .cw70-lineups-section>[data-mc="lineups"],
+#ciao-miniapp-root .cw70-lineups-section .mc-lineups-wrap,
+#ciao-miniapp-root .cw70-lineups-section .mc-lineup-extra{
+  background:transparent!important;background-image:none!important;border:0!important;box-shadow:none!important;overflow:visible!important;clip-path:none!important
+}
+#ciao-miniapp-root .cw70-lineups-section .mc-lineup-extra{display:grid!important;gap:8px!important;margin-top:9px!important;padding:0!important}
+#ciao-miniapp-root .cw70-lineups-section .mc-lineup-list{
+  position:relative!important;margin:0!important;border-radius:20px!important;overflow:hidden!important;overflow:clip!important;
+  clip-path:inset(0 round 20px)!important;-webkit-clip-path:inset(0 round 20px)!important;contain:paint!important;
+  -webkit-mask-image:-webkit-radial-gradient(white,black)!important;transform:translateZ(0)!important;isolation:isolate!important;
+  border:1px solid rgba(var(--cw45-rgb,49,80,255),.15)!important;
+  background:linear-gradient(145deg,rgba(var(--cw45-rgb,49,80,255),.07),rgba(7,13,31,.96))!important;background-clip:padding-box!important
+}
+
+/* Compact match row: center stack is score -> xG -> match status. */
+#ciao-miniapp-root .cw66-score-strip{
+  height:56px!important;grid-template-columns:22px minmax(0,1fr) auto minmax(0,1fr) 22px!important;
+  grid-template-rows:24px 10px 10px!important;row-gap:1px!important;padding-top:5px!important;padding-bottom:5px!important
+}
+#ciao-miniapp-root .cw66-score-logo,#ciao-miniapp-root .cw66-score-team{grid-row:1/4!important;align-self:center!important}
+#ciao-miniapp-root .cw66-score-logo.home{grid-column:1!important}.cw66-score-team.home{grid-column:2!important}
+#ciao-miniapp-root .cw66-score-value{grid-column:3!important;grid-row:1!important;align-self:center!important}
+#ciao-miniapp-root .cw66-score-team.away{grid-column:4!important}.cw66-score-logo.away{grid-column:5!important}
+#ciao-miniapp-root .cw66-score-xg-row{grid-column:3!important;grid-row:2!important;justify-self:center!important;align-self:center!important;white-space:nowrap!important;color:#a6b3d3!important;font-size:6.6px!important;font-weight:850!important;line-height:1!important;font-style:normal!important}
+#ciao-miniapp-root .cw66-score-xg-row[hidden]{display:block!important;visibility:hidden!important}
+#ciao-miniapp-root .cw66-score-state{grid-column:3!important;grid-row:3!important;justify-self:center!important;align-self:center!important;display:block!important;margin:0!important;padding:0!important;white-space:nowrap!important;color:color-mix(in srgb,var(--cw45-a,#3150ff) 65%,#c5cee5)!important;font-size:6.5px!important;font-weight:950!important;letter-spacing:.045em!important;line-height:1!important;text-transform:uppercase!important;font-style:normal!important}
+#ciao-miniapp-root .cw66-score-strip.live .cw66-score-state{color:color-mix(in srgb,var(--cw45-a,#3150ff) 74%,#fff)!important}
+#ciao-miniapp-root.match-center-open.cw66-compact-on .mc-tabs-wrap{top:68px!important}
+
+/* Club profile: Match-Center-style segmented tournament switch, but from the club palette. */
+#ciao-miniapp-root.club-profile-open .cw23-scope-strip{
+  display:flex!important;align-items:stretch!important;gap:2px!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important;
+  margin:10px 0 12px!important;padding:3px!important;border:1px solid var(--club-accent-faint,rgba(118,140,255,.22))!important;border-radius:17px!important;
+  background:linear-gradient(145deg,var(--club-accent-soft,rgba(49,80,255,.12)),rgba(5,12,29,.97))!important;background-image:linear-gradient(145deg,var(--club-accent-soft,rgba(49,80,255,.12)),rgba(5,12,29,.97))!important;
+  box-shadow:none!important;overflow:hidden!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important
+}
+#ciao-miniapp-root.club-profile-open .cw23-scope-strip button{
+  flex:1 1 0!important;min-width:0!important;min-height:39px!important;padding:0 5px!important;border:0!important;border-radius:13px!important;
+  background:transparent!important;background-image:none!important;color:#909dbd!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+  font:900 8.5px/1.05 'Manrope',sans-serif!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important
+}
+#ciao-miniapp-root.club-profile-open .cw23-scope-strip button::before,#ciao-miniapp-root.club-profile-open .cw23-scope-strip button::after{display:none!important;content:none!important}
+#ciao-miniapp-root.club-profile-open .cw23-scope-strip button.active{
+  color:#fff!important;border:0!important;background:linear-gradient(135deg,var(--club-accent,#3150ff),var(--club-accent-2,#101a38))!important;background-image:linear-gradient(135deg,var(--club-accent,#3150ff),var(--club-accent-2,#101a38))!important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.12),0 8px 22px var(--club-accent-faint,rgba(49,80,255,.16))!important
+}
+#ciao-miniapp-root.club-profile-open .cw16-club-toolbar{border-bottom-color:var(--club-accent-faint,rgba(118,140,255,.14))!important;background:linear-gradient(180deg,var(--club-accent-soft,rgba(49,80,255,.12)),rgba(4,9,24,.96) 54%,rgba(4,9,24,0) 100%)!important}
+#ciao-miniapp-root.club-profile-open .cw16-club-back{border-color:var(--club-accent-faint,rgba(118,140,255,.22))!important;background:linear-gradient(180deg,var(--club-accent-soft,rgba(49,80,255,.12)),rgba(255,255,255,.025))!important}
+@media(max-width:390px){
+  #ciao-miniapp-root .cw66-score-strip{height:56px!important;padding-left:9px!important;padding-right:9px!important}
+  #ciao-miniapp-root.match-center-open.cw66-compact-on .mc-tabs-wrap{top:67px!important}
+  #ciao-miniapp-root.club-profile-open .cw23-scope-strip button{min-height:37px!important;padding:0 3px!important;font-size:8px!important}
+}
+</style>
+<!-- /ciao-v70-match-club-finish -->
 
 </body>
 </html>
