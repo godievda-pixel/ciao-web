@@ -6588,6 +6588,13 @@ try{if(tab==='predict'&&!matchViewId&&!clubViewId)setTimeout(()=>__cw62PrefetchF
 
 
 /* ciao-v66-matchcenter-visual-pass */
+function __cw66CompactLogoHtml(team){
+  const crest=String(team?.crest_url??team?.crestUrl??team?.logo_url??team?.logoUrl??'').trim();
+  if(crest)return `<img class="cw66-score-logo-img" loading="eager" decoding="async" src="${esc(crest)}" alt="">`;
+  const emoji=String(team?.custom_emoji_id??'').trim();
+  if(emoji)return `<img class="cw66-score-logo-img" loading="eager" decoding="async" src="${API_BASE}?asset=emoji&id=${encodeURIComponent(emoji)}" alt="">`;
+  return '<span class="cw66-score-logo-fallback" aria-hidden="true">⚽</span>';
+}
 function __cw66CompactState(d){
   const m=d?.match||{},norm=typeof __cw38NormalizeMatch==='function'?__cw38NormalizeMatch(d):null;
   const status=String(norm?.status??d?.status??m?.live_status??'scheduled').toLowerCase();
@@ -6603,24 +6610,25 @@ function __cw66CompactState(d){
   else if(status==='postponed')state='ПЕРЕНЕСЁН';
   else if(status==='cancelled')state='ОТМЕНЁН';
   const short=t=>String(t?.short_name||t?.name||'Команда').trim();
-  return {home:short(m.home),away:short(m.away),score,state,active};
+  return {home:short(m.home),away:short(m.away),homeLogo:__cw66CompactLogoHtml(m.home),awayLogo:__cw66CompactLogoHtml(m.away),score,state,active};
 }
 function __cw66ScoreStripHtml(d){
   const x=__cw66CompactState(d);
-  return `<div class="cw66-sticky-slot" aria-hidden="true"><div class="cw66-score-strip ${x.active?'live':''}" data-cw66-score-strip><span class="cw66-score-team home" data-cw66-home>${esc(x.home)}</span><b class="cw66-score-value" data-cw66-score>${esc(x.score)}</b><span class="cw66-score-team away" data-cw66-away>${esc(x.away)}</span><small class="cw66-score-state" data-cw66-state>${esc(x.state)}</small></div></div>`;
+  return `<div class="cw66-sticky-slot" aria-hidden="true"><div class="cw66-score-strip ${x.active?'live':''}" data-cw66-score-strip><span class="cw66-score-logo home" data-cw66-home-logo>${x.homeLogo}</span><span class="cw66-score-team home" data-cw66-home>${esc(x.home)}</span><b class="cw66-score-value" data-cw66-score>${esc(x.score)}</b><span class="cw66-score-team away" data-cw66-away>${esc(x.away)}</span><span class="cw66-score-logo away" data-cw66-away-logo>${x.awayLogo}</span><small class="cw66-score-state" data-cw66-state>${esc(x.state)}</small></div></div>`;
 }
 function __cw66PatchCompact(d=matchData){
   const strip=main?.querySelector?.('[data-cw66-score-strip]');if(!strip||!d)return false;
-  const x=__cw66CompactState(d),home=strip.querySelector('[data-cw66-home]'),away=strip.querySelector('[data-cw66-away]'),score=strip.querySelector('[data-cw66-score]'),state=strip.querySelector('[data-cw66-state]');
-  if(home&&home.textContent!==x.home)home.textContent=x.home;if(away&&away.textContent!==x.away)away.textContent=x.away;if(score&&score.textContent!==x.score)score.textContent=x.score;if(state&&state.textContent!==x.state)state.textContent=x.state;
+  const x=__cw66CompactState(d),home=strip.querySelector('[data-cw66-home]'),away=strip.querySelector('[data-cw66-away]'),score=strip.querySelector('[data-cw66-score]'),state=strip.querySelector('[data-cw66-state]'),homeLogo=strip.querySelector('[data-cw66-home-logo]'),awayLogo=strip.querySelector('[data-cw66-away-logo]');
+  if(home&&home.textContent!==x.home)home.textContent=x.home;if(away&&away.textContent!==x.away)away.textContent=x.away;if(score&&score.textContent!==x.score)score.textContent=x.score;if(state&&state.textContent!==x.state)state.textContent=x.state;if(homeLogo&&homeLogo.innerHTML!==x.homeLogo)homeLogo.innerHTML=x.homeLogo;if(awayLogo&&awayLogo.innerHTML!==x.awayLogo)awayLogo.innerHTML=x.awayLogo;
   strip.classList.toggle('live',x.active);return true;
 }
 function __cw66SyncSticky(){
   if(!matchViewId||!root.classList.contains('match-center-open')){root.classList.remove('cw66-compact-on');return false}
-  const hero=main?.querySelector?.('[data-mc="hero"]'),toolbar=main?.querySelector?.('.mc-toolbar'),slot=main?.querySelector?.('.cw66-sticky-slot'),strip=main?.querySelector?.('[data-cw66-score-strip]');
-  if(!hero||!toolbar||!slot||!strip){root.classList.remove('cw66-compact-on');return false}
-  const heroBottom=hero.getBoundingClientRect().bottom,toolbarBottom=toolbar.getBoundingClientRect().bottom;
-  const on=Number(main?.scrollTop||window.scrollY||0)>28&&heroBottom<=toolbarBottom+8;
+  const hero=main?.querySelector?.('[data-mc="hero"]'),slot=main?.querySelector?.('.cw66-sticky-slot'),strip=main?.querySelector?.('[data-cw66-score-strip]');
+  if(!hero||!slot||!strip){root.classList.remove('cw66-compact-on');return false}
+  const scrollTop=Math.max(Number(main?.scrollTop||0),Number(document.scrollingElement?.scrollTop||0),Number(window.scrollY||0));
+  const rootTop=Math.max(0,Number(main?.getBoundingClientRect?.().top||0));
+  const on=scrollTop>28&&hero.getBoundingClientRect().bottom<=rootTop+10;
   root.classList.toggle('cw66-compact-on',on);slot.setAttribute('aria-hidden',on?'false':'true');return on;
 }
 try{
@@ -7375,44 +7383,88 @@ html,body{max-width:100vw!important;overflow-x:hidden!important}
 #ciao-miniapp-root .cw45-mc-themed [data-mc="lineups"] .mc-lineup-list+.mc-lineup-list{border-top:1px solid rgba(var(--cw45-rgb),.14)!important}
 #ciao-miniapp-root .cw45-mc-themed [data-mc="lineups"] .mc-lineup-list h4{margin-bottom:9px!important}
 
-/* Consistent micro-spacing: tabs -> content and sibling sections such as Form -> Match info. */
-#ciao-miniapp-root.match-center-open .mc-tabs-wrap{margin:0 0 8px!important;padding:0!important;top:66px!important;transition:top .18s ease!important}
+/* Match Center toolbar scrolls away normally; only compact score + tabs remain sticky. */
+#ciao-miniapp-root.match-center-open .mc-toolbar,
+#ciao-miniapp-root.match-center-open .mc-toolbar.mc-sticky-back{
+  position:relative!important;top:auto!important;z-index:2!important;transform:none!important;
+  margin-top:6px!important;margin-bottom:10px!important
+}
+#ciao-miniapp-root.match-center-open .content{scroll-padding-top:62px!important}
+
+/* Tabs use the same dense blurred material as the toolbar / compact score. */
+#ciao-miniapp-root.match-center-open .mc-tabs-wrap{
+  position:sticky!important;top:6px!important;z-index:118!important;
+  margin:0 0 8px!important;padding:3px!important;
+  overflow:hidden!important;border:1px solid rgba(var(--cw45-rgb,49,80,255),.24)!important;border-radius:17px!important;
+  background:linear-gradient(180deg,rgba(var(--cw45-rgb,49,80,255),.15),rgba(4,10,25,.965))!important;
+  background-image:linear-gradient(180deg,rgba(var(--cw45-rgb,49,80,255),.15),rgba(4,10,25,.965))!important;
+  box-shadow:0 10px 26px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.035)!important;
+  backdrop-filter:blur(16px)!important;-webkit-backdrop-filter:blur(16px)!important;
+  transition:top .18s ease!important
+}
+#ciao-miniapp-root.match-center-open .mc-tabs{
+  padding:0!important;border:0!important;background:transparent!important;background-image:none!important;box-shadow:none!important
+}
+#ciao-miniapp-root.match-center-open .mc-tab{background:rgba(255,255,255,.035)!important;border-color:rgba(var(--cw45-rgb,49,80,255),.12)!important}
+#ciao-miniapp-root.match-center-open .mc-tab.active{background:linear-gradient(135deg,var(--cw45-a,#3150ff),var(--cw45-b,#0b2f88))!important;border-color:rgba(var(--cw45-rgb,49,80,255),.36)!important}
 #ciao-miniapp-root.match-center-open .mc-tab-content>.mc-section:first-child{margin-top:0!important}
 #ciao-miniapp-root.match-center-open .mc-tab-content>.mc-section+ .mc-section{margin-top:8px!important}
 
-/* Independent zero-height sticky slot under the toolbar; it never creates an extra gap. */
+/* One rounded inner surface, no square theme plates inside stats/form/momentum. */
+#ciao-miniapp-root .cw45-mc-themed [data-cw20-stats] .cw20-stat-card{
+  margin:0 12px 8px!important;padding:0 12px 2px!important;border:1px solid rgba(var(--cw45-rgb),.11)!important;
+  border-radius:16px!important;overflow:hidden!important;background:rgba(4,10,25,.14)!important;background-image:none!important;box-shadow:none!important
+}
+#ciao-miniapp-root .cw45-mc-themed [data-cw20-stats] .cw20-stat-row{background:transparent!important;background-image:none!important;border-radius:0!important}
+#ciao-miniapp-root .cw45-mc-themed [data-mc="momentum"] .mc-chart-pad{
+  border-radius:15px!important;overflow:hidden!important;background:rgba(4,10,25,.13)!important;background-image:none!important
+}
+#ciao-miniapp-root .cw45-mc-themed .cw14-form-card{
+  margin-top:0!important;padding:0!important;border:1px solid rgba(var(--cw45-rgb),.11)!important;border-radius:16px!important;
+  overflow:hidden!important;background:rgba(4,10,25,.13)!important;background-image:none!important
+}
+#ciao-miniapp-root .cw45-mc-themed .cw14-form-row{background:transparent!important;background-image:none!important}
+#ciao-miniapp-root .cw45-mc-themed [data-mc="lineups"] .mc-lineups-wrap,
+#ciao-miniapp-root .cw45-mc-themed [data-mc="lineups"] .mc-lineup-extra{background:transparent!important;background-image:none!important;box-shadow:none!important}
+#ciao-miniapp-root .cw45-mc-themed :is(.cw20-stat-row,.cw14-form-row,.mc-chart-pad,.mc-lineup-list)::before,
+#ciao-miniapp-root .cw45-mc-themed :is(.cw20-stat-row,.cw14-form-row,.mc-chart-pad,.mc-lineup-list)::after{display:none!important;content:none!important}
+
+/* Independent zero-height sticky slot; score strip becomes the compact match header. */
 #ciao-miniapp-root .cw66-sticky-slot{
-  position:sticky!important;top:66px!important;z-index:124!important;height:0!important;overflow:visible!important;
+  position:sticky!important;top:6px!important;z-index:124!important;height:0!important;overflow:visible!important;
   pointer-events:none!important;margin:0!important;padding:0!important
 }
 #ciao-miniapp-root .cw66-score-strip{
-  position:absolute!important;left:0!important;right:0!important;top:3px!important;height:36px!important;
-  display:grid!important;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)!important;grid-template-rows:19px 10px!important;
-  align-items:center!important;column-gap:8px!important;padding:3px 10px 4px!important;box-sizing:border-box!important;
-  border:1px solid rgba(var(--cw45-rgb,49,80,255),.23)!important;border-radius:12px!important;
-  background:linear-gradient(180deg,rgba(var(--cw45-rgb,49,80,255),.13),rgba(4,10,25,.96))!important;
-  box-shadow:0 9px 24px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.025)!important;
-  backdrop-filter:blur(14px)!important;-webkit-backdrop-filter:blur(14px)!important;
+  position:absolute!important;left:-8px!important;right:-8px!important;top:0!important;height:46px!important;
+  display:grid!important;grid-template-columns:22px minmax(0,1fr) auto minmax(0,1fr) 22px!important;grid-template-rows:27px 10px!important;
+  align-items:center!important;column-gap:7px!important;padding:4px 13px 5px!important;box-sizing:border-box!important;
+  border:1px solid rgba(var(--cw45-rgb,49,80,255),.26)!important;border-radius:15px!important;
+  background:linear-gradient(180deg,rgba(var(--cw45-rgb,49,80,255),.16),rgba(4,10,25,.97))!important;
+  box-shadow:0 10px 28px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.035)!important;
+  backdrop-filter:blur(16px)!important;-webkit-backdrop-filter:blur(16px)!important;
   opacity:0!important;visibility:hidden!important;transform:translateY(-5px)!important;
   transition:opacity .15s ease,transform .18s ease,visibility 0s linear .18s!important
 }
-#ciao-miniapp-root.cw66-compact-on .cw66-score-strip{
-  opacity:1!important;visibility:visible!important;transform:none!important;transition-delay:0s!important
-}
-#ciao-miniapp-root .cw66-score-team{min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;color:#eaf0ff!important;font-size:9px!important;font-weight:900!important;line-height:1!important}
+#ciao-miniapp-root.cw66-compact-on .cw66-score-strip{opacity:1!important;visibility:visible!important;transform:none!important;transition-delay:0s!important}
+#ciao-miniapp-root .cw66-score-logo{width:22px!important;height:22px!important;display:grid!important;place-items:center!important;overflow:hidden!important}
+#ciao-miniapp-root .cw66-score-logo-img{width:22px!important;height:22px!important;object-fit:contain!important;display:block!important}
+#ciao-miniapp-root .cw66-score-logo-fallback{font-size:15px!important;line-height:1!important}
+#ciao-miniapp-root .cw66-score-team{min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;color:#eef3ff!important;font-size:9.2px!important;font-weight:900!important;line-height:1!important}
 #ciao-miniapp-root .cw66-score-team.home{text-align:right!important}
 #ciao-miniapp-root .cw66-score-team.away{text-align:left!important}
-#ciao-miniapp-root .cw66-score-value{min-width:42px!important;text-align:center!important;color:#fff!important;font-family:'Unbounded','Manrope',sans-serif!important;font-size:13px!important;font-weight:800!important;line-height:1!important}
+#ciao-miniapp-root .cw66-score-value{min-width:46px!important;text-align:center!important;color:#fff!important;font-family:'Unbounded','Manrope',sans-serif!important;font-size:14px!important;font-weight:800!important;line-height:1!important}
 #ciao-miniapp-root .cw66-score-state{grid-column:1/-1!important;grid-row:2!important;text-align:center!important;color:color-mix(in srgb,var(--cw45-a,#3150ff) 58%,#aab8db)!important;font-size:6.8px!important;font-weight:950!important;letter-spacing:.055em!important;line-height:1!important;text-transform:uppercase!important}
 #ciao-miniapp-root .cw66-score-strip.live .cw66-score-state{color:color-mix(in srgb,var(--cw45-a,#3150ff) 72%,#fff)!important}
-#ciao-miniapp-root.match-center-open.cw66-compact-on .mc-tabs-wrap{top:106px!important}
+#ciao-miniapp-root.match-center-open.cw66-compact-on .mc-tabs-wrap{top:58px!important}
 @media(max-width:390px){
-  #ciao-miniapp-root.match-center-open .mc-tabs-wrap{top:64px!important;margin-bottom:7px!important}
-  #ciao-miniapp-root .cw66-sticky-slot{top:64px!important}
-  #ciao-miniapp-root.match-center-open.cw66-compact-on .mc-tabs-wrap{top:104px!important}
-  #ciao-miniapp-root .cw66-score-team{font-size:8.3px!important}
-  #ciao-miniapp-root .cw66-score-value{font-size:12px!important;min-width:38px!important}
+  #ciao-miniapp-root.match-center-open .mc-tabs-wrap{top:5px!important;margin-bottom:7px!important;border-radius:16px!important}
+  #ciao-miniapp-root .cw66-sticky-slot{top:5px!important}
+  #ciao-miniapp-root.match-center-open.cw66-compact-on .mc-tabs-wrap{top:57px!important}
+  #ciao-miniapp-root .cw66-score-strip{left:-6px!important;right:-6px!important;height:46px!important;padding-left:10px!important;padding-right:10px!important}
+  #ciao-miniapp-root .cw66-score-team{font-size:8.5px!important}
+  #ciao-miniapp-root .cw66-score-value{font-size:13px!important;min-width:42px!important}
   #ciao-miniapp-root .cw45-mc-themed [data-mc="lineups"] .mc-lineup-list{padding:11px 12px!important}
+  #ciao-miniapp-root .cw45-mc-themed [data-cw20-stats] .cw20-stat-card{margin-left:10px!important;margin-right:10px!important;padding-left:10px!important;padding-right:10px!important}
 }
 </style>
 <!-- /ciao-v66-matchcenter-visual-pass -->
