@@ -6609,18 +6609,46 @@ function __cw66CompactState(d){
   else if(status==='live'){state=`LIVE${Number.isFinite(minute)&&minute>0?' · '+minute+'′':''}`;active=true}
   else if(status==='postponed')state='ПЕРЕНЕСЁН';
   else if(status==='cancelled')state='ОТМЕНЁН';
+  const stat=d?.stats?.stats||{},homeStats=stat?.home||{},awayStats=stat?.away||{};
+  const xgh=Number(homeStats?.expected_goals??homeStats?.xg?.actual??homeStats?.xg),xga=Number(awayStats?.expected_goals??awayStats?.xg?.actual??awayStats?.xg);
+  const xg=Number.isFinite(xgh)&&Number.isFinite(xga)?`xG ${xgh.toFixed(2)} — ${xga.toFixed(2)}`:'';
   const short=t=>String(t?.short_name||t?.name||'Команда').trim();
-  return {home:short(m.home),away:short(m.away),homeLogo:__cw66CompactLogoHtml(m.home),awayLogo:__cw66CompactLogoHtml(m.away),score,state,active};
+  return {home:short(m.home),away:short(m.away),homeLogo:__cw66CompactLogoHtml(m.home),awayLogo:__cw66CompactLogoHtml(m.away),score,state,xg,active};
 }
 function __cw66ScoreStripHtml(d){
-  const x=__cw66CompactState(d);
-  return `<div class="cw66-sticky-slot" aria-hidden="true"><div class="cw66-score-strip ${x.active?'live':''}" data-cw66-score-strip><span class="cw66-score-logo home" data-cw66-home-logo>${x.homeLogo}</span><span class="cw66-score-team home" data-cw66-home>${esc(x.home)}</span><b class="cw66-score-value" data-cw66-score>${esc(x.score)}</b><span class="cw66-score-team away" data-cw66-away>${esc(x.away)}</span><span class="cw66-score-logo away" data-cw66-away-logo>${x.awayLogo}</span><small class="cw66-score-state" data-cw66-state>${esc(x.state)}</small></div></div>`;
+  const x=__cw66CompactState(d),hasXg=!!x.xg;
+  return `<div class="cw66-sticky-slot" aria-hidden="true"><div class="cw66-score-strip ${x.active?'live':''}" data-cw66-score-strip><span class="cw66-score-logo home" data-cw66-home-logo>${x.homeLogo}</span><span class="cw66-score-team home" data-cw66-home>${esc(x.home)}</span><b class="cw66-score-value" data-cw66-score>${esc(x.score)}</b><span class="cw66-score-team away" data-cw66-away>${esc(x.away)}</span><span class="cw66-score-logo away" data-cw66-away-logo>${x.awayLogo}</span><small class="cw66-score-state"><span class="cw66-score-xg" data-cw66-xg ${hasXg?'':'hidden'}>${esc(x.xg)}</span><i data-cw66-xg-sep ${hasXg?'':'hidden'}>·</i><span data-cw66-state>${esc(x.state)}</span></small></div></div>`;
 }
 function __cw66PatchCompact(d=matchData){
   const strip=main?.querySelector?.('[data-cw66-score-strip]');if(!strip||!d)return false;
-  const x=__cw66CompactState(d),home=strip.querySelector('[data-cw66-home]'),away=strip.querySelector('[data-cw66-away]'),score=strip.querySelector('[data-cw66-score]'),state=strip.querySelector('[data-cw66-state]'),homeLogo=strip.querySelector('[data-cw66-home-logo]'),awayLogo=strip.querySelector('[data-cw66-away-logo]');
-  if(home&&home.textContent!==x.home)home.textContent=x.home;if(away&&away.textContent!==x.away)away.textContent=x.away;if(score&&score.textContent!==x.score)score.textContent=x.score;if(state&&state.textContent!==x.state)state.textContent=x.state;if(homeLogo&&homeLogo.innerHTML!==x.homeLogo)homeLogo.innerHTML=x.homeLogo;if(awayLogo&&awayLogo.innerHTML!==x.awayLogo)awayLogo.innerHTML=x.awayLogo;
+  const x=__cw66CompactState(d),home=strip.querySelector('[data-cw66-home]'),away=strip.querySelector('[data-cw66-away]'),score=strip.querySelector('[data-cw66-score]'),state=strip.querySelector('[data-cw66-state]'),xg=strip.querySelector('[data-cw66-xg]'),sep=strip.querySelector('[data-cw66-xg-sep]'),homeLogo=strip.querySelector('[data-cw66-home-logo]'),awayLogo=strip.querySelector('[data-cw66-away-logo]');
+  if(home&&home.textContent!==x.home)home.textContent=x.home;if(away&&away.textContent!==x.away)away.textContent=x.away;if(score&&score.textContent!==x.score)score.textContent=x.score;if(state&&state.textContent!==x.state)state.textContent=x.state;if(xg){if(xg.textContent!==x.xg)xg.textContent=x.xg;xg.hidden=!x.xg}if(sep)sep.hidden=!x.xg;if(homeLogo&&homeLogo.innerHTML!==x.homeLogo)homeLogo.innerHTML=x.homeLogo;if(awayLogo&&awayLogo.innerHTML!==x.awayLogo)awayLogo.innerHTML=x.awayLogo;
   strip.classList.toggle('live',x.active);return true;
+}
+function __cw69ApplyRootTheme(d=matchData){
+  if(!root)return false;
+  const key=typeof __cw45CompetitionKey==='function'?__cw45CompetitionKey(d):'serie_a';
+  const themes={
+    serie_a:{rgb:'49,80,255',a:'#3150ff',b:'#0b2f88'},
+    ucl:{rgb:'83,103,230',a:'#5367e6',b:'#49318f'},
+    uel:{rgb:'230,106,19',a:'#e66a13',b:'#7a2c05'},
+    uecl:{rgb:'40,169,104',a:'#28a968',b:'#0b3b28'},
+    coppa_italia:{rgb:'21,148,87',a:'#159457',b:'#9f2435'}
+  },t=themes[key]||themes.serie_a;
+  root.setAttribute('data-cw69-mc-theme',key);
+  root.style.setProperty('--cw45-rgb',t.rgb);root.style.setProperty('--cw45-a',t.a);root.style.setProperty('--cw45-b',t.b);
+  root.style.setProperty('background',`radial-gradient(circle at 100% 2%,rgba(${t.rgb},.20),transparent 39%),radial-gradient(circle at 0 42%,rgba(${t.rgb},.08),transparent 34%),linear-gradient(180deg,${t.a}18,#040a18 64%)`,'important');
+  root.style.setProperty('background-attachment','fixed','important');
+  return key;
+}
+function __cw69ClearRootTheme(){try{root?.removeAttribute?.('data-cw69-mc-theme');root?.style?.removeProperty('--cw45-rgb');root?.style?.removeProperty('--cw45-a');root?.style?.removeProperty('--cw45-b');root?.style?.removeProperty('background');root?.style?.removeProperty('background-attachment')}catch(_e){}}
+let __cw69XgFlight=null;
+function __cw69HasCompactXg(d){const st=d?.stats?.stats||{},h=Number(st?.home?.expected_goals??st?.home?.xg?.actual??st?.home?.xg),a=Number(st?.away?.expected_goals??st?.away?.xg?.actual??st?.away?.xg);return Number.isFinite(h)&&Number.isFinite(a)}
+async function __cw69EnsureCompactXg(){
+  if(!matchViewId||!matchData||__cw69HasCompactXg(matchData)){__cw66PatchCompact(matchData);return}
+  const status=String(matchData?.status??matchData?.match?.live_status??'').toLowerCase();if(!['live','finished'].includes(status))return;
+  const id=Number(matchViewId),source=String(matchViewSource||matchData?.source||'serie_a'),key=`${source}:${id}`;if(__cw69XgFlight?.key===key)return __cw69XgFlight.promise;
+  const promise=(async()=>{try{const sec=await __cw9FastMatchApi(id,['stats'],source);if(Number(matchViewId)!==id||!matchData)return;matchData=__cw9MergeMatch(matchData,sec);__cw66PatchCompact(matchData)}catch(_e){}finally{if(__cw69XgFlight?.key===key)__cw69XgFlight=null}})();__cw69XgFlight={key,promise};return promise;
 }
 function __cw66SyncSticky(){
   if(!matchViewId||!root.classList.contains('match-center-open')){root.classList.remove('cw66-compact-on');return false}
@@ -6641,11 +6669,11 @@ try{
 }catch(_e){}
 try{
   const __cw66BindMatchBase=bindMatchCenter;
-  bindMatchCenter=function(){const out=__cw66BindMatchBase();requestAnimationFrame(()=>{__cw66PatchCompact(matchData);__cw66SyncSticky()});return out};
+  bindMatchCenter=function(){const out=__cw66BindMatchBase();__cw69ApplyRootTheme(matchData);requestAnimationFrame(()=>{__cw66PatchCompact(matchData);__cw66SyncSticky()});setTimeout(()=>__cw69EnsureCompactXg(),0);return out};
 }catch(_e){}
 try{
   const __cw66PatchMatchBase=patchMatchCenter;
-  patchMatchCenter=function(next){const out=__cw66PatchMatchBase(next);__cw66PatchCompact(next);requestAnimationFrame(__cw66SyncSticky);return out};
+  patchMatchCenter=function(next){const out=__cw66PatchMatchBase(next);__cw69ApplyRootTheme(next);__cw66PatchCompact(next);requestAnimationFrame(__cw66SyncSticky);if(!__cw69HasCompactXg(next))setTimeout(()=>__cw69EnsureCompactXg(),0);return out};
 }catch(_e){}
 try{
   const __cw66PatchHeroBase=__cw36PatchHero;
@@ -6653,7 +6681,7 @@ try{
 }catch(_e){}
 try{
   const __cw66CloseBase=closeMatchCenter;
-  closeMatchCenter=function(){root.classList.remove('cw66-compact-on');return __cw66CloseBase()};
+  closeMatchCenter=function(){root.classList.remove('cw66-compact-on');__cw69ClearRootTheme();return __cw66CloseBase()};
 }catch(_e){}
 if(main&&!main.dataset.cw66StickyBound){
   main.dataset.cw66StickyBound='1';
@@ -7344,11 +7372,25 @@ html,body{max-width:100vw!important;overflow-x:hidden!important}
 
 <!-- ciao-v66-matchcenter-visual-pass -->
 <style id="ciao-v66-matchcenter-visual-pass">
-/* Keep .content as the only vertical scroll root. overflow-x:hidden on mc-shell
-   computes a vertical scrolling context in Chromium and breaks sticky descendants. */
+/* Keep .content as the only vertical scroll root. */
 #ciao-miniapp-root.match-center-open .mc-shell{overflow-x:clip!important;overflow-y:visible!important}
+#ciao-miniapp-root.match-center-open{padding-bottom:0!important;min-height:100dvh!important}
+#ciao-miniapp-root.match-center-open .content{padding-bottom:calc(18px + env(safe-area-inset-bottom))!important;scroll-padding-top:62px!important;background:transparent!important}
+#ciao-miniapp-root.match-center-open .nav,#ciao-miniapp-root.match-center-open .savebar,#ciao-miniapp-root.match-center-open .cwpred-savebar{display:none!important}
+#ciao-miniapp-root.match-center-open::after{display:none!important;content:none!important}
+#ciao-miniapp-root.match-center-open .app{min-height:100dvh!important;padding-bottom:0!important;background:transparent!important}
 
-/* One competition-tinted surface per section; technical wrappers never paint another rectangle. */
+/* Match Center receives its tournament background even when opened from Home. */
+#ciao-miniapp-root.match-center-open[data-cw69-mc-theme="serie_a"]{--cw45-rgb:49,80,255;--cw45-a:#3150ff;--cw45-b:#0b2f88}
+#ciao-miniapp-root.match-center-open[data-cw69-mc-theme="ucl"]{--cw45-rgb:83,103,230;--cw45-a:#5367e6;--cw45-b:#49318f}
+#ciao-miniapp-root.match-center-open[data-cw69-mc-theme="uel"]{--cw45-rgb:230,106,19;--cw45-a:#e66a13;--cw45-b:#7a2c05}
+#ciao-miniapp-root.match-center-open[data-cw69-mc-theme="uecl"]{--cw45-rgb:40,169,104;--cw45-a:#28a968;--cw45-b:#0b3b28}
+#ciao-miniapp-root.match-center-open[data-cw69-mc-theme="coppa_italia"]{--cw45-rgb:21,148,87;--cw45-a:#159457;--cw45-b:#9f2435}
+#ciao-miniapp-root.match-center-open[data-cw69-mc-theme]{
+  background:radial-gradient(circle at 100% 2%,rgba(var(--cw45-rgb),.20),transparent 39%),radial-gradient(circle at 0 42%,rgba(var(--cw45-rgb),.08),transparent 34%),linear-gradient(180deg,color-mix(in srgb,var(--cw45-a) 9%,#06102a),#040a18 64%)!important;
+}
+
+/* Technical wrappers never paint square tournament plates. */
 #ciao-miniapp-root .cw45-mc-themed :is(
   .cw20-stat-card,.cw20-stat-row,.cw20-stat-secondary,.cw20-stat-mini,
   .mc-chart-pad,.mc-momentum,
@@ -7366,103 +7408,120 @@ html,body{max-width:100vw!important;overflow-x:hidden!important}
 #ciao-miniapp-root .cw45-mc-themed .mc-momentum::after{background:rgba(var(--cw45-rgb),.16)!important}
 #ciao-miniapp-root .cw45-mc-themed .cw14-form-row{border:0!important;border-radius:0!important;border-bottom:1px solid rgba(var(--cw45-rgb),.12)!important}
 #ciao-miniapp-root .cw45-mc-themed .cw14-form-row:last-child{border-bottom:0!important}
-#ciao-miniapp-root .cw45-mc-themed .cw14-info-item{background:rgba(255,255,255,.012)!important;border-color:rgba(var(--cw45-rgb),.11)!important}
 #ciao-miniapp-root .cw45-mc-themed .cw212-live-stat{border-color:rgba(var(--cw45-rgb),.11)!important}
 
-/* Bench and unavailable are separate rounded cards with a small deliberate gap. */
+/* Information about the match is one rounded surface, like Form/Stats. */
+#ciao-miniapp-root .cw45-mc-themed .cw14-match-info{
+  gap:0!important;border:1px solid rgba(var(--cw45-rgb),.14)!important;border-radius:16px!important;
+  overflow:hidden!important;clip-path:inset(0 round 16px)!important;-webkit-mask-image:-webkit-radial-gradient(white,black)!important;
+  transform:translateZ(0)!important;isolation:isolate!important;background:rgba(4,10,25,.16)!important;background-image:none!important
+}
+#ciao-miniapp-root .cw45-mc-themed .cw14-info-item{border:0!important;border-radius:0!important;background:transparent!important;background-image:none!important}
+#ciao-miniapp-root .cw45-mc-themed .cw14-info-item.stadium{border-bottom:1px solid rgba(var(--cw45-rgb),.13)!important}
+#ciao-miniapp-root .cw45-mc-themed .cw14-info-item:nth-child(3){border-left:1px solid rgba(var(--cw45-rgb),.13)!important}
+
+/* Lineups tab has no giant square parent plate; bench/unavailable remain separate rounded cards. */
+#ciao-miniapp-root .cw45-mc-themed .mc-section:has(> [data-mc="lineups"]){
+  overflow:visible!important;clip-path:none!important;border-color:transparent!important;background:transparent!important;background-image:none!important;box-shadow:none!important
+}
+#ciao-miniapp-root .cw45-mc-themed [data-mc="lineups"],
+#ciao-miniapp-root .cw45-mc-themed [data-mc="lineups"] .mc-lineups-wrap,
 #ciao-miniapp-root .cw45-mc-themed [data-mc="lineups"] .mc-lineup-extra{
-  margin-top:8px!important;padding:0!important;border:0!important;border-radius:0!important;
-  background:transparent!important;background-image:none!important;box-shadow:none!important;
-  display:grid!important;gap:8px!important;overflow:visible!important;clip-path:none!important
+  background:transparent!important;background-image:none!important;border:0!important;box-shadow:none!important;overflow:visible!important;clip-path:none!important
+}
+#ciao-miniapp-root .cw45-mc-themed [data-mc="lineups"] .mc-lineup-extra{
+  margin-top:8px!important;padding:0!important;border-radius:0!important;display:grid!important;gap:8px!important
 }
 #ciao-miniapp-root .cw45-mc-themed [data-mc="lineups"] .mc-lineup-list{
   margin:0!important;padding:12px 14px!important;border:1px solid rgba(var(--cw45-rgb),.14)!important;border-radius:16px!important;
-  background:rgba(4,10,25,.20)!important;background-image:none!important;box-shadow:none!important;
-  overflow:hidden!important;clip-path:inset(0 round 16px)!important
+  background:linear-gradient(145deg,rgba(var(--cw45-rgb),.06),rgba(4,10,25,.90))!important;background-image:linear-gradient(145deg,rgba(var(--cw45-rgb),.06),rgba(4,10,25,.90))!important;
+  box-shadow:none!important;overflow:hidden!important;clip-path:inset(0 round 16px)!important;-webkit-mask-image:-webkit-radial-gradient(white,black)!important;
+  transform:translateZ(0)!important;isolation:isolate!important;background-clip:padding-box!important
 }
-#ciao-miniapp-root .cw45-mc-themed [data-mc="lineups"] .mc-lineup-list+.mc-lineup-list{border-top:1px solid rgba(var(--cw45-rgb),.14)!important}
 #ciao-miniapp-root .cw45-mc-themed [data-mc="lineups"] .mc-lineup-list h4{margin-bottom:9px!important}
 
-/* Match Center toolbar scrolls away normally; only compact score + tabs remain sticky. */
+/* Match Center title scrolls normally. */
 #ciao-miniapp-root.match-center-open .mc-toolbar,
 #ciao-miniapp-root.match-center-open .mc-toolbar.mc-sticky-back{
-  position:relative!important;top:auto!important;z-index:2!important;transform:none!important;
-  margin-top:6px!important;margin-bottom:10px!important
+  position:relative!important;top:auto!important;z-index:2!important;transform:none!important;margin-top:6px!important;margin-bottom:10px!important
 }
-#ciao-miniapp-root.match-center-open .content{scroll-padding-top:62px!important}
 
-/* Tabs use the same dense blurred material as the toolbar / compact score. */
+/* Default tabs return to the previous segmented treatment, with an 8px hero gap. */
+#ciao-miniapp-root.match-center-open .mc-hero + .mc-tabs-wrap{margin-top:8px!important}
 #ciao-miniapp-root.match-center-open .mc-tabs-wrap{
-  position:sticky!important;top:6px!important;z-index:118!important;
-  margin:0 0 8px!important;padding:3px!important;
-  overflow:hidden!important;border:1px solid rgba(var(--cw45-rgb,49,80,255),.24)!important;border-radius:17px!important;
+  position:sticky!important;top:6px!important;z-index:118!important;margin-bottom:8px!important;padding:0!important;
+  overflow:visible!important;border:0!important;border-radius:17px!important;background:transparent!important;background-image:none!important;
+  box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;transition:top .18s ease!important
+}
+#ciao-miniapp-root.match-center-open .mc-tabs{
+  padding:3px!important;border:1px solid rgba(var(--cw45-rgb,49,80,255),.24)!important;border-radius:17px!important;
+  background:linear-gradient(145deg,rgba(var(--cw45-rgb,49,80,255),.15),rgba(5,14,34,.98))!important;
+  background-image:linear-gradient(145deg,rgba(var(--cw45-rgb,49,80,255),.15),rgba(5,14,34,.98))!important;
+  box-shadow:none!important;overflow:hidden!important
+}
+#ciao-miniapp-root.match-center-open .mc-tab{background:transparent!important;border-color:transparent!important;box-shadow:none!important}
+#ciao-miniapp-root.match-center-open .mc-tab.active{background:linear-gradient(135deg,var(--cw45-a,#3150ff),var(--cw45-b,#0b2f88))!important;border-color:rgba(var(--cw45-rgb,49,80,255),.36)!important}
+/* Only the scrolled/sticky state gets the dense blur material. */
+#ciao-miniapp-root.match-center-open.cw66-compact-on .mc-tabs-wrap{
+  top:58px!important;padding:3px!important;overflow:hidden!important;border:1px solid rgba(var(--cw45-rgb,49,80,255),.24)!important;
   background:linear-gradient(180deg,rgba(var(--cw45-rgb,49,80,255),.15),rgba(4,10,25,.965))!important;
   background-image:linear-gradient(180deg,rgba(var(--cw45-rgb,49,80,255),.15),rgba(4,10,25,.965))!important;
   box-shadow:0 10px 26px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.035)!important;
-  backdrop-filter:blur(16px)!important;-webkit-backdrop-filter:blur(16px)!important;
-  transition:top .18s ease!important
+  backdrop-filter:blur(16px)!important;-webkit-backdrop-filter:blur(16px)!important
 }
-#ciao-miniapp-root.match-center-open .mc-tabs{
-  padding:0!important;border:0!important;background:transparent!important;background-image:none!important;box-shadow:none!important
-}
-#ciao-miniapp-root.match-center-open .mc-tab{background:rgba(255,255,255,.035)!important;border-color:rgba(var(--cw45-rgb,49,80,255),.12)!important}
-#ciao-miniapp-root.match-center-open .mc-tab.active{background:linear-gradient(135deg,var(--cw45-a,#3150ff),var(--cw45-b,#0b2f88))!important;border-color:rgba(var(--cw45-rgb,49,80,255),.36)!important}
+#ciao-miniapp-root.match-center-open.cw66-compact-on .mc-tabs{padding:0!important;border:0!important;background:transparent!important;background-image:none!important;box-shadow:none!important}
 #ciao-miniapp-root.match-center-open .mc-tab-content>.mc-section:first-child{margin-top:0!important}
-#ciao-miniapp-root.match-center-open .mc-tab-content>.mc-section+ .mc-section{margin-top:8px!important}
+#ciao-miniapp-root.match-center-open .mc-tab-content>.mc-section+.mc-section{margin-top:8px!important}
 
-/* One rounded inner surface, no square theme plates inside stats/form/momentum. */
+/* One rounded inner surface for stats/form/momentum. */
 #ciao-miniapp-root .cw45-mc-themed [data-cw20-stats] .cw20-stat-card{
   margin:0 12px 8px!important;padding:0 12px 2px!important;border:1px solid rgba(var(--cw45-rgb),.11)!important;
   border-radius:16px!important;overflow:hidden!important;background:rgba(4,10,25,.14)!important;background-image:none!important;box-shadow:none!important
 }
 #ciao-miniapp-root .cw45-mc-themed [data-cw20-stats] .cw20-stat-row{background:transparent!important;background-image:none!important;border-radius:0!important}
-#ciao-miniapp-root .cw45-mc-themed [data-mc="momentum"] .mc-chart-pad{
-  border-radius:15px!important;overflow:hidden!important;background:rgba(4,10,25,.13)!important;background-image:none!important
-}
-#ciao-miniapp-root .cw45-mc-themed .cw14-form-card{
-  margin-top:0!important;padding:0!important;border:1px solid rgba(var(--cw45-rgb),.11)!important;border-radius:16px!important;
-  overflow:hidden!important;background:rgba(4,10,25,.13)!important;background-image:none!important
-}
+#ciao-miniapp-root .cw45-mc-themed [data-mc="momentum"] .mc-chart-pad{border-radius:15px!important;overflow:hidden!important;background:rgba(4,10,25,.13)!important;background-image:none!important}
+#ciao-miniapp-root .cw45-mc-themed .cw14-form-card{margin-top:0!important;padding:0!important;border:1px solid rgba(var(--cw45-rgb),.11)!important;border-radius:16px!important;overflow:hidden!important;background:rgba(4,10,25,.13)!important;background-image:none!important}
 #ciao-miniapp-root .cw45-mc-themed .cw14-form-row{background:transparent!important;background-image:none!important}
-#ciao-miniapp-root .cw45-mc-themed [data-mc="lineups"] .mc-lineups-wrap,
-#ciao-miniapp-root .cw45-mc-themed [data-mc="lineups"] .mc-lineup-extra{background:transparent!important;background-image:none!important;box-shadow:none!important}
-#ciao-miniapp-root .cw45-mc-themed :is(.cw20-stat-row,.cw14-form-row,.mc-chart-pad,.mc-lineup-list)::before,
-#ciao-miniapp-root .cw45-mc-themed :is(.cw20-stat-row,.cw14-form-row,.mc-chart-pad,.mc-lineup-list)::after{display:none!important;content:none!important}
+#ciao-miniapp-root .cw45-mc-themed :is(.cw20-stat-row,.cw14-form-row,.mc-chart-pad,.mc-lineup-list,.cw14-match-info,.cw14-info-item)::before,
+#ciao-miniapp-root .cw45-mc-themed :is(.cw20-stat-row,.cw14-form-row,.mc-chart-pad,.mc-lineup-list,.cw14-match-info,.cw14-info-item)::after{display:none!important;content:none!important}
 
-/* Independent zero-height sticky slot; score strip becomes the compact match header. */
-#ciao-miniapp-root .cw66-sticky-slot{
-  position:sticky!important;top:6px!important;z-index:124!important;height:0!important;overflow:visible!important;
-  pointer-events:none!important;margin:0!important;padding:0!important
-}
+/* Tournament-tinted score field in "Твой прогноз". */
+#ciao-miniapp-root .cw45-mc-themed .cw20-pred-score:not(.empty){border-color:rgba(var(--cw45-rgb),.36)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 8px 22px rgba(var(--cw45-rgb),.12)!important}
+#ciao-miniapp-root .mc-theme-serie-a .cw20-pred-score:not(.empty){background:linear-gradient(145deg,#3150ff,#0b2f88)!important}
+#ciao-miniapp-root .mc-theme-ucl .cw20-pred-score:not(.empty){background:linear-gradient(145deg,#5367e6,#49318f)!important}
+#ciao-miniapp-root .mc-theme-uel .cw20-pred-score:not(.empty){background:linear-gradient(145deg,#e66a13,#7a2c05)!important}
+#ciao-miniapp-root .mc-theme-uecl .cw20-pred-score:not(.empty){background:linear-gradient(145deg,#28a968,#0b3b28)!important}
+#ciao-miniapp-root .mc-theme-coppa .cw20-pred-score:not(.empty){background:linear-gradient(135deg,#159457 0%,#315aaf 54%,#9f2435 100%)!important}
+
+/* Compact score: exactly the same width as tabs; xG joins match state on row two. */
+#ciao-miniapp-root .cw66-sticky-slot{position:sticky!important;top:6px!important;z-index:124!important;height:0!important;overflow:visible!important;pointer-events:none!important;margin:0!important;padding:0!important}
 #ciao-miniapp-root .cw66-score-strip{
-  position:absolute!important;left:-8px!important;right:-8px!important;top:0!important;height:46px!important;
+  position:absolute!important;left:4px!important;right:4px!important;top:0!important;height:46px!important;
   display:grid!important;grid-template-columns:22px minmax(0,1fr) auto minmax(0,1fr) 22px!important;grid-template-rows:27px 10px!important;
   align-items:center!important;column-gap:7px!important;padding:4px 13px 5px!important;box-sizing:border-box!important;
   border:1px solid rgba(var(--cw45-rgb,49,80,255),.26)!important;border-radius:15px!important;
   background:linear-gradient(180deg,rgba(var(--cw45-rgb,49,80,255),.16),rgba(4,10,25,.97))!important;
   box-shadow:0 10px 28px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.035)!important;
   backdrop-filter:blur(16px)!important;-webkit-backdrop-filter:blur(16px)!important;
-  opacity:0!important;visibility:hidden!important;transform:translateY(-5px)!important;
-  transition:opacity .15s ease,transform .18s ease,visibility 0s linear .18s!important
+  opacity:0!important;visibility:hidden!important;transform:translateY(-5px)!important;transition:opacity .15s ease,transform .18s ease,visibility 0s linear .18s!important
 }
 #ciao-miniapp-root.cw66-compact-on .cw66-score-strip{opacity:1!important;visibility:visible!important;transform:none!important;transition-delay:0s!important}
 #ciao-miniapp-root .cw66-score-logo{width:22px!important;height:22px!important;display:grid!important;place-items:center!important;overflow:hidden!important}
 #ciao-miniapp-root .cw66-score-logo-img{width:22px!important;height:22px!important;object-fit:contain!important;display:block!important}
 #ciao-miniapp-root .cw66-score-logo-fallback{font-size:15px!important;line-height:1!important}
 #ciao-miniapp-root .cw66-score-team{min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;color:#eef3ff!important;font-size:9.2px!important;font-weight:900!important;line-height:1!important}
-#ciao-miniapp-root .cw66-score-team.home{text-align:right!important}
-#ciao-miniapp-root .cw66-score-team.away{text-align:left!important}
+#ciao-miniapp-root .cw66-score-team.home{text-align:right!important}#ciao-miniapp-root .cw66-score-team.away{text-align:left!important}
 #ciao-miniapp-root .cw66-score-value{min-width:46px!important;text-align:center!important;color:#fff!important;font-family:'Unbounded','Manrope',sans-serif!important;font-size:14px!important;font-weight:800!important;line-height:1!important}
-#ciao-miniapp-root .cw66-score-state{grid-column:1/-1!important;grid-row:2!important;text-align:center!important;color:color-mix(in srgb,var(--cw45-a,#3150ff) 58%,#aab8db)!important;font-size:6.8px!important;font-weight:950!important;letter-spacing:.055em!important;line-height:1!important;text-transform:uppercase!important}
+#ciao-miniapp-root .cw66-score-state{grid-column:3!important;grid-row:2!important;justify-self:center!important;display:flex!important;white-space:nowrap!important;overflow:visible!important;align-items:center!important;justify-content:center!important;gap:5px!important;text-align:center!important;color:color-mix(in srgb,var(--cw45-a,#3150ff) 58%,#aab8db)!important;font-size:6.8px!important;font-weight:950!important;letter-spacing:.035em!important;line-height:1!important;text-transform:uppercase!important;font-style:normal!important}
+#ciao-miniapp-root .cw66-score-state i{font-style:normal!important;opacity:.55!important}#ciao-miniapp-root .cw66-score-state [hidden]{display:none!important}
 #ciao-miniapp-root .cw66-score-strip.live .cw66-score-state{color:color-mix(in srgb,var(--cw45-a,#3150ff) 72%,#fff)!important}
-#ciao-miniapp-root.match-center-open.cw66-compact-on .mc-tabs-wrap{top:58px!important}
+
 @media(max-width:390px){
   #ciao-miniapp-root.match-center-open .mc-tabs-wrap{top:5px!important;margin-bottom:7px!important;border-radius:16px!important}
   #ciao-miniapp-root .cw66-sticky-slot{top:5px!important}
   #ciao-miniapp-root.match-center-open.cw66-compact-on .mc-tabs-wrap{top:57px!important}
-  #ciao-miniapp-root .cw66-score-strip{left:-6px!important;right:-6px!important;height:46px!important;padding-left:10px!important;padding-right:10px!important}
-  #ciao-miniapp-root .cw66-score-team{font-size:8.5px!important}
-  #ciao-miniapp-root .cw66-score-value{font-size:13px!important;min-width:42px!important}
+  #ciao-miniapp-root .cw66-score-strip{left:4px!important;right:4px!important;height:46px!important;padding-left:10px!important;padding-right:10px!important}
+  #ciao-miniapp-root .cw66-score-team{font-size:8.5px!important}#ciao-miniapp-root .cw66-score-value{font-size:13px!important;min-width:42px!important}
   #ciao-miniapp-root .cw45-mc-themed [data-mc="lineups"] .mc-lineup-list{padding:11px 12px!important}
   #ciao-miniapp-root .cw45-mc-themed [data-cw20-stats] .cw20-stat-card{margin-left:10px!important;margin-right:10px!important;padding-left:10px!important;padding-right:10px!important}
 }
