@@ -6586,6 +6586,68 @@ if(!root.dataset.cw62ClubBound){
 try{if(tab==='predict'&&!matchViewId&&!clubViewId)setTimeout(()=>__cw62PrefetchFavoriteClub(),80)}catch(_e){}
 /* ===== /Ciao, Web! v62 coherent home + club profile ===== */
 
+
+/* ciao-v66-matchcenter-visual-pass */
+function __cw66CompactState(d){
+  const m=d?.match||{},norm=typeof __cw38NormalizeMatch==='function'?__cw38NormalizeMatch(d):null;
+  const status=String(norm?.status??d?.status??m?.live_status??'scheduled').toLowerCase();
+  const minute=Number(norm?.minute??m?.live_elapsed??m?.minute);
+  const hs=norm?.homeScore??m?.home_score??m?.homeScore,as=norm?.awayScore??m?.away_score??m?.awayScore;
+  const score=(hs!=null&&as!=null)?`${Number(hs)}:${Number(as)}`:(typeof matchCenterScore==='function'?String(matchCenterScore(d)||'— : —'):'— : —');
+  let state='ДО МАТЧА',active=false;
+  if(status==='finished'){state='FT'}
+  else if(status==='halftime'){state='ПЕРЕРЫВ';active=true}
+  else if(status==='penalties'){state='ПЕНАЛЬТИ';active=true}
+  else if(status==='extra_time'){state=`ДОП. ВРЕМЯ${Number.isFinite(minute)&&minute>0?' · '+minute+'′':''}`;active=true}
+  else if(status==='live'){state=`LIVE${Number.isFinite(minute)&&minute>0?' · '+minute+'′':''}`;active=true}
+  else if(status==='postponed')state='ПЕРЕНЕСЁН';
+  else if(status==='cancelled')state='ОТМЕНЁН';
+  const short=t=>String(t?.short_name||t?.name||'Команда').trim();
+  return {home:short(m.home),away:short(m.away),score,state,active};
+}
+function __cw66ScoreStripHtml(d){
+  const x=__cw66CompactState(d);
+  return `<div class="cw66-score-strip ${x.active?'live':''}" data-cw66-score-strip aria-hidden="true"><span class="cw66-score-team home" data-cw66-home>${esc(x.home)}</span><b class="cw66-score-value" data-cw66-score>${esc(x.score)}</b><span class="cw66-score-team away" data-cw66-away>${esc(x.away)}</span><small class="cw66-score-state" data-cw66-state>${esc(x.state)}</small></div>`;
+}
+function __cw66PatchCompact(d=matchData){
+  const strip=main?.querySelector?.('[data-cw66-score-strip]');if(!strip||!d)return false;
+  const x=__cw66CompactState(d),home=strip.querySelector('[data-cw66-home]'),away=strip.querySelector('[data-cw66-away]'),score=strip.querySelector('[data-cw66-score]'),state=strip.querySelector('[data-cw66-state]');
+  if(home&&home.textContent!==x.home)home.textContent=x.home;if(away&&away.textContent!==x.away)away.textContent=x.away;if(score&&score.textContent!==x.score)score.textContent=x.score;if(state&&state.textContent!==x.state)state.textContent=x.state;
+  strip.classList.toggle('live',x.active);return true;
+}
+function __cw66SyncSticky(){
+  if(!matchViewId||!root.classList.contains('match-center-open')){root.classList.remove('cw66-compact-on');return false}
+  const hero=main?.querySelector?.('[data-mc="hero"]'),toolbar=main?.querySelector?.('.mc-toolbar'),strip=main?.querySelector?.('[data-cw66-score-strip]');if(!hero||!toolbar||!strip){root.classList.remove('cw66-compact-on');return false}
+  const on=Number(main?.scrollTop||0)>44&&hero.getBoundingClientRect().bottom<=toolbar.getBoundingClientRect().bottom+6;
+  root.classList.toggle('cw66-compact-on',on);strip.setAttribute('aria-hidden',on?'false':'true');return on;
+}
+try{
+  const __cw66MatchCenterHtmlBase=matchCenterHtml;
+  matchCenterHtml=function(d){
+    let html=String(__cw66MatchCenterHtmlBase(d)||'');if(html.includes('data-cw66-score-strip'))return html;
+    const needle='<span class="mc-toolbar-spacer"></span></div>';
+    return html.replace(needle,`<span class="mc-toolbar-spacer"></span>${__cw66ScoreStripHtml(d)}</div>`);
+  };
+}catch(_e){}
+try{
+  const __cw66BindMatchBase=bindMatchCenter;
+  bindMatchCenter=function(){const out=__cw66BindMatchBase();requestAnimationFrame(()=>{__cw66PatchCompact(matchData);__cw66SyncSticky()});return out};
+}catch(_e){}
+try{
+  const __cw66PatchMatchBase=patchMatchCenter;
+  patchMatchCenter=function(next){const out=__cw66PatchMatchBase(next);__cw66PatchCompact(next);requestAnimationFrame(__cw66SyncSticky);return out};
+}catch(_e){}
+try{
+  const __cw66PatchHeroBase=__cw36PatchHero;
+  __cw36PatchHero=function(prev,next){const out=__cw66PatchHeroBase(prev,next);__cw66PatchCompact(next);requestAnimationFrame(__cw66SyncSticky);return out};
+}catch(_e){}
+try{
+  const __cw66CloseBase=closeMatchCenter;
+  closeMatchCenter=function(){root.classList.remove('cw66-compact-on');return __cw66CloseBase()};
+}catch(_e){}
+if(main&&!main.dataset.cw66StickyBound){main.dataset.cw66StickyBound='1';main.addEventListener('scroll',__cw66SyncSticky,{passive:true})}
+/* /ciao-v66-matchcenter-visual-pass */
+
 /* ===== /Ciao, Web! v22.5 product polish layer ===== */
 
 })();
@@ -7263,6 +7325,75 @@ html,body{max-width:100vw!important;overflow-x:hidden!important}
 </style>
 
 <!-- /ciao-v62-home-club-profile-coherent -->
+
+
+<!-- ciao-v66-matchcenter-visual-pass -->
+<style id="ciao-v66-matchcenter-visual-pass">
+/* One competition-tinted surface per section; technical wrappers never paint another rectangle. */
+#ciao-miniapp-root .cw45-mc-themed :is(
+  .cw20-stat-card,.cw20-stat-row,.cw20-stat-secondary,.cw20-stat-mini,
+  .mc-chart-pad,.mc-momentum,
+  .cw14-form-card,.cw14-form-row,.cw14-match-info,.cw14-info-item,
+  .cw212-live-grid,.cw212-live-stat,
+  .mc-lineup-list
+){background:transparent!important;background-image:none!important;box-shadow:none!important}
+#ciao-miniapp-root .cw45-mc-themed [data-cw20-stats] .cw20-stat-card{padding-top:0!important;padding-bottom:4px!important}
+#ciao-miniapp-root .cw45-mc-themed [data-cw20-stats] .cw20-stat-row{border:0!important;border-bottom:1px solid rgba(var(--cw45-rgb),.13)!important;border-radius:0!important}
+#ciao-miniapp-root .cw45-mc-themed [data-cw20-stats] .cw20-stat-row:last-child{border-bottom:1px solid rgba(var(--cw45-rgb),.13)!important}
+#ciao-miniapp-root .cw45-mc-themed [data-cw20-stats] .cw20-stat-secondary{padding-top:8px!important;border-top:0!important}
+#ciao-miniapp-root .cw45-mc-themed [data-cw20-stats] .cw20-stat-mini{border-color:rgba(var(--cw45-rgb),.12)!important}
+#ciao-miniapp-root .cw45-mc-themed [data-mc="momentum"]{padding:0 14px 13px!important}
+#ciao-miniapp-root .cw45-mc-themed [data-mc="momentum"] .mc-chart-pad{padding:0!important;margin:0!important;border:0!important}
+#ciao-miniapp-root .cw45-mc-themed .mc-momentum{padding:7px 0!important;border:0!important}
+#ciao-miniapp-root .cw45-mc-themed .mc-momentum::after{background:rgba(var(--cw45-rgb),.16)!important}
+#ciao-miniapp-root .cw45-mc-themed .cw14-form-row{border:0!important;border-radius:0!important;border-bottom:1px solid rgba(var(--cw45-rgb),.12)!important}
+#ciao-miniapp-root .cw45-mc-themed .cw14-form-row:last-child{border-bottom:0!important}
+#ciao-miniapp-root .cw45-mc-themed .cw14-info-item{background:rgba(255,255,255,.012)!important;border-color:rgba(var(--cw45-rgb),.11)!important}
+#ciao-miniapp-root .cw45-mc-themed .cw212-live-stat{border-color:rgba(var(--cw45-rgb),.11)!important}
+
+/* Bench + unavailable = one calm panel with one separator, not stacked cards. */
+#ciao-miniapp-root .cw45-mc-themed [data-mc="lineups"] .mc-lineup-extra{
+  margin-top:10px!important;padding:0!important;border:1px solid rgba(var(--cw45-rgb),.14)!important;border-radius:16px!important;
+  background:rgba(4,10,25,.20)!important;background-image:none!important;box-shadow:none!important;overflow:hidden!important;clip-path:inset(0 round 16px)!important
+}
+#ciao-miniapp-root .cw45-mc-themed [data-mc="lineups"] .mc-lineup-list{
+  margin:0!important;padding:12px 14px!important;border:0!important;border-radius:0!important;clip-path:none!important;background:transparent!important
+}
+#ciao-miniapp-root .cw45-mc-themed [data-mc="lineups"] .mc-lineup-list+.mc-lineup-list{border-top:1px solid rgba(var(--cw45-rgb),.13)!important}
+#ciao-miniapp-root .cw45-mc-themed [data-mc="lineups"] .mc-lineup-list h4{margin-bottom:9px!important}
+
+/* Tabs sit close to the next section. */
+#ciao-miniapp-root.match-center-open .mc-tabs-wrap{margin:0 0 8px!important;padding:0!important;top:66px!important;transition:top .18s ease!important}
+#ciao-miniapp-root.match-center-open .mc-tab-content>.mc-section:first-child{margin-top:0!important}
+#ciao-miniapp-root.match-center-open .mc-tab-content>.mc-section+ .mc-section{margin-top:12px!important}
+
+/* Sticky compact score: second row of the already-sticky Match Center toolbar. */
+#ciao-miniapp-root.match-center-open .mc-toolbar{
+  display:grid!important;grid-template-columns:42px minmax(0,1fr) 42px!important;grid-template-rows:42px auto!important;column-gap:10px!important;row-gap:0!important;align-items:center!important
+}
+#ciao-miniapp-root.match-center-open .mc-toolbar>.mc-back{grid-column:1!important;grid-row:1!important}
+#ciao-miniapp-root.match-center-open .mc-toolbar>.mc-toolbar-title{grid-column:2!important;grid-row:1!important}
+#ciao-miniapp-root.match-center-open .mc-toolbar>.mc-toolbar-spacer{grid-column:3!important;grid-row:1!important}
+#ciao-miniapp-root .cw66-score-strip{
+  grid-column:1/-1!important;grid-row:2!important;position:relative!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)!important;grid-template-rows:18px 11px!important;align-items:center!important;column-gap:8px!important;
+  height:0!important;max-height:0!important;margin:0!important;padding:0 5px!important;overflow:hidden!important;opacity:0!important;border-top:1px solid transparent!important;transform:translateY(-3px)!important;transition:height .18s ease,max-height .18s ease,opacity .15s ease,margin .18s ease,transform .18s ease,border-color .18s ease!important
+}
+#ciao-miniapp-root.cw66-compact-on .cw66-score-strip{height:34px!important;max-height:34px!important;margin-top:3px!important;opacity:1!important;transform:none!important;border-top-color:rgba(var(--cw45-rgb,49,80,255),.15)!important}
+#ciao-miniapp-root .cw66-score-team{min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;color:#eaf0ff!important;font-size:9px!important;font-weight:900!important;line-height:1!important}
+#ciao-miniapp-root .cw66-score-team.home{text-align:right!important}#ciao-miniapp-root .cw66-score-team.away{text-align:left!important}
+#ciao-miniapp-root .cw66-score-value{min-width:42px!important;text-align:center!important;color:#fff!important;font-family:'Unbounded','Manrope',sans-serif!important;font-size:13px!important;font-weight:800!important;line-height:1!important}
+#ciao-miniapp-root .cw66-score-state{grid-column:1/-1!important;grid-row:2!important;text-align:center!important;color:color-mix(in srgb,var(--cw45-a,#3150ff) 58%,#aab8db)!important;font-size:6.8px!important;font-weight:950!important;letter-spacing:.055em!important;line-height:1!important;text-transform:uppercase!important}
+#ciao-miniapp-root .cw66-score-strip.live .cw66-score-state{color:color-mix(in srgb,var(--cw45-a,#3150ff) 72%,#fff)!important}
+#ciao-miniapp-root.match-center-open.cw66-compact-on .mc-tabs-wrap{top:103px!important}
+@media(max-width:390px){
+  #ciao-miniapp-root.match-center-open .mc-tabs-wrap{top:64px!important;margin-bottom:7px!important}
+  #ciao-miniapp-root.match-center-open.cw66-compact-on .mc-tabs-wrap{top:101px!important}
+  #ciao-miniapp-root .cw66-score-team{font-size:8.3px!important}
+  #ciao-miniapp-root .cw66-score-value{font-size:12px!important;min-width:38px!important}
+  #ciao-miniapp-root .cw45-mc-themed [data-mc="lineups"] .mc-lineup-list{padding:11px 12px!important}
+}
+</style>
+<!-- /ciao-v66-matchcenter-visual-pass -->
 
 </body>
 </html>
