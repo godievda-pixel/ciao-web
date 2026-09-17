@@ -6607,7 +6607,7 @@ function __cw66CompactState(d){
 }
 function __cw66ScoreStripHtml(d){
   const x=__cw66CompactState(d);
-  return `<div class="cw66-score-strip ${x.active?'live':''}" data-cw66-score-strip aria-hidden="true"><span class="cw66-score-team home" data-cw66-home>${esc(x.home)}</span><b class="cw66-score-value" data-cw66-score>${esc(x.score)}</b><span class="cw66-score-team away" data-cw66-away>${esc(x.away)}</span><small class="cw66-score-state" data-cw66-state>${esc(x.state)}</small></div>`;
+  return `<div class="cw66-sticky-slot" aria-hidden="true"><div class="cw66-score-strip ${x.active?'live':''}" data-cw66-score-strip><span class="cw66-score-team home" data-cw66-home>${esc(x.home)}</span><b class="cw66-score-value" data-cw66-score>${esc(x.score)}</b><span class="cw66-score-team away" data-cw66-away>${esc(x.away)}</span><small class="cw66-score-state" data-cw66-state>${esc(x.state)}</small></div></div>`;
 }
 function __cw66PatchCompact(d=matchData){
   const strip=main?.querySelector?.('[data-cw66-score-strip]');if(!strip||!d)return false;
@@ -6617,16 +6617,18 @@ function __cw66PatchCompact(d=matchData){
 }
 function __cw66SyncSticky(){
   if(!matchViewId||!root.classList.contains('match-center-open')){root.classList.remove('cw66-compact-on');return false}
-  const hero=main?.querySelector?.('[data-mc="hero"]'),toolbar=main?.querySelector?.('.mc-toolbar'),strip=main?.querySelector?.('[data-cw66-score-strip]');if(!hero||!toolbar||!strip){root.classList.remove('cw66-compact-on');return false}
-  const on=Number(main?.scrollTop||0)>44&&hero.getBoundingClientRect().bottom<=toolbar.getBoundingClientRect().bottom+6;
-  root.classList.toggle('cw66-compact-on',on);strip.setAttribute('aria-hidden',on?'false':'true');return on;
+  const hero=main?.querySelector?.('[data-mc="hero"]'),toolbar=main?.querySelector?.('.mc-toolbar'),slot=main?.querySelector?.('.cw66-sticky-slot'),strip=main?.querySelector?.('[data-cw66-score-strip]');
+  if(!hero||!toolbar||!slot||!strip){root.classList.remove('cw66-compact-on');return false}
+  const heroBottom=hero.getBoundingClientRect().bottom,toolbarBottom=toolbar.getBoundingClientRect().bottom;
+  const on=Number(main?.scrollTop||window.scrollY||0)>28&&heroBottom<=toolbarBottom+8;
+  root.classList.toggle('cw66-compact-on',on);slot.setAttribute('aria-hidden',on?'false':'true');return on;
 }
 try{
   const __cw66MatchCenterHtmlBase=matchCenterHtml;
   matchCenterHtml=function(d){
     let html=String(__cw66MatchCenterHtmlBase(d)||'');if(html.includes('data-cw66-score-strip'))return html;
     const needle='<span class="mc-toolbar-spacer"></span></div>';
-    return html.replace(needle,`<span class="mc-toolbar-spacer"></span>${__cw66ScoreStripHtml(d)}</div>`);
+    return html.replace(needle,`${needle}${__cw66ScoreStripHtml(d)}`);
   };
 }catch(_e){}
 try{
@@ -6645,7 +6647,12 @@ try{
   const __cw66CloseBase=closeMatchCenter;
   closeMatchCenter=function(){root.classList.remove('cw66-compact-on');return __cw66CloseBase()};
 }catch(_e){}
-if(main&&!main.dataset.cw66StickyBound){main.dataset.cw66StickyBound='1';main.addEventListener('scroll',__cw66SyncSticky,{passive:true})}
+if(main&&!main.dataset.cw66StickyBound){
+  main.dataset.cw66StickyBound='1';
+  main.addEventListener('scroll',__cw66SyncSticky,{passive:true});
+  window.addEventListener('scroll',__cw66SyncSticky,{passive:true});
+  window.addEventListener('resize',__cw66SyncSticky,{passive:true});
+}
 /* /ciao-v66-matchcenter-visual-pass */
 
 /* ===== /Ciao, Web! v22.5 product polish layer ===== */
@@ -7329,13 +7336,16 @@ html,body{max-width:100vw!important;overflow-x:hidden!important}
 
 <!-- ciao-v66-matchcenter-visual-pass -->
 <style id="ciao-v66-matchcenter-visual-pass">
+/* Keep .content as the only vertical scroll root. overflow-x:hidden on mc-shell
+   computes a vertical scrolling context in Chromium and breaks sticky descendants. */
+#ciao-miniapp-root.match-center-open .mc-shell{overflow-x:clip!important;overflow-y:visible!important}
+
 /* One competition-tinted surface per section; technical wrappers never paint another rectangle. */
 #ciao-miniapp-root .cw45-mc-themed :is(
   .cw20-stat-card,.cw20-stat-row,.cw20-stat-secondary,.cw20-stat-mini,
   .mc-chart-pad,.mc-momentum,
   .cw14-form-card,.cw14-form-row,.cw14-match-info,.cw14-info-item,
-  .cw212-live-grid,.cw212-live-stat,
-  .mc-lineup-list
+  .cw212-live-grid,.cw212-live-stat
 ){background:transparent!important;background-image:none!important;box-shadow:none!important}
 #ciao-miniapp-root .cw45-mc-themed [data-cw20-stats] .cw20-stat-card{padding-top:0!important;padding-bottom:4px!important}
 #ciao-miniapp-root .cw45-mc-themed [data-cw20-stats] .cw20-stat-row{border:0!important;border-bottom:1px solid rgba(var(--cw45-rgb),.13)!important;border-radius:0!important}
@@ -7351,43 +7361,55 @@ html,body{max-width:100vw!important;overflow-x:hidden!important}
 #ciao-miniapp-root .cw45-mc-themed .cw14-info-item{background:rgba(255,255,255,.012)!important;border-color:rgba(var(--cw45-rgb),.11)!important}
 #ciao-miniapp-root .cw45-mc-themed .cw212-live-stat{border-color:rgba(var(--cw45-rgb),.11)!important}
 
-/* Bench + unavailable = one calm panel with one separator, not stacked cards. */
+/* Bench and unavailable are separate rounded cards with a small deliberate gap. */
 #ciao-miniapp-root .cw45-mc-themed [data-mc="lineups"] .mc-lineup-extra{
-  margin-top:10px!important;padding:0!important;border:1px solid rgba(var(--cw45-rgb),.14)!important;border-radius:16px!important;
-  background:rgba(4,10,25,.20)!important;background-image:none!important;box-shadow:none!important;overflow:hidden!important;clip-path:inset(0 round 16px)!important
+  margin-top:8px!important;padding:0!important;border:0!important;border-radius:0!important;
+  background:transparent!important;background-image:none!important;box-shadow:none!important;
+  display:grid!important;gap:8px!important;overflow:visible!important;clip-path:none!important
 }
 #ciao-miniapp-root .cw45-mc-themed [data-mc="lineups"] .mc-lineup-list{
-  margin:0!important;padding:12px 14px!important;border:0!important;border-radius:0!important;clip-path:none!important;background:transparent!important
+  margin:0!important;padding:12px 14px!important;border:1px solid rgba(var(--cw45-rgb),.14)!important;border-radius:16px!important;
+  background:rgba(4,10,25,.20)!important;background-image:none!important;box-shadow:none!important;
+  overflow:hidden!important;clip-path:inset(0 round 16px)!important
 }
-#ciao-miniapp-root .cw45-mc-themed [data-mc="lineups"] .mc-lineup-list+.mc-lineup-list{border-top:1px solid rgba(var(--cw45-rgb),.13)!important}
+#ciao-miniapp-root .cw45-mc-themed [data-mc="lineups"] .mc-lineup-list+.mc-lineup-list{border-top:1px solid rgba(var(--cw45-rgb),.14)!important}
 #ciao-miniapp-root .cw45-mc-themed [data-mc="lineups"] .mc-lineup-list h4{margin-bottom:9px!important}
 
-/* Tabs sit close to the next section. */
+/* Consistent micro-spacing: tabs -> content and sibling sections such as Form -> Match info. */
 #ciao-miniapp-root.match-center-open .mc-tabs-wrap{margin:0 0 8px!important;padding:0!important;top:66px!important;transition:top .18s ease!important}
 #ciao-miniapp-root.match-center-open .mc-tab-content>.mc-section:first-child{margin-top:0!important}
-#ciao-miniapp-root.match-center-open .mc-tab-content>.mc-section+ .mc-section{margin-top:12px!important}
+#ciao-miniapp-root.match-center-open .mc-tab-content>.mc-section+ .mc-section{margin-top:8px!important}
 
-/* Sticky compact score: second row of the already-sticky Match Center toolbar. */
-#ciao-miniapp-root.match-center-open .mc-toolbar{
-  display:grid!important;grid-template-columns:42px minmax(0,1fr) 42px!important;grid-template-rows:42px auto!important;column-gap:10px!important;row-gap:0!important;align-items:center!important
+/* Independent zero-height sticky slot under the toolbar; it never creates an extra gap. */
+#ciao-miniapp-root .cw66-sticky-slot{
+  position:sticky!important;top:66px!important;z-index:124!important;height:0!important;overflow:visible!important;
+  pointer-events:none!important;margin:0!important;padding:0!important
 }
-#ciao-miniapp-root.match-center-open .mc-toolbar>.mc-back{grid-column:1!important;grid-row:1!important}
-#ciao-miniapp-root.match-center-open .mc-toolbar>.mc-toolbar-title{grid-column:2!important;grid-row:1!important}
-#ciao-miniapp-root.match-center-open .mc-toolbar>.mc-toolbar-spacer{grid-column:3!important;grid-row:1!important}
 #ciao-miniapp-root .cw66-score-strip{
-  grid-column:1/-1!important;grid-row:2!important;position:relative!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)!important;grid-template-rows:18px 11px!important;align-items:center!important;column-gap:8px!important;
-  height:0!important;max-height:0!important;margin:0!important;padding:0 5px!important;overflow:hidden!important;opacity:0!important;border-top:1px solid transparent!important;transform:translateY(-3px)!important;transition:height .18s ease,max-height .18s ease,opacity .15s ease,margin .18s ease,transform .18s ease,border-color .18s ease!important
+  position:absolute!important;left:0!important;right:0!important;top:3px!important;height:36px!important;
+  display:grid!important;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)!important;grid-template-rows:19px 10px!important;
+  align-items:center!important;column-gap:8px!important;padding:3px 10px 4px!important;box-sizing:border-box!important;
+  border:1px solid rgba(var(--cw45-rgb,49,80,255),.23)!important;border-radius:12px!important;
+  background:linear-gradient(180deg,rgba(var(--cw45-rgb,49,80,255),.13),rgba(4,10,25,.96))!important;
+  box-shadow:0 9px 24px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.025)!important;
+  backdrop-filter:blur(14px)!important;-webkit-backdrop-filter:blur(14px)!important;
+  opacity:0!important;visibility:hidden!important;transform:translateY(-5px)!important;
+  transition:opacity .15s ease,transform .18s ease,visibility 0s linear .18s!important
 }
-#ciao-miniapp-root.cw66-compact-on .cw66-score-strip{height:34px!important;max-height:34px!important;margin-top:3px!important;opacity:1!important;transform:none!important;border-top-color:rgba(var(--cw45-rgb,49,80,255),.15)!important}
+#ciao-miniapp-root.cw66-compact-on .cw66-score-strip{
+  opacity:1!important;visibility:visible!important;transform:none!important;transition-delay:0s!important
+}
 #ciao-miniapp-root .cw66-score-team{min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;color:#eaf0ff!important;font-size:9px!important;font-weight:900!important;line-height:1!important}
-#ciao-miniapp-root .cw66-score-team.home{text-align:right!important}#ciao-miniapp-root .cw66-score-team.away{text-align:left!important}
+#ciao-miniapp-root .cw66-score-team.home{text-align:right!important}
+#ciao-miniapp-root .cw66-score-team.away{text-align:left!important}
 #ciao-miniapp-root .cw66-score-value{min-width:42px!important;text-align:center!important;color:#fff!important;font-family:'Unbounded','Manrope',sans-serif!important;font-size:13px!important;font-weight:800!important;line-height:1!important}
 #ciao-miniapp-root .cw66-score-state{grid-column:1/-1!important;grid-row:2!important;text-align:center!important;color:color-mix(in srgb,var(--cw45-a,#3150ff) 58%,#aab8db)!important;font-size:6.8px!important;font-weight:950!important;letter-spacing:.055em!important;line-height:1!important;text-transform:uppercase!important}
 #ciao-miniapp-root .cw66-score-strip.live .cw66-score-state{color:color-mix(in srgb,var(--cw45-a,#3150ff) 72%,#fff)!important}
-#ciao-miniapp-root.match-center-open.cw66-compact-on .mc-tabs-wrap{top:103px!important}
+#ciao-miniapp-root.match-center-open.cw66-compact-on .mc-tabs-wrap{top:106px!important}
 @media(max-width:390px){
   #ciao-miniapp-root.match-center-open .mc-tabs-wrap{top:64px!important;margin-bottom:7px!important}
-  #ciao-miniapp-root.match-center-open.cw66-compact-on .mc-tabs-wrap{top:101px!important}
+  #ciao-miniapp-root .cw66-sticky-slot{top:64px!important}
+  #ciao-miniapp-root.match-center-open.cw66-compact-on .mc-tabs-wrap{top:104px!important}
   #ciao-miniapp-root .cw66-score-team{font-size:8.3px!important}
   #ciao-miniapp-root .cw66-score-value{font-size:12px!important;min-width:38px!important}
   #ciao-miniapp-root .cw45-mc-themed [data-mc="lineups"] .mc-lineup-list{padding:11px 12px!important}
