@@ -4375,7 +4375,7 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
 
   __cwHomePredFixNav();
   __cwPredApplyTheme();
-  try{if(tab==='predict'||tab==='mine')render()}catch(error){console.error('ciao-home-nav-initial-render',error)}
+  try{if(S&&(tab==='predict'||tab==='mine'))render()}catch(error){console.error('ciao-home-nav-initial-render',error)}
   /* /ciao-prod-home-predictions-nav-fix-20260907 */
 /* ciao-prod-prediction-live-scroll-polish-20260907 */
   function __cwPredPolishStatusBadges(){
@@ -6885,6 +6885,216 @@ async function __cw72OpenClubMatch(mid){
 __cw16OpenMatchFromClub=__cw72OpenClubMatch;
 /* /ciao-v72-notifications-club-match-routing */
 
+
+/* ciao-v73-stability-kernel */
+const __cw73CommitSeq=new Map();
+const __cw73LastCompleteDom=new Map();
+const __cw73PredictionStable=new Map();
+let __cw73PredictionGeneration=0;
+let __cw73RenderQueued=false,__cw73Rendering=false,__cw73RenderReason='';
+const __cw73Nav={clubOrigin:null,matchFromClub:null};
+try{root?.classList?.add('cw73-webview-stable-surface')}catch(_e){}
+
+function __cw73BeginCommit(channel){
+  const key=String(channel||'global'),next=(Number(__cw73CommitSeq.get(key))||0)+1;__cw73CommitSeq.set(key,next);return next
+}
+function __cw73IsCurrentCommit(channel,token){return Number(__cw73CommitSeq.get(String(channel||'global'))||0)===Number(token)}
+function __cw73Clone(value){try{return typeof structuredClone==='function'?structuredClone(value):JSON.parse(JSON.stringify(value))}catch(_e){return value}}
+function __cw73CaptureView(){
+  return {tab:String(tab||'predict'),matchViewId:Number(matchViewId)||null,matchViewSource:String(matchViewSource||'serie_a'),matchCenterTab:String(matchCenterTab||'overview'),clubViewId:Number(clubViewId)||null,clubViewTab:String(clubViewTab||'overview'),clubViewScope:String(clubViewScope||'overall'),scrollTop:Number(main?.scrollTop||0),predictionCompetition:typeof __cwPredCompetition==='string'?__cwPredCompetition:'',predictionStage:typeof __cwPredStageKey==='string'?__cwPredStageKey:'',selectedRound:Number(S?.selected_round??selectedRound)||null};
+}
+function __cw73ViewKey(snap=__cw73CaptureView()){
+  if(snap.clubViewId)return `club:${snap.clubViewId}:${snap.clubViewScope}:${snap.clubViewTab}`;
+  if(snap.matchViewId)return `match:${snap.matchViewSource}:${snap.matchViewId}:${snap.matchCenterTab}`;
+  if(snap.tab==='predict'||snap.tab==='mine')return `${snap.tab}:${snap.predictionCompetition||'home'}:${snap.predictionStage||snap.selectedRound||''}`;
+  return `${snap.tab}:${snap.selectedRound||''}`
+}
+function __cw73RestoreScroll(snap){const y=Number(snap?.scrollTop||0);requestAnimationFrame(()=>{if(main)main.scrollTop=y})}
+function __cw73IsStableContent(){
+  if(!main)return false;
+  return !main.querySelector('.loader,.cw38-skeleton-screen,.cw22-sk,.cw43-loader-wrap,.cw73-deliberate-loading')
+}
+function __cw73RememberComplete(key){
+  if(!main||!key)return;if(!__cw73IsStableContent())return;__cw73LastCompleteDom.delete(key);__cw73LastCompleteDom.set(key,{html:main.innerHTML,scrollTop:Number(main.scrollTop||0)});
+  while(__cw73LastCompleteDom.size>12)__cw73LastCompleteDom.delete(__cw73LastCompleteDom.keys().next().value)
+}
+function __cw73ExpectedPredictionCount(){
+  try{
+    if((tab!=='predict'&&tab!=='mine')||matchViewId||clubViewId)return 0;
+    if(typeof __cwPredCompetition==='string'&&__cwPredCompetition==='')return 0;
+    if(typeof __cwPredCompetition==='string'&&__cwPredCompetition&&__cwPredCompetition!=='serie_a'){
+      const g=typeof __cwPredSelectedGroup==='function'?__cwPredSelectedGroup():null;return Array.isArray(g?.matches)?g.matches.length:0
+    }
+    const rows=S?.round?.matches;return Array.isArray(rows)?rows.length:0
+  }catch(_e){return 0}
+}
+function __cw73ScreenComplete(){
+  if(!main)return true;
+  if(clubViewId)return !!main.querySelector('.cw16-club-shell');
+  if(matchViewId)return !!main.querySelector('.mc-shell');
+  if(tab==='predict'||tab==='mine'){
+    const expected=__cw73ExpectedPredictionCount();
+    if(expected>0){const actual=main.querySelectorAll('[data-cwpred-match],.cwpred-card,.match[data-mid],.mine-match[data-mid]').length;if(actual===0)return false}
+    const bodyText=String(main.textContent||'').replace(/\s+/g,'').length;
+    if(expected>0&&bodyText<12)return false
+  }
+  return main.children.length>0||!!main.querySelector('.loader,.cw22-sk,.cw43-loader-wrap,.empty')
+}
+function __cw73TransientHold(key){
+  if(!__cw73LastCompleteDom.has(key)||!__cw73IsStableContent())return false;
+  try{
+    if((tab==='predict'||tab==='mine')&&typeof __cwPredLoading!=='undefined'&&__cwPredLoading)return true;
+    if(tab==='predict'&&typeof __cwHomeExternalLoading!=='undefined'&&__cwHomeExternalLoading)return true;
+    if(clubViewId&&typeof __cw16ClubSectionLoading!=='undefined'&&__cw16ClubSectionLoading)return true
+  }catch(_e){}
+  return false
+}
+function __cw73RestoreComplete(key){
+  const snap=__cw73LastCompleteDom.get(key);if(!snap||!main)return false;
+  main.innerHTML=snap.html;main.scrollTop=Number(snap.scrollTop||0);root?.setAttribute?.('data-cw73-incomplete-screen-blocked',String(Date.now()));
+  try{console.warn('cw73-incomplete-screen-blocked',key)}catch(_e){}
+  try{typeof bind==='function'&&bind()}catch(_e){}
+  try{if(clubViewId&&typeof __cw16BindClubProfile==='function')__cw16BindClubProfile()}catch(_e){}
+  try{if(matchViewId&&typeof bindMatchCenter==='function')bindMatchCenter()}catch(_e){}
+  return true
+}
+function __cw73ShowDeliberateLoading(key){
+  if(!main)return false;
+  const html=String(typeof LOADER_HTML==='string'?LOADER_HTML:'<div class="cw38-skeleton-screen"><div class="cw38-sk hero"></div><div class="cw38-sk card"></div><div class="cw38-sk card"></div></div>');
+  main.innerHTML=html.replace('cw38-skeleton-screen','cw38-skeleton-screen cw73-deliberate-loading');
+  root?.setAttribute?.('data-cw73-incomplete-screen-blocked',String(Date.now()));
+  try{console.warn('cw73-deliberate-loading',key)}catch(_e){}
+  return true
+}
+const __cw73LegacyRender=render;
+function __cw73RunRender(reason='direct'){
+  if(__cw73Rendering)return false;const before=__cw73CaptureView(),beforeKey=__cw73ViewKey(before);
+  if(__cw73ScreenComplete())__cw73RememberComplete(beforeKey);
+  if(__cw73TransientHold(beforeKey)){try{__cw73SyncNotifCenter?.()}catch(_e){}return false}
+  __cw73Rendering=true;let out;
+  try{out=__cw73LegacyRender()}finally{__cw73Rendering=false}
+  const after=__cw73CaptureView(),afterKey=__cw73ViewKey(after);
+  if(__cw73ScreenComplete())__cw73RememberComplete(afterKey);else if(!__cw73RestoreComplete(afterKey))__cw73ShowDeliberateLoading(afterKey);
+  try{if(matchViewId&&matchData){__cw36PatchFreshness?.(matchData);__cw66PatchCompact?.(matchData)}}catch(_e){}
+  try{__cw73SyncNotifCenter?.()}catch(_e){}
+  return out
+}
+function __cw73RequestRender(reason='async'){
+  __cw73RenderReason=String(reason||'async');if(__cw73RenderQueued)return;__cw73RenderQueued=true;
+  requestAnimationFrame(()=>{__cw73RenderQueued=false;const why=__cw73RenderReason;__cw73RenderReason='';__cw73RunRender(why)})
+}
+render=function(){return __cw73RunRender('legacy-call')};
+
+/* Prediction requests: keep the last complete payload visible and reject stale commits. */
+try{
+  const __cw73PredLoadBase=__cwPredLoadExternal;
+  __cwPredLoadExternal=async function(competition,options={}){
+    const comp=String(competition||''),channel='prediction-load:'+comp,token=__cw73BeginCommit(channel);__cw73PredictionGeneration++;
+    if(__cwPredExternalPayload&&String(__cwPredExternalPayload?.competition||'')===comp)__cw73PredictionStable.set(comp,{payload:__cw73Clone(__cwPredExternalPayload),stage:String(__cwPredStageKey||'')});
+    const stable=__cw73PredictionStable.get(comp)||null,result=await __cw73PredLoadBase(comp,{...options,quiet:stable?true:!!options.quiet});
+    if(!__cw73IsCurrentCommit(channel,token))return false;
+    if(result&&__cwPredExternalPayload&&String(__cwPredExternalPayload?.competition||'')===comp){__cw73PredictionStable.set(comp,{payload:__cw73Clone(__cwPredExternalPayload),stage:String(__cwPredStageKey||'')});return true}
+    if(!result&&stable&&String(__cwPredCompetition||'')===comp){__cwPredExternalPayload=__cw73Clone(stable.payload);__cwPredStageKey=stable.stage||__cwPredStageKey;__cwPredLoading=false;__cwPredError='';__cw73RequestRender('prediction-stable-fallback')}
+    return result
+  };
+}catch(_e){}
+try{
+  const __cw73PredOpenBase=__cwPredOpenCompetition;
+  __cwPredOpenCompetition=async function(key){
+    const comp=String(key||''),stable=__cw73PredictionStable.get(comp)||null;
+    if(!stable||comp==='serie_a')return await __cw73PredOpenBase(comp);
+    if(!__cwPredMeta(comp))return false;
+    if(__cwPredCompetition&&__cwPredCompetition!==comp){await __cw26PredAutosaveFlush({force:true});__cwPredExternalDraft.clear()}
+    __cwPredRequestVersion+=1;__cwPredCompetition=comp;__cwPredStageKey=String(stable.stage||'');__cwPredExternalPayload=stable?__cw73Clone(stable.payload):null;__cwPredLoading=false;__cwPredSaving=false;__cwPredError='';__cwPredRefreshError='';__cwPredApplyTheme();
+    render();return await __cwPredLoadExternal(comp,{quiet:true})
+  };
+}catch(_e){}
+async function __cw73RefreshSerieAPredictions(round,channel,token,kept,snap){
+  try{
+    const next=await api({action:'state',round});
+    if(!__cw73IsCurrentCommit(channel,token)||String(__cwPredCompetition||'serie_a')!=='serie_a'||Number(next?.selected_round)!==Number(round))return false;
+    S=next;selectedRound=next.selected_round;draft.clear();for(const [k,v] of kept)draft.set(k,v);
+    render();__cw73RestoreScroll(snap);return true
+  }catch(_e){draft.clear();for(const [k,v] of kept)draft.set(k,v);return false}
+}
+try{
+  const __cw73PredRefreshBase=__cwPredRefreshVisible;
+  __cwPredRefreshVisible=async function(options={}){
+    const comp=String(__cwPredCompetition||'serie_a'),round=Number(S?.selected_round??selectedRound)||0,channel=`prediction-refresh:${comp}:${round}`,token=__cw73BeginCommit(channel),kept=new Map(draft),snap=__cw73CaptureView();
+    if(comp==='serie_a')return await __cw73RefreshSerieAPredictions(round,channel,token,kept,snap);
+    const out=await __cw73PredRefreshBase({...options,quiet:true});
+    if(!__cw73IsCurrentCommit(channel,token)||String(__cwPredCompetition||'serie_a')!==comp)return false;
+    for(const [k,v] of kept)if(!draft.has(k))draft.set(k,v);__cw73RestoreScroll(snap);
+    if(__cwPredExternalPayload)__cw73PredictionStable.set(comp,{payload:__cw73Clone(__cwPredExternalPayload),stage:String(__cwPredStageKey||'')});
+    return out
+  };
+  try{window.__cwPredRefreshVisible=__cwPredRefreshVisible}catch(_e){}
+}catch(_e){}
+
+/* Match Center: patch first and verify the request still belongs to the same match/source. */
+function __cw73PatchLive(prev,next,activeTab=matchCenterTab){
+  if(!next||!matchViewId)return false;
+  try{__cw22DetectIncidents?.(next)}catch(_e){}
+  try{__cw36PatchHero?.(prev,next)}catch(_e){try{patchMatchCenter?.(next)}catch(__e){}}
+  try{__cw36PatchActiveTab?.(prev,next,String(activeTab||'overview'))}catch(_e){}
+  matchData=next;matchCenterTab=String(activeTab||'overview');
+  try{__cw66PatchCompact?.(next);__cw38PatchPhase?.(next);__cw2014PatchMatchCenterPhase?.()}catch(_e){}
+  return true
+}
+async function __cw73RefreshMatchCenter(){
+  if(!matchViewId||matchLoading||document.hidden)return false;
+  const id=Number(matchViewId),source=String(matchViewSource||'serie_a'),activeTab=String(matchCenterTab||'overview'),channel=`live:${source}:${id}`,token=__cw73BeginCommit(channel),prev=matchData;
+  if(typeof __cw35LiveState==='function'&&__cw35LiveState(prev)==='finished')return false;
+  try{
+    const sections=typeof __cw36SectionsForTab==='function'?__cw36SectionsForTab(activeTab):['detail','stats','incidents'];
+    const fresh=await __cw9FastMatchApi(id,sections,source);
+    if(!__cw73IsCurrentCommit(channel,token)||Number(matchViewId)!==id||String(matchViewSource||'serie_a')!==source)return false;
+    let next=typeof __cw9MergeMatch==='function'?__cw9MergeMatch(prev,fresh):{...(prev||{}),...(fresh||{})};if(typeof __cw35NormalizeMatchData==='function')next=__cw35NormalizeMatchData(next);
+    return __cw73PatchLive(prev,next,activeTab)
+  }catch(_e){return false}
+}
+try{
+  const __cw73RefreshLiveBase=refreshLive;
+  refreshLive=async function(){if(matchViewId)return await __cw73RefreshMatchCenter();return await __cw73RefreshLiveBase()};
+  refreshMatchCenter=__cw73RefreshMatchCenter;
+}catch(_e){}
+
+/* One navigation snapshot shape for club/match back transitions. */
+try{
+  const __cw73OpenClubBase=openClubProfile;
+  openClubProfile=async function(teamId){if(!clubViewId)__cw73Nav.clubOrigin=__cw73CaptureView();return await __cw73OpenClubBase(teamId)};
+}catch(_e){}
+try{
+  const __cw73ClubMatchBase=__cw16OpenMatchFromClub;
+  __cw16OpenMatchFromClub=async function(mid){__cw73Nav.matchFromClub=__cw73CaptureView();return await __cw73ClubMatchBase(mid)};
+}catch(_e){}
+try{
+  const __cw73CloseMatchBase=closeMatchCenter;
+  closeMatchCenter=function(){const snap=__cw73Nav.matchFromClub,out=__cw73CloseMatchBase();if(snap){__cw73Nav.matchFromClub=null;requestAnimationFrame(()=>{if(clubViewId&&Number(clubViewId)===Number(snap.clubViewId)){let changed=false;if(String(clubViewScope||'overall')!==String(snap.clubViewScope||'overall')){clubViewScope=String(snap.clubViewScope||'overall');changed=true}if(String(clubViewTab||'overview')!==String(snap.clubViewTab||'overview')){clubViewTab=String(snap.clubViewTab||'overview');changed=true}if(changed)__cw73RunRender('restore-club-context');if(main)main.scrollTop=Number(snap.scrollTop||0)}})}return out};
+}catch(_e){}
+try{
+  const __cw73CloseClubBase=closeClubProfile;
+  closeClubProfile=function(){const snap=__cw73Nav.clubOrigin,out=__cw73CloseClubBase();if(snap&&!clubViewId){__cw73Nav.clubOrigin=null;requestAnimationFrame(()=>{if(matchViewId&&snap.matchViewId===matchViewId)matchViewSource=String(snap.matchViewSource||matchViewSource||'serie_a');if(main)main.scrollTop=Number(snap.scrollTop||0)})}return out};
+}catch(_e){}
+
+/* Notification center: one DOM sync path, no full-app rerender for read operations. */
+function __cw73SyncNotifCenter(){
+  if(!root)return;const current=root.querySelector('.cw-notif-center');
+  if(!__cwNotifCenterOpen){current?.remove?.()}else{const host=document.createElement('div');host.innerHTML=__cwNotifCenterHtml();const next=host.firstElementChild;if(next){if(current){if(current.outerHTML!==next.outerHTML)current.replaceWith(next)}else root.appendChild(next)}}
+  const unread=Number(__cwNotifCenterData?.unread_count??S?.notification_unread_count??S?.user?.notification_unread_count??0)||0;
+  root.querySelectorAll('.cw-notif-unread').forEach(el=>{el.textContent=unread?String(unread):'→';el.classList.toggle('show',!!unread)})
+}
+try{__cw72SyncNotifCenter=__cw73SyncNotifCenter}catch(_e){}
+__cwNotifMarkAll=async function(){
+  try{await __cw72WithTimeout(__cw18Post({action:'notification_mark_all_read'}),8000,'notification_mark_all_timeout');if(__cwNotifCenterData){__cwNotifCenterData.events=(__cwNotifCenterData.events||[]).map(x=>({...x,read_at:x.read_at||new Date().toISOString()}));__cwNotifCenterData.unread_count=0}S.notification_unread_count=0;if(S.user)S.user.notification_unread_count=0;__cw73SyncNotifCenter()}catch(e){try{toast(e?.message||'Не удалось обновить уведомления')}catch(_e){}}
+};
+try{
+  const __cw73NotifEventOpen=__cwNotifOpenEvent;
+  __cwNotifEventClick=async function(id){const event=(__cwNotifCenterData?.events||[]).find(x=>Number(x.id)===Number(id));if(!event)return;try{if(!event.read_at){await __cw72WithTimeout(__cw18Post({action:'notification_mark_read',event_id:Number(id)}),8000,'notification_mark_read_timeout');event.read_at=new Date().toISOString();const n=Math.max(0,(Number(__cwNotifCenterData?.unread_count)||0)-1);if(__cwNotifCenterData)__cwNotifCenterData.unread_count=n;S.notification_unread_count=n;if(S.user)S.user.notification_unread_count=n;__cw73SyncNotifCenter()}}catch(_e){}return await __cw73NotifEventOpen(event)};
+}catch(_e){}
+try{__cw73RememberComplete(__cw73ViewKey())}catch(_e){}
+/* /ciao-v73-stability-kernel */
+
 /* ===== /Ciao, Web! v22.5 product polish layer ===== */
 
 })();
@@ -7822,5 +8032,34 @@ html,body{max-width:100vw!important;overflow-x:hidden!important}
 #ciao-miniapp-root .cw72-notif-error>button{min-width:132px;min-height:39px;margin-top:4px;border:1px solid rgba(132,153,255,.18);border-radius:12px;background:linear-gradient(180deg,rgba(49,80,255,.22),rgba(9,27,189,.16));color:#fff;font:900 9px/1 Manrope,sans-serif}
 </style>
 <!-- /ciao-v72-notifications-club-routing-style -->
+
+
+<!-- ciao-v73-compositor-stability -->
+<style id="ciao-v73-compositor-stability">
+#ciao-miniapp-root.cw73-webview-stable-surface img.logo,
+#ciao-miniapp-root.cw73-webview-stable-surface .logo img,
+#ciao-miniapp-root.cw73-webview-stable-surface .cwtt2-logo,
+#ciao-miniapp-root.cw73-webview-stable-surface .cw16-club-crest img,
+#ciao-miniapp-root.cw73-webview-stable-surface .cw-home-today-crest,
+#ciao-miniapp-root.cw73-webview-stable-surface .cw18-fav-logo-big,
+#ciao-miniapp-root.cw73-webview-stable-surface .cwpred-team-logo{
+  transform:none!important;-webkit-transform:none!important;will-change:auto!important;backface-visibility:visible!important;-webkit-backface-visibility:visible!important;filter:none!important
+}
+#ciao-miniapp-root.cw73-webview-stable-surface .match,
+#ciao-miniapp-root.cw73-webview-stable-surface .card,
+#ciao-miniapp-root.cw73-webview-stable-surface .hero,
+#ciao-miniapp-root.cw73-webview-stable-surface .stat,
+#ciao-miniapp-root.cw73-webview-stable-surface .cwpred-card,
+#ciao-miniapp-root.cw73-webview-stable-surface .scoreboard-card{
+  animation:none!important;will-change:auto!important;backface-visibility:visible!important;-webkit-backface-visibility:visible!important
+}
+#ciao-miniapp-root.cw73-webview-stable-surface .content,
+#ciao-miniapp-root.cw73-webview-stable-surface .matches,
+#ciao-miniapp-root.cw73-webview-stable-surface .cwpred-cards{
+  contain:none!important;will-change:auto!important
+}
+</style>
+<!-- /ciao-v73-compositor-stability -->
+
 </body>
 </html>
