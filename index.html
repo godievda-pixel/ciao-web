@@ -7637,6 +7637,7 @@ requestAnimationFrame(()=>{__cw77PatchFavoriteLivePosition();__cw77PatchClubLive
 
 
 /* ciao-v77.1-live-switcher-table-hotfix */
+/* ciao-v77.2-projected-live-phase-fix */
 /* Exactly two LIVE matches now produce one destination button, and table rows do not repeat the word LIVE in team metadata. */
 function __cw771TeamName(team){
   const raw=String(team?.name||team?.short_name||'—').trim();
@@ -7658,17 +7659,29 @@ __cw77LiveMatchSwitcherHtml=function(d=matchData){
   return `<div class="cw77-live-switcher cw77-live-switcher--multi" data-cw77-live-switcher><button type="button" data-cw77-live-prev="${__cw76MatchId(prev)}" aria-label="Предыдущий LIVE-матч"><small>← Предыдущий</small><b>${esc(__cw771LiveMatchLabel(prev))}</b></button><span class="cw771-switch-count">${idx+1} из ${rows.length}</span><button type="button" data-cw77-live-next="${__cw76MatchId(next)}" aria-label="Следующий LIVE-матч"><small>Следующий →</small><b>${esc(__cw771LiveMatchLabel(next))}</b></button></div>`
 };
 function __cw771TablePhase(r){
+  /* Projected LIVE-table rows already carry the canonical phase label in __phase.
+     They intentionally do not copy live_status/live_elapsed, so re-running the
+     generic status detector on the projected row would incorrectly return scheduled. */
+  const projected=String(r?.__phase||'').trim();
+  if(projected){
+    if(/^LIVE(?:\s*·\s*)?/i.test(projected)){
+      const minuteOnly=projected.replace(/^LIVE(?:\s*·\s*)?/i,'').trim();
+      return minuteOnly||'МАТЧ ИДЁТ'
+    }
+    return projected
+  }
   const state=typeof __cw35LiveState==='function'?__cw35LiveState(r):String(r?.live_status||'').toLowerCase(),minute=typeof __cw35LiveMinute==='function'?__cw35LiveMinute(r):Number(r?.live_elapsed);
   if(state==='halftime')return'ПЕРЕРЫВ';
   if(state==='extra_time')return`ДОП. ВРЕМЯ${Number.isFinite(Number(minute))&&Number(minute)>0?' · '+Number(minute)+'′':''}`;
   if(state==='penalties')return'СЕРИЯ ПЕНАЛЬТИ';
   if(state==='live')return Number.isFinite(Number(minute))&&Number(minute)>0?`${Number(minute)}′`:'МАТЧ ИДЁТ';
-  return typeof __cw35LiveLabel==='function'?String(__cw35LiveLabel(r)||'').replace(/^LIVE(?:\s*·\s*)?/i,''):''
+  return''
 }
 __cw76LiveTeamMeta=function(r,engine){
   if(!r?.__live)return'';const impacts=__cw76ImpactingMatches(r,engine),affect=impacts.length?` · влияет: ${__cw76FixtureLabel(impacts[0])}${impacts.length>1?` +${impacts.length-1}`:''}`:'',phase=__cw771TablePhase(r);
   return `<small class="cw76-team-live"><i></i>${esc(phase)} · ${esc(r.__score)}${esc(affect)}</small>`
 };
+/* /ciao-v77.2-projected-live-phase-fix */
 /* /ciao-v77.1-live-switcher-table-hotfix */
 
 /* ===== /Ciao, Web! v22.5 product polish layer ===== */
