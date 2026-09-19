@@ -1368,6 +1368,17 @@ html::-webkit-scrollbar,body::-webkit-scrollbar,#ciao-miniapp-root::-webkit-scro
 }
 </style>
 
+
+<style id="ciao-v74-ios-viewport-floor">
+html,body{background:#040a18!important;min-height:100%!important;}
+#ciao-miniapp-root{
+  min-height:var(--ciao-vh,100dvh)!important;
+  height:var(--ciao-vh,100dvh)!important;
+  max-height:var(--ciao-vh,100dvh)!important;
+  bottom:auto!important;
+}
+#ciao-miniapp-root.match-center-open{background-color:#040a18!important;}
+</style>
 </head>
 <body class="ciao-pronostici-page"><div id="cw225-start-cover"><div class="cw225-start-inner"><b>Ciao, Web!</b><div class="cw225-italy-loader" aria-hidden="true"></div><span>Загружаем последние данные</span></div></div>
 <!-- Ciao, Web! Mini App v7 — detached from Tilda shell -->
@@ -1851,7 +1862,7 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
     document.documentElement.style.setProperty('visibility','visible','important');
     document.body.style.setProperty('opacity','1','important');
     document.body.style.setProperty('visibility','visible','important');
-    document.body.style.setProperty('background','#0f171f','important');
+    document.body.style.setProperty('background','#040a18','important');
 
     const all = document.getElementById('allrecords');
     if (all) {
@@ -1862,10 +1873,22 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
   } catch(e) {}
 
   const tg = window.Telegram?.WebApp || {};
-  function applyViewport(){
+  /* ciao-v74-ios-viewport-floor-20260919
+     Telegram iOS can briefly report viewportHeight below the real WebView after
+     its native top chrome changes. Never let that smaller value shorten the app. */
+  function __cw74ViewportHeight(){
     const live=Number(window.Telegram?.WebApp?.viewportHeight||0);
     const stable=Number(window.Telegram?.WebApp?.viewportStableHeight||0);
-    const h=Math.max(320, live||stable||window.innerHeight||document.documentElement.clientHeight||600);
+    const innerHeight=Number(window.innerHeight||0);
+    const clientHeight=Number(document.documentElement?.clientHeight||0);
+    const visualHeight=Number(window.visualViewport?.height||0);
+    const browserHeight=Math.max(innerHeight,clientHeight,visualHeight,0);
+    const telegramHeight=Math.max(live,stable,0);
+    const saneTelegram=(telegramHeight>0&&(browserHeight<=0||telegramHeight<=browserHeight+96))?telegramHeight:0;
+    return Math.max(320,browserHeight,saneTelegram||0);
+  }
+  function applyViewport(){
+    const h=__cw74ViewportHeight();
     root.style.setProperty('--ciao-vh', h+'px');
     const area=window.Telegram?.WebApp?.contentSafeAreaInset||window.Telegram?.WebApp?.safeAreaInset||{};
     if(Number.isFinite(Number(area.bottom))) root.style.setProperty('--ciao-safe-bottom',Math.max(0,Number(area.bottom))+'px');
@@ -1889,6 +1912,8 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
   try { tg?.ready?.(); tg?.expand?.(); tg?.disableVerticalSwipes?.(); } catch(e) {}
   applyViewport();
   try { tg?.onEvent?.('viewportChanged', applyViewport); } catch(e) {}
+  try { window.visualViewport?.addEventListener?.('resize',applyViewport,{passive:true}); } catch(e) {}
+  try { window.visualViewport?.addEventListener?.('scroll',applyViewport,{passive:true}); } catch(e) {}
   window.addEventListener('resize',applyViewport,{passive:true});
   window.addEventListener('orientationchange',()=>setTimeout(applyViewport,120),{passive:true});
   document.documentElement.style.overflow='hidden'; document.body.style.overflow='hidden';
