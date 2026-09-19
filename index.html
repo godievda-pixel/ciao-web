@@ -7635,6 +7635,42 @@ try{
 requestAnimationFrame(()=>{__cw77PatchFavoriteLivePosition();__cw77PatchClubLiveDashboard();__cw77PatchMatchExtras();__cw77ObserveWarmTargets()});
 /* /ciao-v77-live-engagement */
 
+
+/* ciao-v77.1-live-switcher-table-hotfix */
+/* Exactly two LIVE matches now produce one destination button, and table rows do not repeat the word LIVE in team metadata. */
+function __cw771TeamName(team){
+  const raw=String(team?.name||team?.short_name||'—').trim();
+  return typeof __cwRuTeamName==='function'?__cwRuTeamName(raw):raw
+}
+function __cw771LiveMatchLabel(x){
+  const h=__cw771TeamName(x?.home),a=__cw771TeamName(x?.away),hs=Number.isFinite(Number(x?.home_score))?Number(x.home_score):0,as=Number.isFinite(Number(x?.away_score))?Number(x.away_score):0;
+  return `${h} ${hs}:${as} ${a}`
+}
+__cw77LiveMatchSwitcherHtml=function(d=matchData){
+  if(String(matchViewSource||d?.source||d?.match?.source||'serie_a')!=='serie_a')return'';
+  const rows=__cw77LiveList();if(rows.length<2)return'';
+  const id=Number(d?.match?.id||matchViewId)||0,found=rows.findIndex(x=>__cw76MatchId(x)===id),idx=found>=0?found:0;
+  if(rows.length===2){
+    const other=rows.find(x=>__cw76MatchId(x)!==id)||rows[(idx+1)%2],otherId=__cw76MatchId(other);
+    return `<div class="cw77-live-switcher cw77-live-switcher--single" data-cw77-live-switcher><button type="button" data-cw77-live-prev="${otherId}" data-cw77-live-next="${otherId}" aria-label="Переключиться на другой LIVE-матч"><span class="cw771-switch-copy"><small>ДРУГОЙ LIVE-МАТЧ</small><b>${esc(__cw771LiveMatchLabel(other))}</b></span><strong>Открыть →</strong></button></div>`
+  }
+  const prev=rows[(idx-1+rows.length)%rows.length],next=rows[(idx+1)%rows.length];
+  return `<div class="cw77-live-switcher cw77-live-switcher--multi" data-cw77-live-switcher><button type="button" data-cw77-live-prev="${__cw76MatchId(prev)}" aria-label="Предыдущий LIVE-матч"><small>← Предыдущий</small><b>${esc(__cw771LiveMatchLabel(prev))}</b></button><span class="cw771-switch-count">${idx+1} из ${rows.length}</span><button type="button" data-cw77-live-next="${__cw76MatchId(next)}" aria-label="Следующий LIVE-матч"><small>Следующий →</small><b>${esc(__cw771LiveMatchLabel(next))}</b></button></div>`
+};
+function __cw771TablePhase(r){
+  const state=typeof __cw35LiveState==='function'?__cw35LiveState(r):String(r?.live_status||'').toLowerCase(),minute=typeof __cw35LiveMinute==='function'?__cw35LiveMinute(r):Number(r?.live_elapsed);
+  if(state==='halftime')return'ПЕРЕРЫВ';
+  if(state==='extra_time')return`ДОП. ВРЕМЯ${Number.isFinite(Number(minute))&&Number(minute)>0?' · '+Number(minute)+'′':''}`;
+  if(state==='penalties')return'СЕРИЯ ПЕНАЛЬТИ';
+  if(state==='live')return Number.isFinite(Number(minute))&&Number(minute)>0?`${Number(minute)}′`:'МАТЧ ИДЁТ';
+  return typeof __cw35LiveLabel==='function'?String(__cw35LiveLabel(r)||'').replace(/^LIVE(?:\s*·\s*)?/i,''):''
+}
+__cw76LiveTeamMeta=function(r,engine){
+  if(!r?.__live)return'';const impacts=__cw76ImpactingMatches(r,engine),affect=impacts.length?` · влияет: ${__cw76FixtureLabel(impacts[0])}${impacts.length>1?` +${impacts.length-1}`:''}`:'',phase=__cw771TablePhase(r);
+  return `<small class="cw76-team-live"><i></i>${esc(phase)} · ${esc(r.__score)}${esc(affect)}</small>`
+};
+/* /ciao-v77.1-live-switcher-table-hotfix */
+
 /* ===== /Ciao, Web! v22.5 product polish layer ===== */
 
 })();
@@ -8637,6 +8673,32 @@ html,body{max-width:100vw!important;overflow-x:hidden!important}
 @media(max-width:390px){#ciao-miniapp-root .cw77-pred-need{gap:8px}.cw77-pred-need>strong{font-size:10px}.cw77-live-switcher button{font-size:6.5px}}
 </style>
 <!-- /ciao-v77-live-engagement-style -->
+
+
+<!-- ciao-v77.1-live-switcher-table-hotfix-style -->
+<style id="ciao-v77-1-live-switcher-table-hotfix-style">
+#ciao-miniapp-root .cw77-live-switcher{width:100%;margin:0 0 10px;gap:10px}
+#ciao-miniapp-root .cw77-live-switcher--single{display:block}
+#ciao-miniapp-root .cw77-live-switcher--single>button{display:flex;width:100%;min-height:48px;align-items:center;justify-content:space-between;gap:12px;padding:9px 12px;text-align:left;white-space:normal}
+#ciao-miniapp-root .cw771-switch-copy{display:grid;min-width:0;gap:4px}
+#ciao-miniapp-root .cw771-switch-copy small{color:#ff7188;font-size:6.5px;font-weight:900;letter-spacing:.08em}
+#ciao-miniapp-root .cw771-switch-copy b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#e8edff;font-size:8px}
+#ciao-miniapp-root .cw77-live-switcher--single>button>strong{flex:0 0 auto;color:#aebbe1;font-size:7px;font-weight:850;white-space:nowrap}
+#ciao-miniapp-root .cw77-live-switcher--multi{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:stretch}
+#ciao-miniapp-root .cw77-live-switcher--multi>button{display:grid;min-width:0;min-height:48px;align-content:center;gap:4px;padding:8px 10px;white-space:normal;text-align:left}
+#ciao-miniapp-root .cw77-live-switcher--multi>button:last-child{text-align:right}
+#ciao-miniapp-root .cw77-live-switcher--multi>button small{color:#788bb8;font-size:6px;font-weight:850}
+#ciao-miniapp-root .cw77-live-switcher--multi>button b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#e6ecff;font-size:7px}
+#ciao-miniapp-root .cw771-switch-count{display:grid;place-items:center;min-width:34px;color:#ff7188;font-size:6.5px;font-weight:900;white-space:nowrap}
+@media(max-width:390px){
+  #ciao-miniapp-root .cw77-live-switcher{gap:7px}
+  #ciao-miniapp-root .cw77-live-switcher--multi{grid-template-columns:minmax(0,1fr) 30px minmax(0,1fr)}
+  #ciao-miniapp-root .cw77-live-switcher--multi>button{padding:7px 8px}
+  #ciao-miniapp-root .cw77-live-switcher--multi>button b{font-size:6.5px}
+  #ciao-miniapp-root .cw77-live-switcher--single>button{min-height:46px;padding:8px 10px}
+}
+</style>
+<!-- /ciao-v77.1-live-switcher-table-hotfix-style -->
 
 </body>
 </html>
