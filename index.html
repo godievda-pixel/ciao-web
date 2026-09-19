@@ -4026,7 +4026,7 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
     if(match?.status==='live'){const minute=Number(match?.minute);return 'LIVE'+(Number.isFinite(minute)?' · '+minute+'′':'')}
     if(match?.status==='halftime')return 'ПЕРЕРЫВ';
     if(match?.status==='extra_time')return 'ДОП. ВРЕМЯ';
-    if(match?.status==='penalties')return 'ПЕНАЛЬТИ';
+    if(match?.status==='penalties')return 'СЕРИЯ ПЕНАЛЬТИ';
     if(match?.status==='finished')return 'Матч завершён';
     if(match?.status==='postponed')return 'Матч перенесён';
     if(match?.status==='cancelled')return 'Матч отменён';
@@ -4119,7 +4119,7 @@ body.ciao-pronostici-page > #ciao-miniapp-root{
   function __cwPredExternalTeamHtml(team,side){const crest=String(team?.crestUrl||'').trim(),body=(crest?'<img class=\"cwpred-team-logo\" loading=\"lazy\" decoding=\"async\" src=\"'+__cwPredEsc(crest)+'\" alt=\"\">':'<span class=\"cwpred-team-logo cwpred-team-logo--empty\"></span>')+'<span class=\"cwpred-team-name\">'+__cwPredEsc(team?.name||'—')+'</span>';return '<div class=\"cwpred-team cwpred-team--'+side+'\">'+body+'</div>'}
   function __cwPredSerieTeamHtml(team,side){const body=(typeof logo==='function'?logo(team):'')+'<span class=\"cwpred-team-name\">'+__cwPredEsc(team?.name||'—')+'</span>';return '<div class=\"cwpred-team cwpred-team--'+side+'\">'+body+'</div>'}
   function __cwPredDateTime(value){const time=Date.parse(value||'');if(!Number.isFinite(time))return 'Дата уточняется';try{const p=new Intl.DateTimeFormat('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}).formatToParts(new Date(time)),get=t=>p.find(x=>x.type===t)?.value||'';return get('day')+'.'+get('month')+' · '+get('hour')+':'+get('minute')}catch(_e){return typeof fmt==='function'?fmt(value):'Дата уточняется'}}
-  function __cwPredStatus(match){const status=String(match?.status||'scheduled');if(status==='live'){const minute=Number(match?.minute);return 'LIVE'+(Number.isFinite(minute)?' · '+minute+'′':'')}if(status==='halftime')return 'ПЕРЕРЫВ';if(status==='extra_time')return 'ДОП. ВРЕМЯ';if(status==='penalties')return 'ПЕНАЛЬТИ';if(status==='finished')return 'Матч завершён';if(status==='postponed')return 'Матч перенесён';if(status==='cancelled')return 'Матч отменён';return 'Матч не начался'}
+  function __cwPredStatus(match){const status=String(match?.status||'scheduled');if(status==='live'){const minute=Number(match?.minute);return 'LIVE'+(Number.isFinite(minute)?' · '+minute+'′':'')}if(status==='halftime')return 'ПЕРЕРЫВ';if(status==='extra_time')return 'ДОП. ВРЕМЯ';if(status==='penalties')return 'СЕРИЯ ПЕНАЛЬТИ';if(status==='finished')return 'Матч завершён';if(status==='postponed')return 'Матч перенесён';if(status==='cancelled')return 'Матч отменён';return 'Матч не начался'}
 
   var __cw29PickerActive=null;
   function __cw29PickerEnsure(){
@@ -5506,7 +5506,7 @@ function __cw35LiveMinute(x){
 function __cw35LiveLabel(x){
   const state=__cw35LiveState(x),minute=__cw35LiveMinute(x);
   if(state==='halftime')return 'ПЕРЕРЫВ';
-  if(state==='penalties')return 'ПЕНАЛЬТИ';
+  if(state==='penalties')return 'СЕРИЯ ПЕНАЛЬТИ';
   if(state==='extra_time')return 'ДОП. ВРЕМЯ'+(minute!=null?' · '+minute+'′':'');
   if(state==='live')return 'LIVE'+(minute!=null?' · '+minute+'′':'');
   if(state==='finished')return 'Матч завершён';
@@ -5715,7 +5715,7 @@ function __cw38NormalizeMatch(x){
   let minute=null;for(const value of [detail?.current_minute,src?.current_minute,src?.minute,src?.live_elapsed,m?.current_minute,m?.minute,m?.live_elapsed]){const n=Number(value);if(Number.isFinite(n)&&n>0){minute=n;break}}
   if(status==='scheduled'&&minute!=null)status='live';
   const homeScore=detail?.home_score??src?.home_score??src?.homeScore??m?.home_score??m?.homeScore??null,awayScore=detail?.away_score??src?.away_score??src?.awayScore??m?.away_score??m?.awayScore??null,active=['live','halftime','extra_time','penalties'].includes(status);
-  const label=status==='halftime'?'ПЕРЕРЫВ':status==='penalties'?'ПЕНАЛЬТИ':status==='extra_time'?`ДОП. ВРЕМЯ${minute!=null?' · '+minute+'′':''}`:status==='live'?`LIVE${minute!=null?' · '+minute+'′':''}`:status==='finished'?'Матч завершён':status==='postponed'?'Перенесён':status==='cancelled'?'Отменён':'Матч не начался';
+  const label=status==='halftime'?'ПЕРЕРЫВ':status==='penalties'?'СЕРИЯ ПЕНАЛЬТИ':status==='extra_time'?`ДОП. ВРЕМЯ${minute!=null?' · '+minute+'′':''}`:status==='live'?`LIVE${minute!=null?' · '+minute+'′':''}`:status==='finished'?'Матч завершён':status==='postponed'?'Перенесён':status==='cancelled'?'Отменён':'Матч не начался';
   return {status,minute,active,label,homeScore,awayScore,scoreText:homeScore!=null&&awayScore!=null?`${homeScore}:${awayScore}`:'— : —'}
 }
 __cw35LiveState=x=>__cw38NormalizeMatch(x).status;__cw35LiveMinute=x=>__cw38NormalizeMatch(x).minute;__cw35LiveLabel=x=>__cw38NormalizeMatch(x).label;matchStatusText=x=>__cw38NormalizeMatch(x).label;
@@ -6629,7 +6629,7 @@ function __cw66CompactState(d){
   let state='ДО МАТЧА',active=false;
   if(status==='finished'){state='FT'}
   else if(status==='halftime'){state='ПЕРЕРЫВ';active=true}
-  else if(status==='penalties'){state='ПЕНАЛЬТИ';active=true}
+  else if(status==='penalties'){state='СЕРИЯ ПЕНАЛЬТИ';active=true}
   else if(status==='extra_time'){state=`ДОП. ВРЕМЯ${Number.isFinite(minute)&&minute>0?' · '+minute+'′':''}`;active=true}
   else if(status==='live'){state=`LIVE${Number.isFinite(minute)&&minute>0?' · '+minute+'′':''}`;active=true}
   else if(status==='postponed')state='ПЕРЕНЕСЁН';
@@ -7119,6 +7119,254 @@ try{
 }catch(_e){}
 try{__cw73RememberComplete(__cw73ViewKey())}catch(_e){}
 /* /ciao-v73-stability-kernel */
+
+/* ciao-v75-live-freshness-edge-budget */
+const __CW75_LIVE_SNAPSHOT_MS=10000;
+const __CW75_LIVE_SECTION_MS=30000;
+const __CW75_EXTERNAL_LIVE_MS=15000;
+const __CW75_IDLE_POLL_MS=60000;
+const __CW75_FINISHED_CACHE_MS=300000;
+const __CW75_SCHEDULED_CACHE_MS=60000;
+const __CW75_LIVE_HEAVY_CACHE_MS=180000;
+const __CW75_H2H_MS=3600000;
+let __cw75SnapshotData=null,__cw75SnapshotAt=0,__cw75SnapshotFlight=null,__cw75RecommendedPollMs=__CW75_IDLE_POLL_MS;
+const __cw75SectionAt=new Map(),__cw75VolatileAt=new Map(),__cw75SectionDemand=new Map();
+
+function __cw75MatchKey(id=matchViewId,source=matchViewSource){return `${String(source||'serie_a')}:${Number(id)||0}`}
+function __cw75CacheEnvelope(id,source){
+  try{const raw=sessionStorage.getItem(__cw38MatchCacheKey(id,source));if(!raw)return null;const x=JSON.parse(raw);return x?.data?x:null}catch(_e){return null}
+}
+function __cw75CachePolicy(d){
+  const state=typeof __cw35LiveState==='function'?__cw35LiveState(d):String(d?.status||d?.match?.live_status||'scheduled').toLowerCase();
+  if(state==='finished')return{state,displayTtl:__CW75_FINISHED_CACHE_MS,heavyTtl:__CW75_FINISHED_CACHE_MS};
+  if(['live','halftime','extra_time','penalties'].includes(state))return{state,displayTtl:0,heavyTtl:__CW75_LIVE_HEAVY_CACHE_MS};
+  return{state,displayTtl:__CW75_SCHEDULED_CACHE_MS,heavyTtl:__CW75_SCHEDULED_CACHE_MS}
+}
+function __cw75SeedSectionTimes(id,source,env){
+  if(!env?.data)return;const key=__cw75MatchKey(id,source),meta=env?.cw75?.sections||{},fallback=Number(env.at)||0;
+  for(const sec of ['detail','stats','incidents','lineups','player_stats','overview_meta'])if(env.data?.[sec]!=null)__cw75SectionAt.set(`${key}:${sec}`,Number(meta[sec])||fallback);
+  if(Number(env?.cw75?.volatile_at)>0)__cw75VolatileAt.set(key,Number(env.cw75.volatile_at));
+}
+function __cw75ComposeBase(cached,seed){
+  if(!cached)return seed||null;if(!seed)return cached;
+  const out={...cached,...seed,match:{...(cached?.match||{}),...(seed?.match||{})},coverage:{...(cached?.coverage||{}),...(seed?.coverage||{})},errors:{...(cached?.errors||{}),...(seed?.errors||{})}};
+  for(const sec of ['detail','stats','incidents','lineups','player_stats','overview_meta','h2h'])if(cached?.[sec]!=null)out[sec]=cached[sec];
+  return typeof __cw35NormalizeMatchData==='function'?__cw35NormalizeMatchData(out):out
+}
+function __cw75Freshness(d){
+  const m=d?.match??d??{},ts=Date.parse(String(m?.live_updated_at??m?.provider_updated_at??d?.fetched_at??''));
+  return{ts:Number.isFinite(ts)?ts:0,minute:Number(typeof __cw35LiveMinute==='function'?__cw35LiveMinute(d):m?.live_elapsed)||0,state:typeof __cw35LiveState==='function'?__cw35LiveState(d):String(d?.status||m?.live_status||'scheduled').toLowerCase(),home:m?.home_score,away:m?.away_score}
+}
+function __cw75MergeFresh(prev,incoming){
+  if(!prev)return typeof __cw35NormalizeMatchData==='function'?__cw35NormalizeMatchData(incoming):incoming;
+  if(!incoming)return prev;
+  let merged=typeof __cw9MergeMatch==='function'?__cw9MergeMatch(prev,incoming):{...prev,...incoming,match:{...(prev?.match||{}),...(incoming?.match||{})}};
+  const pm=prev?.match||{},im=incoming?.match||{},p=__cw75Freshness(prev),n=__cw75Freshness(incoming),hasVolatile=['home_score','away_score','live_elapsed','live_status','live_phase','live_updated_at','is_finished'].some(k=>Object.prototype.hasOwnProperty.call(im,k));
+  const pActive=['live','halftime','extra_time','penalties'].includes(p.state),nActive=['live','halftime','extra_time','penalties'].includes(n.state);
+  const older=hasVolatile&&((p.ts&&n.ts&&n.ts<p.ts)||(pActive&&n.state==='scheduled')||(pActive&&nActive&&p.minute>0&&n.minute>0&&n.minute+1<p.minute));
+  if(older){
+    merged={...merged,status:prev.status,match:{...(merged?.match||{})}};
+    for(const k of ['home_score','away_score','live_elapsed','live_status','live_phase','live_updated_at','is_finished'])if(Object.prototype.hasOwnProperty.call(pm,k))merged.match[k]=pm[k]
+  }
+  return typeof __cw35NormalizeMatchData==='function'?__cw35NormalizeMatchData(merged):merged
+}
+function __cw75ApplySnapshot(base,row){
+  if(!base||!row)return base;const m=base?.match||{},next={...base,match:{...m,id:Number(row.id??m.id)||m.id,kickoff_at:row.kickoff_at??m.kickoff_at,home_score:row.home_score,away_score:row.away_score,is_finished:!!row.is_finished,live_status:row.live_status??m.live_status,live_phase:row.live_phase??m.live_phase,live_elapsed:row.live_elapsed??null,live_updated_at:row.live_updated_at??m.live_updated_at}};
+  next.status=typeof __cw35LiveState==='function'?__cw35LiveState(next):String(next.match.live_status||'scheduled');return typeof __cw35NormalizeMatchData==='function'?__cw35NormalizeMatchData(next):next
+}
+function __cw75SnapshotRow(id){const rows=Array.isArray(__cw75SnapshotData?.matches)?__cw75SnapshotData.matches:[];return rows.find(x=>Number(x?.id)===Number(id))||(__cw2014LastRows?.get?.(Number(id))??null)}
+const __cw75SnapshotBase=__cw2014Snapshot;
+__cw2014Snapshot=async function(options={}){
+  const force=options?.force===true,maxAge=Math.max(0,Number(options?.maxAgeMs??8000)),now=Date.now();
+  if(!force&&__cw75SnapshotData&&now-__cw75SnapshotAt<maxAge)return __cw75SnapshotData;
+  if(__cw75SnapshotFlight)return await __cw75SnapshotFlight;
+  __cw75SnapshotFlight=Promise.resolve(__cw75SnapshotBase()).then(r=>{__cw75SnapshotData=r;__cw75SnapshotAt=Date.now();__cw75RecommendedPollMs=Math.max(10000,Number(r?.recommended_poll_ms)||(__cw75HasAnyLiveRows(r?.matches)?10000:60000));try{__cw2014LastRows=new Map((Array.isArray(r?.matches)?r.matches:[]).map(x=>[Number(x.id),x]))}catch(_e){}return r}).finally(()=>{__cw75SnapshotFlight=null});
+  return await __cw75SnapshotFlight
+};
+function __cw75HasAnyLiveRows(rows){return (Array.isArray(rows)?rows:[]).some(x=>['live','halftime','extra_time','penalties'].includes(typeof __cw35LiveState==='function'?__cw35LiveState(x):String(x?.live_status||'')))}
+function __cw75ShouldCheckSnapshot(d){
+  if(!d)return true;const state=typeof __cw35LiveState==='function'?__cw35LiveState(d):String(d?.status||'scheduled');if(['live','halftime','extra_time','penalties'].includes(state))return true;if(state==='finished')return false;
+  const kick=Date.parse(String(d?.match?.kickoff_at||''));if(!Number.isFinite(kick))return true;const dt=kick-Date.now();return dt<30*60*1000&&dt>-4*60*60*1000
+}
+function __cw75SectionTtl(sec,d=matchData){
+  const state=typeof __cw35LiveState==='function'?__cw35LiveState(d):String(d?.status||'scheduled'),live=['live','halftime','extra_time','penalties'].includes(state);
+  if(state==='finished')return __CW75_FINISHED_CACHE_MS;if(!live)return sec==='lineups'?300000:__CW75_SCHEDULED_CACHE_MS;
+  if(sec==='incidents')return 20000;if(sec==='stats')return __CW75_LIVE_SECTION_MS;if(sec==='player_stats')return 45000;if(sec==='lineups'||sec==='overview_meta')return 300000;return 60000
+}
+function __cw75SectionsForTab(key){
+  if(key==='stats')return['detail','stats'];if(key==='events')return['detail','incidents'];if(key==='lineups')return['detail','lineups'];if(key==='players')return['detail','player_stats'];return['detail','stats','incidents']
+}
+function __cw75SectionsDue(sections,{force=false,id=matchViewId,source=matchViewSource,data=matchData}={}){
+  const key=__cw75MatchKey(id,source),now=Date.now();return[...new Set((sections||[]).map(String))].filter(sec=>force||data?.[sec]==null||now-Number(__cw75SectionAt.get(`${key}:${sec}`)||0)>=__cw75SectionTtl(sec,data))
+}
+function __cw75PatchAfterMerge(prev,next,activeTab=matchCenterTab){
+  try{__cw22DetectIncidents?.(next)}catch(_e){}try{__cw36PatchHero?.(prev,next)}catch(_e){try{patchMatchCenter?.(next)}catch(__e){}}
+  try{__cw36PatchActiveTab?.(prev,next,String(activeTab||'overview'))}catch(_e){}try{__cw38PatchPhase?.(next);__cw38PatchOverviewExtras?.();__cw66PatchCompact?.(next);__cw2014PatchMatchCenterPhase?.();__cw9ReplaceSplit?.(next)}catch(_e){}
+  const host=main?.querySelector?.('[data-mc-tab-content]');if(host&&host.dataset.mcTabContent===String(activeTab||'overview')&&typeof __cw9TabReady==='function'&&__cw9TabReady(String(activeTab||'overview'),next)&&(host.querySelector('.mc-lazy-loading')||!host.children.length))host.innerHTML=matchTabContent(next,String(activeTab||'overview'))
+}
+function __cw75RequestSections(sections,{force=false,reason=''}={}){
+  if(!matchViewId||!matchData||document.hidden)return Promise.resolve(false);const id=Number(matchViewId),source=String(matchViewSource||'serie_a'),key=__cw75MatchKey(id,source),due=__cw75SectionsDue(sections,{force,id,source,data:matchData});if(!due.length)return Promise.resolve(true);
+  let demand=__cw75SectionDemand.get(key);if(!demand){demand={id,source,sections:new Set(),force:false,resolvers:[],timer:null};__cw75SectionDemand.set(key,demand)}for(const s of due)demand.sections.add(s);demand.force=demand.force||force;
+  const promise=new Promise(resolve=>demand.resolvers.push(resolve));if(!demand.timer)demand.timer=setTimeout(async()=>{const d=__cw75SectionDemand.get(key);if(!d)return;__cw75SectionDemand.delete(key);const wanted=__cw75SectionsDue([...d.sections],{force:d.force,id:d.id,source:d.source,data:matchData});if(!wanted.length){d.resolvers.forEach(x=>x(true));return}const active=String(matchCenterTab||'overview'),prev=matchData;try{const fresh=await __cw9FastMatchApi(d.id,wanted,d.source);if(Number(matchViewId)!==d.id||String(matchViewSource||'serie_a')!==d.source){d.resolvers.forEach(x=>x(false));return}const next=__cw75MergeFresh(matchData,fresh);matchData=next;const now=Date.now();for(const sec of wanted)__cw75SectionAt.set(`${key}:${sec}`,now);if(fresh?.match)__cw75VolatileAt.set(key,now);__cw75PatchAfterMerge(prev,next,active);try{__cw38WriteMatchCache?.(next,d.source)}catch(_e){}d.resolvers.forEach(x=>x(true))}catch(_e){d.resolvers.forEach(x=>x(false))}},24);return promise
+}
+
+/* Persist heavy-section ages separately from volatile LIVE fields. */
+__cw38WriteMatchCache=function(d,source=matchViewSource){
+  const id=Number(d?.match?.id||matchViewId)||0;if(!id)return;const src=String(source||'serie_a'),key=__cw75MatchKey(id,src),sections={};for(const sec of ['detail','stats','incidents','lineups','player_stats','overview_meta']){const at=Number(__cw75SectionAt.get(`${key}:${sec}`)||0);if(at)sections[sec]=at}
+  try{sessionStorage.setItem(__cw38MatchCacheKey(id,src),JSON.stringify({at:Date.now(),data:d,cw75:{volatile_at:Number(__cw75VolatileAt.get(key)||0),sections}}))}catch(_e){}
+};
+
+function __cw75ShowMatchLoader(){main.innerHTML=typeof __cw43MatchLoaderHtml==='function'?__cw43MatchLoaderHtml():('<div class="mc-shell">'+LOADER_HTML+'</div>');root.querySelector('#mcBack')?.addEventListener('click',closeMatchCenter);main.scrollTop=0}
+async function __cw75OpenMatchCenter(id,source=matchViewSource){
+  const mid=Number(id),src=String(source||matchViewSource||'serie_a');if(!Number.isFinite(mid)||mid<=0)return false;if(matchLoading&&Number(matchViewId)===mid)return false;
+  matchReturnTab=tab;matchViewId=mid;matchViewSource=src;matchCenterTab=__cw38Ui?.matchTabs?.[String(mid)]||'overview';root.classList.add('match-center-open');
+  const env=__cw75CacheEnvelope(mid,src);__cw75SeedSectionTimes(mid,src,env);const rawCache=env?.data&&Date.now()-Number(env.at||0)<=__CW75_LIVE_HEAVY_CACHE_MS?env.data:null,seed=typeof __cw61SeedMatch==='function'?__cw61SeedMatch(mid,src):null;let base=__cw75ComposeBase(rawCache,seed),snapshotRow=null;
+  const initialState=base?(typeof __cw35LiveState==='function'?__cw35LiveState(base):String(base?.status||'scheduled')):'scheduled',initialLive=['live','halftime','extra_time','penalties'].includes(initialState);
+  if(src==='serie_a'&&__cw75ShouldCheckSnapshot(base)){
+    matchLoading=true;__cw75ShowMatchLoader();try{await __cw2014Snapshot({maxAgeMs:8000});snapshotRow=__cw75SnapshotRow(mid);if(snapshotRow&&base){base=__cw75ApplySnapshot(base,snapshotRow);__cw75VolatileAt.set(__cw75MatchKey(mid,src),__cw75SnapshotAt)}}catch(_e){}
+  }
+  if(src==='external'&&base&&initialLive){const freshSeed=typeof __cw61SeedMatch==='function'?__cw61SeedMatch(mid,src):null;if(freshSeed)base=__cw75ComposeBase(base,freshSeed)}
+  const state=base?(typeof __cw35LiveState==='function'?__cw35LiveState(base):'scheduled'):'scheduled',live=['live','halftime','extra_time','penalties'].includes(state),cachePolicy=base?__cw75CachePolicy(base):null,cacheAge=env?Date.now()-Number(env.at||0):Infinity;
+  const volatileFresh=src==='serie_a'?(!!snapshotRow&&Date.now()-__cw75SnapshotAt<=__CW75_LIVE_SNAPSHOT_MS):Number(__cw75VolatileAt.get(__cw75MatchKey(mid,src))||0)>Date.now()-__CW75_EXTERNAL_LIVE_MS;
+  if(base&&(!live||volatileFresh||(cachePolicy&&cacheAge<=cachePolicy.displayTtl))){matchLoading=false;matchData=base;__cw61RenderMatch(base,mid,src);const need=__cw75SectionsForTab(matchCenterTab);Promise.resolve(__cw75RequestSections(need,{reason:'open'})).catch(()=>{});try{__cw36ScheduleNext?.(__cw75NextPollMs())}catch(_e){}return true}
+  matchLoading=true;__cw75ShowMatchLoader();try{const wanted=__cw75SectionsForTab(matchCenterTab),fresh=await __cw9FastMatchApi(mid,wanted,src);if(Number(matchViewId)!==mid||String(matchViewSource||'serie_a')!==src)return false;base=__cw75MergeFresh(base,fresh);const now=Date.now();for(const sec of wanted)__cw75SectionAt.set(`${__cw75MatchKey(mid,src)}:${sec}`,now);__cw75VolatileAt.set(__cw75MatchKey(mid,src),now);matchLoading=false;matchData=base;__cw61RenderMatch(base,mid,src);try{__cw36ScheduleNext?.(__cw75NextPollMs())}catch(_e){}return true}catch(e){matchLoading=false;if(Number(matchViewId)!==mid)return false;if(base){matchData=base;__cw61RenderMatch(base,mid,src);return true}main.innerHTML=`<div class="mc-shell"><div class="mc-toolbar"><button class="mc-back" id="mcBack" aria-label="Назад"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button><div class="mc-toolbar-title">Матч-центр</div><span class="mc-toolbar-spacer"></span></div><div class="empty"><b>Не удалось загрузить матч</b><br><br>${esc(e?.message||'Попробуйте ещё раз')}</div></div>`;root.querySelector('#mcBack')?.addEventListener('click',closeMatchCenter);return false}
+}
+openMatchCenter=__cw75OpenMatchCenter;
+
+async function __cw75RefreshMatchCenter(){
+  if(!matchViewId||matchLoading||document.hidden||!matchData)return false;const id=Number(matchViewId),source=String(matchViewSource||'serie_a'),active=String(matchCenterTab||'overview'),state=typeof __cw35LiveState==='function'?__cw35LiveState(matchData):String(matchData?.status||'scheduled');if(state==='finished')return false;
+  let changed=false;
+  if(source==='serie_a'&&__cw75ShouldCheckSnapshot(matchData)){
+    try{await __cw2014Snapshot({maxAgeMs:Math.max(0,__CW75_LIVE_SNAPSHOT_MS-750)});if(Number(matchViewId)!==id)return false;const row=__cw75SnapshotRow(id);if(row){const prev=matchData,next=__cw75ApplySnapshot(prev,row);matchData=next;__cw75VolatileAt.set(__cw75MatchKey(id,source),__cw75SnapshotAt);__cw75PatchAfterMerge(prev,next,active);changed=true}}
+    catch(_e){}
+  }else if(source==='external'&&['live','halftime','extra_time','penalties'].includes(state)){
+    const key=__cw75MatchKey(id,source),last=Number(__cw75VolatileAt.get(key)||0);if(Date.now()-last>=__CW75_EXTERNAL_LIVE_MS){const prev=matchData;try{const fresh=await __cw9FastMatchApi(id,[],source);if(Number(matchViewId)!==id)return false;const next=__cw75MergeFresh(prev,fresh);matchData=next;__cw75VolatileAt.set(key,Date.now());__cw75PatchAfterMerge(prev,next,active);changed=true}catch(_e){}}
+  }
+  const currentState=typeof __cw35LiveState==='function'?__cw35LiveState(matchData):state;if(['live','halftime','extra_time','penalties'].includes(currentState)){const due=__cw75SectionsDue(__cw75SectionsForTab(active));if(due.length)await __cw75RequestSections(due,{reason:'live-tab'})}
+  try{__cw38WriteMatchCache?.(matchData,source)}catch(_e){}return changed
+}
+refreshMatchCenter=__cw75RefreshMatchCenter;
+const __cw75RefreshLiveBase=refreshLive;
+refreshLive=async function(){if(matchViewId)return await __cw75RefreshMatchCenter();return await __cw75RefreshLiveBase()};
+
+/* Missing tab data and compact xG share one debounced Edge request. */
+__cw9LoadSection=async function(key){if(!matchViewId)return false;const host=main?.querySelector?.('[data-mc-tab-content]');if(host&&matchCenterTab===key&&!__cw9TabReady(key,matchData))host.innerHTML='<div class="mc-lazy-loading">Загружаем данные…</div>';const ok=await __cw75RequestSections(__cw75SectionsForTab(key),{reason:'tab-open'});if(ok&&host&&matchCenterTab===key&&__cw9TabReady(key,matchData)){host.dataset.mcTabContent=key;host.innerHTML=matchTabContent(matchData,key)}return ok};
+__cw69EnsureCompactXg=async function(){if(!matchViewId||!matchData)return false;if(__cw69HasCompactXg(matchData)){__cw66PatchCompact(matchData);return true}const state=typeof __cw35LiveState==='function'?__cw35LiveState(matchData):String(matchData?.status||'');if(!['live','halftime','extra_time','penalties','finished'].includes(state))return false;return await __cw75RequestSections(['stats'],{reason:'compact-xg'})};
+const __cw75BestPlayerBase=__cw2151EnsureBestPlayer;
+__cw2151EnsureBestPlayer=async function(){const state=matchData&&typeof __cw35LiveState==='function'?__cw35LiveState(matchData):'';if(['live','halftime','extra_time','penalties'].includes(state)){try{if(__cw212BestPlayer?.(matchData))__cw2015PatchOverview?.(matchData)}catch(_e){}return false}return await __cw75BestPlayerBase()};
+const __cw75BindMatchBase=bindMatchCenter;
+bindMatchCenter=function(){const out=__cw75BindMatchBase();for(const b of root.querySelectorAll('[data-mc-tab]'))if(b.dataset.cw75FreshBound!=='1'){b.dataset.cw75FreshBound='1';b.addEventListener('click',()=>setTimeout(()=>{if(matchViewId)__cw75RequestSections(__cw75SectionsForTab(String(matchCenterTab||b.dataset.mcTab||'overview')),{reason:'tab-freshness'}).catch(()=>{})},0))}return out};
+
+/* H2H is effectively static for a match: persist it for the session instead of re-hitting Edge every five minutes. */
+const __cw75H2HBase=__cw38EnsureH2H;
+__cw38EnsureH2H=async function(){if(!matchViewId||!matchData)return;const id=Number(matchViewId),key=`ciao:cw75:h2h:${id}`;try{const saved=JSON.parse(sessionStorage.getItem(key)||'null');if(saved?.matches&&Date.now()-Number(saved.at||0)<__CW75_H2H_MS){__cw38H2HCache.set(id,{matches:saved.matches,at:Date.now(),loading:false,cw43:true});__cw38PatchH2H();return true}}catch(_e){}const out=await __cw75H2HBase();try{const x=__cw38H2HCache.get(id);if(Array.isArray(x?.matches)&&x.matches.length)sessionStorage.setItem(key,JSON.stringify({at:Date.now(),matches:x.matches}))}catch(_e){}return out};
+
+function __cw75VisibleLive(){
+  if(matchViewId&&matchData)return['live','halftime','extra_time','penalties'].includes(typeof __cw35LiveState==='function'?__cw35LiveState(matchData):String(matchData?.status||''));if(S?.has_live)return true;
+  try{const pools=[];if(__cwPredExternalPayload?.matches)pools.push(__cwPredExternalPayload.matches);if(__cwMtPayload?.matches)pools.push(__cwMtPayload.matches);for(const list of (__cwHomeExternalByCompetition?.values?.()||[]))pools.push(list);return pools.some(rows=>(rows||[]).some(m=>['live','halftime','extra_time','penalties'].includes(String(m?.status??m?.liveStatus??m?.live_status??'').toLowerCase())))}catch(_e){return false}
+}
+function __cw75NextPollMs(){if(document.hidden)return __CW75_IDLE_POLL_MS;if(matchViewId){const state=matchData&&typeof __cw35LiveState==='function'?__cw35LiveState(matchData):'scheduled';if(state==='halftime')return 30000;if(['live','extra_time','penalties'].includes(state))return String(matchViewSource||'serie_a')==='serie_a'?__CW75_LIVE_SNAPSHOT_MS:__CW75_EXTERNAL_LIVE_MS;return __CW75_IDLE_POLL_MS}return __cw75VisibleLive()?Math.max(10000,Math.min(30000,Number(__cw75RecommendedPollMs)||10000)):__CW75_IDLE_POLL_MS}
+__cw36ScheduleNext=function(delay){if(__cw36SchedulerTimer)clearTimeout(__cw36SchedulerTimer);if(document.hidden)return;const requested=Number(delay)||0,target=requested>0&&requested<3000?Math.max(500,requested):__cw75NextPollMs();__cw36SchedulerTimer=setTimeout(async()=>{try{await __cwPerfTick()}finally{__cw36ScheduleNext(__cw75NextPollMs())}},target)};
+try{if(__cw36SchedulerTimer)clearTimeout(__cw36SchedulerTimer);__cw36SchedulerTimer=null;__cw36ScheduleNext(__cw75NextPollMs())}catch(_e){}
+
+/* Leaving LIVE invalidates only volatile fields; heavy sections stay reusable, so re-entry is fresh without a request storm. */
+const __cw75CloseMatchBase=closeMatchCenter;
+closeMatchCenter=function(){try{if(matchViewId&&matchData&&['live','halftime','extra_time','penalties'].includes(__cw35LiveState(matchData))){const key=__cw75MatchKey(matchViewId,matchViewSource);__cw75VolatileAt.set(key,0);const env=__cw75CacheEnvelope(matchViewId,matchViewSource);if(env){env.cw75={...(env.cw75||{}),volatile_at:0};sessionStorage.setItem(__cw38MatchCacheKey(matchViewId,matchViewSource),JSON.stringify(env))}}}catch(_e){}const out=__cw75CloseMatchBase();try{__cw36ScheduleNext(__cw75NextPollMs())}catch(_e){}return out};
+/* /ciao-v75-live-freshness-edge-budget */
+
+/* ciao-v75.1-unified-live-phase-labels */
+/* Client-only consistency layer: no network calls are added here. */
+const __cw751NormalizeMatchBase=__cw38NormalizeMatch;
+__cw38NormalizeMatch=function(x){
+  const out=__cw751NormalizeMatchBase(x);if(!out)return out;
+  if(out.status==='penalties'&&out.label!=='СЕРИЯ ПЕНАЛЬТИ')return {...out,label:'СЕРИЯ ПЕНАЛЬТИ'};
+  return out
+};
+function __cw751PhaseActive(x){return ['live','halftime','extra_time','penalties'].includes(__cw35LiveState(x))}
+function __cw751PhaseLabel(x){return __cw35LiveLabel(x)}
+
+/* Prediction Center: Serie A and external tournaments now share the same phase formatter. */
+__cwPredStatus=function(match){
+  const state=__cw35LiveState(match);if(__cw751PhaseActive(match))return __cw751PhaseLabel(match);
+  if(state==='finished')return 'Матч завершён';if(state==='postponed')return 'Матч перенесён';if(state==='cancelled')return 'Матч отменён';return 'Матч не начался'
+};
+__cwPredSerieStatus=function(match){
+  const state=__cw35LiveState(match);if(__cw751PhaseActive(match))return __cw751PhaseLabel(match);
+  if(state==='finished'||match?.is_finished)return 'Матч завершён';return match?.open?'Матч не начался':'Прогноз закрыт'
+};
+__cwPredSerieRealScore=function(match){
+  const state=__cw35LiveState(match),active=__cw751PhaseActive(match)||state==='finished'||match?.is_finished;
+  return active&&match?.home_score!=null&&match?.away_score!=null?String(match.home_score)+' : '+String(match.away_score):''
+};
+
+/* Multi-tournament match lists use the same formatter, including ET minute. */
+__cwMtPolishStatus=function(match){
+  const state=__cw35LiveState(match);if(__cw751PhaseActive(match))return __cw751PhaseLabel(match);
+  if(state==='finished')return 'Матч завершён';if(state==='postponed')return 'Матч перенесён';if(state==='cancelled')return 'Матч отменён';return 'Матч не начался'
+};
+
+/* Compact Match Center strip: keep its 3-line layout but use the canonical phase label. */
+const __cw751CompactStateBase=__cw66CompactState;
+__cw66CompactState=function(d){
+  const out=__cw751CompactStateBase(d),state=__cw35LiveState(d);if(!out)return out;
+  if(__cw751PhaseActive(d))out.state=__cw751PhaseLabel(d);
+  return out
+};
+
+/* Calendar / legacy visible cards: patch every active phase, not only halftime. */
+__cw2014PatchPhaseLabels=function(rows){
+  const map=new Map((Array.isArray(rows)?rows:[]).map(x=>[Number(x.id),x]));
+  for(const host of main?.querySelectorAll?.('[data-mid]')||[]){
+    const m=map.get(Number(host.dataset.mid));if(!m||!__cw751PhaseActive(m))continue;const label=__cw751PhaseLabel(m);
+    for(const el of host.querySelectorAll?.('.live-pill,.cw11-mine-state,[data-live-slot="mine-live"]')||[])el.textContent=label;
+    const boardStatus=host.querySelector?.('[data-live-slot="board-status"],.board-status'),boardCaption=host.querySelector?.('[data-live-slot="board-caption"],.board-caption');
+    if(boardStatus&&String(boardStatus.textContent||'').trim())boardStatus.textContent=label;
+    if(boardCaption&&host.classList?.contains?.('scoreboard-card'))boardCaption.textContent=label
+  }
+};
+
+function __cw751PatchPredictionPhaseLabels(){
+  if(!root)return;
+  const serie=new Map((Array.isArray(S?.round?.matches)?S.round.matches:[]).map(m=>[Number(m.id),m]));
+  for(const card of root.querySelectorAll?.('.cwpred-serie-card[data-mid]')||[]){
+    const m=serie.get(Number(card.dataset.mid)),el=card.querySelector('.cwpred-status');if(!m||!el)continue;el.textContent=__cwPredSerieStatus(m);el.classList.toggle('cwpred-status--live',__cw751PhaseActive(m))
+  }
+  let external=[];try{external=__cwPredSelectedGroup?.()?.matches||__cwPredExternalPayload?.matches||[]}catch(_e){}
+  const ext=new Map((Array.isArray(external)?external:[]).map(m=>[String(m?.matchId||''),m]));
+  for(const card of root.querySelectorAll?.('.cwpred-external-card[data-cwpred-match]')||[]){
+    const m=ext.get(String(card.getAttribute('data-cwpred-match')||'')),el=card.querySelector('.cwpred-status');if(!m||!el)continue;el.textContent=__cwPredStatus(m);el.classList.toggle('cwpred-status--live',__cw751PhaseActive(m))
+  }
+}
+function __cw751PatchTournamentPhaseLabels(){
+  if(!root)return;let rows=[];try{rows=Array.isArray(__cwMtPayload?.matches)?__cwMtPayload.matches:[]}catch(_e){}
+  const map=new Map(rows.map(m=>[String(m?.matchId||''),m]));
+  for(const card of root.querySelectorAll?.('.cwmt-match-card[data-cwmt-match]')||[]){
+    const m=map.get(String(card.getAttribute('data-cwmt-match')||'')),el=card.querySelector('.board-status');if(!m||!el)continue;el.textContent=__cwMtPolishStatus(m)
+  }
+}
+function __cw751PatchAllVisiblePhases(){
+  try{__cw751PatchPredictionPhaseLabels()}catch(_e){}
+  try{__cw751PatchTournamentPhaseLabels()}catch(_e){}
+  try{if(matchViewId&&matchData){__cw2014PatchMatchCenterPhase?.();__cw66PatchCompact?.(matchData)}}catch(_e){}
+  try{if(tab==='calendar'&&!matchViewId&&!clubViewId)__cw2014PatchPhaseLabels?.(S?.round?.matches||[])}catch(_e){}
+}
+
+try{
+  const __cw751PredPolishBase=__cwPredPolishStatusBadges;
+  __cwPredPolishStatusBadges=function(){const out=__cw751PredPolishBase?.();__cw751PatchPredictionPhaseLabels();return out}
+}catch(_e){}
+try{
+  const __cw751RenderBase=render;
+  render=function(){const out=__cw751RenderBase();requestAnimationFrame(__cw751PatchAllVisiblePhases);return out}
+}catch(_e){}
+try{
+  const __cw751RefreshLiveBase=refreshLive;
+  refreshLive=async function(...args){const out=await __cw751RefreshLiveBase(...args);__cw751PatchAllVisiblePhases();return out}
+}catch(_e){}
+requestAnimationFrame(__cw751PatchAllVisiblePhases);
+/* /ciao-v75.1-unified-live-phase-labels */
+
+
 
 /* ===== /Ciao, Web! v22.5 product polish layer ===== */
 
